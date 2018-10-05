@@ -781,8 +781,6 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
-libcreate: plutolib/libpluto_0.1.a
-
 ## all         : default task; compile C code, build firmware
 
 all: binary
