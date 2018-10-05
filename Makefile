@@ -62,8 +62,7 @@ INCLUDE_DIRS	 = $(SRC_DIR)
 LINKER_DIR	 = $(ROOT)/src/main/target
 
 
-#toolchain dir for static lib building
-TOOLCHAINBASEDIR = F:\DronaAviation\API\GNU-ARM\6-2017-q2-update
+
 
 
 # Search path for sources
@@ -758,17 +757,6 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF) 
 
-# Compile
-
-plutolib/libpluto_0.1.a: $(TARGET_OBJS)
-	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin-0.dll $@ $^
-
-
-
-#for mac and linux	
-#plutolib/libpluto_0.1.a: $(TARGET_OBJS)
-#	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin.so $@ $^	
-
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
 	@mkdir -p $(dir $@)
@@ -796,7 +784,6 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 libcreate: plutolib/libpluto_0.1.a
 
 ## all         : default task; compile C code, build firmware
-#all: libcreate
 
 all: binary
 
