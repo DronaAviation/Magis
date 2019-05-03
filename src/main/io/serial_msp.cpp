@@ -95,7 +95,7 @@
 
 #include "command/command.h"
 
-#include "API/API-Utils.h"
+#include "../API/API-Utils.h"
 
 static serialPort_t *mspSerialPort;
 
@@ -112,7 +112,6 @@ uint16_t fsIndicator;
 #ifdef __cplusplus
 extern "C" {
 #endif
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #ifdef __cplusplus
 }
@@ -173,7 +172,7 @@ static const char * const flightControllerIdentifier = MAGIS_IDENTIFIER; // 4 UP
 #define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF
 
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
-#define BOARD_IDENTIFIER_LENGTH             6 // 4 UPPER CASE alpha numeric characters that identify the board being used.
+#define BOARD_IDENTIFIER_LENGTH             7 // 4 UPPER CASE alpha numeric characters that identify the board being used.
 #define BOARD_HARDWARE_REVISION_LENGTH      2
 
 
@@ -190,7 +189,7 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #define CAP_DYNBALANCE              ((uint32_t)1 << 2)
 #define CAP_FLAPS                   ((uint32_t)1 << 3)
-#define CAP_NAVCAP                  ((uint32_t)1 << 4)
+#define CAP_NAVCAP                  ((uin732_t)1 << 4)
 #define CAP_EXTAUX                  ((uint32_t)1 << 5)
 
 */
@@ -879,55 +878,64 @@ static bool processOutCommand(uint8_t cmdMSP)
 
         	fsIndicator=0;
 
-        			switch(leastSignificantBit(flightIndicatorFlag))
-        			{
-        			case 0:
-        				    fsIndicator=(1<<0);
-        								break;
+            switch(leastSignificantBit(flightIndicatorFlag))
+            {
+            case Accel_Gyro_Calibration:
+
+                        fsIndicator=(1<<App_Accel_Gyro_Calibration);
+                        break;
 
 
-        			case 1:
-        				  fsIndicator=(1<<1);
-        								break;
+            case Mag_Calibration:
 
-
-
-        			case 2:
-        				  fsIndicator=(1<<8);
-        				       break;
-
-        			case 3:
-        				  fsIndicator=(1<<7);
-        						break;
-
-        			case 4:
-        				  fsIndicator=(1<<6);
-        						break;
-
-        			case 5:
-        				  fsIndicator=(1<<5);
-        								break;
-
-
-        			case 6:
-        				  fsIndicator=(1<<4);
-        						break;
-
-        			case 7:
-        				  fsIndicator=(1<<3);
-        						break;
-
-
-        			case 8:
-        				  fsIndicator=(1<<2);
-        						break;
-
-        			}
+                        fsIndicator=(1<<App_Mag_Calibration);
+                        break;
 
 
 
-        	        headSerialReply(2);
-        	        serialize16(fsIndicator);
+            case Crash:
+
+                        fsIndicator=(1<<App_Crash);
+                        break;
+
+            case Low_battery:
+
+                        fsIndicator=(1<<App_Low_battery);
+                        break;
+
+            case LowBattery_inFlight:
+
+                        fsIndicator=(1<<App_LowBattery_inFlight);
+                        break;
+
+            case Signal_loss:
+
+                        fsIndicator=(1<<App_Signal_loss);
+                        break;
+
+
+            case Not_ok_to_arm:
+
+                        fsIndicator=(1<<App_Not_ok_to_arm);
+                        break;
+
+            case Ok_to_arm:
+
+                        fsIndicator=(1<<App_Ok_to_arm);
+                        break;
+
+
+            case Armed:
+
+                        fsIndicator=(1<<App_Armed);
+                        break;
+
+            }
+
+
+
+            headSerialReply(2);
+            serialize16(fsIndicator);
 
 
 
@@ -1602,8 +1610,11 @@ static bool processInCommand(void)
 
         case MSP_SET_COMMAND:
 
-           current_command=read16();
 
+           if(!isLanding) {
+           current_command=read16();
+           command_status = RUNNING;
+           }
 
 
            break;

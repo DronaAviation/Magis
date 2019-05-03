@@ -23,13 +23,13 @@ extern "C" {
 
 // Helpful macros
 #ifdef LED_M
-#define LED_M_TOGGLE              digitalToggle(LED0_GPIO, LED0_PIN)
+#define LED_M_TOGGLE              digitalToggle(LED2_GPIO, LED2_PIN)
 #ifndef LED_M_INVERTED
-#define LED_M_OFF                 digitalHi(LED0_GPIO, LED0_PIN)
-#define LED_M_ON                  digitalLo(LED0_GPIO, LED0_PIN)
+#define LED_M_OFF                 digitalHi(LED2_GPIO, LED2_PIN)
+#define LED_M_ON                  digitalLo(LED2_GPIO, LED2_PIN)
 #else
-#define LED_M_OFF                 digitalLo(LED0_GPIO, LED0_PIN)
-#define LED_M_ON                  digitalHi(LED0_GPIO, LED0_PIN)
+#define LED_M_OFF                 digitalLo(LED2_GPIO, LED2_PIN)
+#define LED_M_ON                  digitalHi(LED2_GPIO, LED2_PIN)
 #endif // inverted
 #else
 #define LED_M_TOGGLE              do {} while(0)
@@ -38,13 +38,13 @@ extern "C" {
 #endif
 
 #ifdef LED_R
-#define LED_R_TOGGLE              digitalToggle(LED1_GPIO, LED1_PIN)
+#define LED_R_TOGGLE              digitalToggle(LED0_GPIO, LED0_PIN)
 #ifndef LED_R_INVERTED
-#define LED_R_OFF                 digitalHi(LED1_GPIO, LED1_PIN)
-#define LED_R_ON                  digitalLo(LED1_GPIO, LED1_PIN)
+#define LED_R_OFF                 digitalHi(LED0_GPIO, LED0_PIN)
+#define LED_R_ON                  digitalLo(LED0_GPIO, LED0_PIN)
 #else
-#define LED_R_OFF                 digitalLo(LED1_GPIO, LED1_PIN)
-#define LED_R_ON                  digitalHi(LED1_GPIO, LED1_PIN)
+#define LED_R_OFF                 digitalLo(LED0_GPIO, LED0_PIN)
+#define LED_R_ON                  digitalHi(LED0_GPIO, LED0_PIN)
 #endif // inverted
 #else
 #define LED_R_TOGGLE              do {} while(0)
@@ -53,13 +53,13 @@ extern "C" {
 #endif
 
 #ifdef LED_L
-#define LED_L_TOGGLE              digitalToggle(LED2_GPIO, LED2_PIN)
+#define LED_L_TOGGLE              digitalToggle(LED1_GPIO, LED1_PIN)
 #ifndef LED_L_INVERTED
-#define LED_L_OFF                 digitalHi(LED2_GPIO, LED2_PIN)
-#define LED_L_ON                  digitalLo(LED2_GPIO, LED2_PIN)
+#define LED_L_OFF                 digitalHi(LED1_GPIO, LED1_PIN)
+#define LED_L_ON                  digitalLo(LED1_GPIO, LED1_PIN)
 #else
-#define LED_L_OFF                 digitalLo(LED2_GPIO, LED2_PIN)
-#define LED_L_ON                  digitalHi(LED2_GPIO, LED2_PIN)
+#define LED_L_OFF                 digitalLo(LED1_GPIO, LED1_PIN)
+#define LED_L_ON                  digitalHi(LED1_GPIO, LED1_PIN)
 #endif // inverted
 #else
 #define LED_L_TOGGLE              do {} while(0)

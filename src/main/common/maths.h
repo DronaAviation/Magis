@@ -38,6 +38,16 @@ extern "C" {
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
+// acceleration due to gravity in m/s/s
+#define GRAVITY_CSS 4096.0f
+
+//Single precision conversions
+#define DEG_TO_RAD 0.017453292519943295769236907684886f
+#define RAD_TO_DEG 57.295779513082320876798154814105f
+
+
+#define FLT_EPSILON 1.19209290E-07F // decimal constant
+
 typedef struct stdev_s {
         float m_oldM, m_newM, m_oldS, m_newS;
         int m_n;
@@ -102,6 +112,21 @@ float cos_approx(float x);
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 
 uint16_t leastSignificantBit(uint16_t myInt);
+
+/* used mostly for dcm  */
+float safe_asin(float v);
+
+// degrees -> radians
+float radians(float deg);
+
+// radians -> degrees
+float degrees(float rad);
+
+
+bool is_positive(float val);
+
+
+
 
 #ifdef __cplusplus
 }

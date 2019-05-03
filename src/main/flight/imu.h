@@ -23,11 +23,12 @@ extern "C" {
 
 extern int16_t throttleAngleCorrection;
 extern uint32_t accTimeSum;
-extern int accSumCount,accSumCountXY;
+extern int accSumCount,accSumCountXYZ;
 extern float accVelScale;
 extern t_fp_vector EstG;
 extern int16_t accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
+extern int32_t accSumXYZ[XYZ_AXIS_COUNT];
 extern int16_t smallAngle;
 
 typedef struct rollAndPitchInclination_s {
@@ -64,6 +65,9 @@ void imuUpdate(rollAndPitchTrims_t *accelerometerTrims);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
+float * dcmBodyToEarth3D(float* vector);
+
+
 
 int16_t imuCalculateHeading(t_fp_vector *vec);
 void imuResetAccelerationSum(int i);
@@ -71,6 +75,18 @@ void imuInit(void);
 
 extern int32_t netAccMagnitude;
 extern int32_t accZoffsetCalCycle;
+
+
+
+extern float tempMat[3][3];
+extern float tempMat1[3][3];
+extern float anglerad[ANGLE_INDEX_COUNT];
+
+
+//extern int32_t imuDebug;
+//extern int32_t imuDebug1;
+
+
 
 #ifdef __cplusplus
 }

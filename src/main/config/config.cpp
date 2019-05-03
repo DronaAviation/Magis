@@ -72,13 +72,12 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#define BRUSHED_MOTORS_PWM_RATE 18000
+#define BRUSHED_MOTORS_PWM_RATE 100000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #ifdef __cplusplus
 }
@@ -153,15 +152,15 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
-    pidProfile->P8[ROLL] = 40; //38; //40;
-    pidProfile->I8[ROLL] = 10; //35; //30;
-    pidProfile->D8[ROLL] = 30; //23;
-    pidProfile->P8[PITCH] = 40;  //38; //40;
-    pidProfile->I8[PITCH] = 10;  //35; //30;
-    pidProfile->D8[PITCH] = 30; //23;
-    pidProfile->P8[YAW] = 80; //85;
-    pidProfile->I8[YAW] = 70; //45;
-    pidProfile->D8[YAW] = 5; //0;
+    pidProfile->P8[PIDROLL] = 40; //38; //40;
+    pidProfile->I8[PIDROLL] = 10; //35; //30;
+    pidProfile->D8[PIDROLL] = 30; //23;
+    pidProfile->P8[PIDPITCH] = 40;  //38; //40;
+    pidProfile->I8[PIDPITCH] = 10;  //35; //30;
+    pidProfile->D8[PIDPITCH] = 30; //23;
+    pidProfile->P8[PIDYAW] = 150; //85;
+    pidProfile->I8[PIDYAW] = 70; //45;
+    pidProfile->D8[PIDYAW] = 50; //0;
     pidProfile->P8[PIDALT] = 100;
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 30; //0;
@@ -185,9 +184,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDLEVEL] = 10;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 120;
-    pidProfile->I8[PIDVEL] = 45;
-    pidProfile->D8[PIDVEL] = 1;
+    pidProfile->P8[PIDVEL] = 120;  //120  //40
+    pidProfile->I8[PIDVEL] = 45;  //45    //20
+    pidProfile->D8[PIDVEL] = 1;  //1      //0
+
+    pidProfile->P8[PIDUSER] = 0;
+    pidProfile->I8[PIDUSER] = 0;
+    pidProfile->D8[PIDUSER] = 0;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->dterm_cut_hz = 0;
@@ -406,7 +409,7 @@ static void resetConf(void)
     masterConfig.mixerMode = MIXER_QUADX;
   //    masterConfig.mixerMode = MIXER_QUADP;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3)
+#if defined(CJMCU) ||  defined(PRIMUSV3R) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3) ||  defined(PRIMUSX)
     //featureSet(FEATURE_RX_PPM);
     featureSet(FEATURE_RX_MSP);
     featureSet(FEATURE_CURRENT_METER);//testing virtual adc current measurement
@@ -474,7 +477,7 @@ static void resetConf(void)
     masterConfig.retarded_arm = 0;
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
-    masterConfig.small_angle = 25;
+    masterConfig.small_angle = 150;
 
     resetMixerConfig(&masterConfig.mixerConfig);
 

@@ -41,17 +41,17 @@ void setPos(float newX, float newY);
 void configurePosHold2(pidProfile_t *initialPidProfile);
 
 extern int16_t posX, posY, posZ, deltaTime;
-extern bool read_position;
-extern uint8_t localisationType;
+extern int8_t Quality;
+extern bool new_position;
+extern int8_t localisationType;
 
 extern int16_t PositionX, PositionY;
 extern int16_t PrevPositionX, PrevPositionY;
 extern int16_t VelocityX, VelocityY;
 extern int16_t inputVx, inputVy;
 extern float whyconZ;
-extern float accel[2], accel_prev[2];
+extern float accel_EF[2], accel_EF_prev[2];
 
-extern int32_t debugPosEst, debugPosEst_1;
 
 
 #ifdef __cplusplus

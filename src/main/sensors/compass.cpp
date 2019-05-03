@@ -48,6 +48,9 @@ float magneticDeclination = 0.0f;
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADC[XYZ_AXIS_COUNT];
+uint32_t compassLastUpdatedAt=0;
+bool have_initial_yaw=false;
+
 sensor_align_e magAlign = (sensor_align_e) 0;
 #ifdef MAG
 static uint8_t magInit = 0;
@@ -55,9 +58,8 @@ static uint8_t magInit = 0;
 void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
-    LED_R_ON;
+
     mag.init();
-    LED_R_OFF;
     magInit = 1;
 }
 
@@ -72,10 +74,12 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
     if ((int32_t) (currentTime - nextUpdateAt) < 0)
         return;
     nextUpdateAt = currentTime + COMPASS_UPDATE_FREQUENCY_10HZ;
+    compassLastUpdatedAt=currentTime;
     mag.read(magADC);
     alignSensors(magADC, magADC, magAlign);
     if (STATE(CALIBRATE_MAG)) {
         tCal = nextUpdateAt;
+        have_initial_yaw=false;
         for (axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = magADC[axis];

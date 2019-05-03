@@ -21,7 +21,10 @@
 extern "C" {
 #endif 
 
+#include "rx/rx.h"
+
 uint8_t sbusFrameStatus(void);
+bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 #ifdef __cplusplus
 }

@@ -26,6 +26,8 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
@@ -39,13 +41,14 @@
 #include "io/gps.h"
 
 #include "flight/pid.h"
+
+#include "../api/API-Utils.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
 #include "flight/filter.h"
 
 
-#include "../API/API-Utils.h"
 #include "config/runtime_config.h"
 
 extern uint16_t cycleTime;
@@ -67,19 +70,25 @@ static int32_t errorAngleI[2] = { 0, 0 };
 static float errorAngleIf[2] = { 0.0f, 0.0f };
 
 
-
+int32_t desiredAngle[3]={0,0,0};
+int32_t desiredRate[3]={0,0,0};
 float derivatives[3]={0,0,0};
 float dt=0;
 uint32_t lastTimedDT=0;
 int16_t lastGyroReadings[3]={0,0,0};
 
 
-
 /* debug variables */
 
 float debugDterm=0;
-float desiredRate=0;
+//float desiredRate=0;
 float currentRate=0;
+
+
+int32_t debugPID=-1;
+int32_t debugPID1=-1;
+
+
 
 
 
@@ -804,24 +813,27 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
         	// YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            AngleRateTmp = (((int32_t) (rate + 27) * rcCommand[YAW]) >> 5);
+            desiredRate[axis] = (((int32_t) (rate + 27) * rcCommand[YAW]) >> 5);
         } else {
             // calculate error and limit the angle to max configured inclination
 #ifdef GPS
-            errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination), +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+            desiredAngle[axis]= 2 * rcCommand[axis] + GPS_angle[axis];
+            errorAngle = constrain(desiredAngle[axis], -((int) max_angle_inclination), +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #else
-                    errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
+            // 0. 4 * rcCommand[axis] for linear mapping ;  2 for non linear
+            desiredAngle[axis]= 2 * rcCommand[axis];
+            errorAngle = constrain( desiredAngle[axis], -((int) max_angle_inclination),
                             +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #endif
 
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                AngleRateTmp = ((int32_t) (rate + 27) * rcCommand[axis]) >> 4;
+                desiredRate[axis] = ((int32_t) (rate + 27) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
-                    AngleRateTmp += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
+                    desiredRate[axis]  += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                AngleRateTmp = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+                desiredRate[axis]  = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -829,15 +841,27 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // -----calculate scaled error.AngleRates
         // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = AngleRateTmp - (gyroADC[axis] / 4);
+
+//        if((reverseReferenceFrame&&axis==FD_PITCH)||(reverseReferenceFrame&&axis==FD_YAW))
+//        RateError = -(AngleRateTmp - (gyroADC[axis] / 4));
+//
+//        else
+        RateError = desiredRate[axis]  - (gyroADC[axis] / 4);
+
+
+
+
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
+
 
         // Pterm low pass
         if (pidProfile->pterm_cut_hz) {
             PTerm = filterApplyPt1(PTerm, &PTermState[axis], pidProfile->pterm_cut_hz);
         }
+
+
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
@@ -900,11 +924,18 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         DTerm = ((int)( derivatives[axis] * pidProfile->D8[axis] * PIDweight[axis] / 100)) >> 6;
 
 
-        if(axis==FD_PITCH){
-               debugDterm=  derivatives[axis];
-               desiredRate=AngleRateTmp;
-               currentRate= (gyroADC[axis] / 4);
-        }
+//        if(axis==FD_PITCH){
+//               debugDterm=  derivatives[axis];
+//              // desiredRate=desiredRate[axis];
+//               currentRate= (gyroADC[axis] / 4);
+//        }
+
+        if (axis == FD_YAW) {
+
+                 debugPID=PTerm;
+                 debugPID1=DTerm;
+
+             }
 
 
         // -----calculate total PID output

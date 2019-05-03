@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #include "../API-Utils.h"
-
+#include "../Hardware/Led.h"
 #include "platform.h"
 
 #include "build_config.h"
@@ -64,8 +64,6 @@
 
 #include "blackbox/blackbox.h"
 
-#include "API/Hardware/Led.h"
-
 #include "command/command.h"
 
 #include "mw.h"
@@ -105,19 +103,98 @@ bool Control_P::disArm()
 }
 
 
-void Control_P::setRC(rc_channels_e channel, int16_t value)
+void Control_P::setRcCommand(rc_channels_e channel, int16_t value)
 {
 
     value = constrain(value, 1000, 2000);
 
-    RC_ARRAY[channel] = (value - 1500);
+
+    switch(channel){
+
+    case RC_ROLL:
+        value-=1500;
+
+           rcCommand[channel]=value;
+           RC_ARRAY[channel]=value;
+           userRCflag[channel]=true;
+           break;
+
+
+
+    case RC_PITCH:
+            value-=1500;
+
+               rcCommand[channel]=value;
+               RC_ARRAY[channel]=value;
+               userRCflag[channel]=true;
+               break;
+
+    case RC_YAW:
+            value-=1500;
+
+               rcCommand[channel]=value;
+               RC_ARRAY[channel]=value;
+               userRCflag[channel]=true;
+               break;
+
+
+    case RC_THROTTLE:
+        rcData[channel]=value;
+        RC_ARRAY[channel]=value;
+        userRCflag[channel]=true;
+
+               break;
+
+
+    }
 
 }
 
-int16_t Control_P::getRC(rc_channels_e channel)
+int16_t Control_P::getRcData(rc_channels_e channel)
 {
 
-    return rcData[channel];
+
+
+    switch(channel){
+
+    case RC_ROLL:
+        return rcData[channel];
+           break;
+
+
+
+    case RC_PITCH:
+        return rcData[channel];
+               break;
+
+    case RC_YAW:
+
+            return rcData[channel];
+               break;
+
+
+    case RC_THROTTLE:
+        return rcData[channel];
+               break;
+
+    case RC_USER1:
+           return rcData[channel+4];
+                  break;
+
+   case RC_USER2:
+
+               return rcData[channel+4];
+                  break;
+
+
+   case RC_USER3:
+           return rcData[channel+4];
+                  break;
+
+    }
+
+
+
 }
 
 void Control_P::disableFlightStatus(bool disable)
@@ -127,45 +204,43 @@ void Control_P::disableFlightStatus(bool disable)
     else
         FlightStatusEnabled = true;
 
-    ledOp(L_LEFT, OFF);
-    ledOp(L_MID, OFF);
-    ledOp(L_RIGHT, OFF);
+
 
 }
 
-void Control_P::disableExternalRC(rc_channels_e channel)
-{
-
-    External_RC_FLAG[channel] = false;
-
-}
-
-void Control_P::disableAllExternalRC(void)
-{
-
-    for (int channel = 0; channel < 4; channel++) {
-        External_RC_FLAG[channel] = false;
-
-    }
-
-}
-
-void Control_P::enableExternalRC(rc_channels_e channel)
-{
-
-    External_RC_FLAG[channel] = true;
-
-}
-
-void Control_P::enableAllExternalRC(void)
-{
-
-    for (int channel = 0; channel < 4; channel++) {
-        External_RC_FLAG[channel] = true;
-
-    }
-
-}
+//void Control_P::disableExternalRC(rc_channels_e channel)
+//{
+//
+//    External_RC_FLAG[channel] = false;
+//
+//}
+//
+//void Control_P::disableAllExternalRC(void)
+//{
+//
+//    for (int channel = 0; channel < 4; channel++) {
+//        External_RC_FLAG[channel] = false;
+//
+//    }
+//
+//}
+//
+//void Control_P::enableExternalRC(rc_channels_e channel)
+//{
+//
+//    External_RC_FLAG[channel] = true;
+//
+//}
+//
+//void Control_P::enableAllExternalRC(void)
+//{
+//
+//    for (int channel = 0; channel < 4; channel++) {
+//        External_RC_FLAG[channel] = true;
+//
+//    }
+//
+//}
 
 bool Control_P::checkFlightStatus(f_status_e status)
 {
@@ -213,40 +288,45 @@ void Control_P::setFailsafeState(failsafe_e failsafe, bool active)
 void Control_P::setCommand(flight_command_e command)
 {
 
+    if(current_command!=command){
     current_command = command;
+    command_status = RUNNING;
+    }
 
 }
 
 void Control_P::setHeading(int16_t heading)
 {
-
+    magHold = heading;
     userHeading = heading;
     isUserHeadingSet = true;
 
+
 }
 
-void Control_P::setUserLoopFrequency(uint16_t frequency)
+void Control_P::setUserLoopFrequency(float frequency)
 {
+    uint32_t resultFrequency;
 
-    frequency = constrain(frequency, 0, 300);
+    frequency = constrain(frequency, 3.5, 2000);
 
-    frequency = frequency * 1000;
+    resultFrequency = frequency * 1000;
 
-    userLoopFrequency = frequency;
+    userLoopFrequency = resultFrequency;
 
 }
 
 void Control_P::enableDeveloperMode(void)
 {
 
-    rcData[AUX2] = 1500;
+    developerMode=true;
 
 }
 
 void Control_P::disableDeveloperMode(void)
 {
 
-    rcData[AUX2] = 1200;
+    developerMode=false;
 
 }
 

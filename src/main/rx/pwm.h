@@ -20,6 +20,11 @@
 extern "C" {
 #endif 
 
+#include "rx/rx.h"
+
+void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfigPtr, rcReadRawDataPtr *callback);
+
+
 #ifdef __cplusplus
 }
 #endif 

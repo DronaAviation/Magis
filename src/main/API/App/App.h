@@ -17,16 +17,35 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+
+typedef enum user_pid_gains {
+
+    Kp = 0,
+    Ki,
+    Kd
+
+} user_pid_gains_e;
+
+
+
 class App_P {
+
 
 public:
 
     int16_t getAppHeading(void);
     bool isArmSwitchOn(void);
+    void setUserPID(user_pid_gains_e gain, uint8_t value);
+    uint8_t getUserPID(user_pid_gains_e gain);
+
+
 
 };
 

@@ -20,7 +20,7 @@
 extern "C" {
 #endif 
 
-#define FC_VERSION_MAJOR            1  // increment when a major release is made (big new feature, etc)
+#define FC_VERSION_MAJOR            2  // increment when a major release is made (big new feature, etc)
 #define FC_VERSION_MINOR            0 // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
 

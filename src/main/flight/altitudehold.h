@@ -45,6 +45,7 @@ void updateSonarAltHoldState(void);
 
 int32_t altitudeHoldGetEstimatedAltitude(void);
 int32_t getSetVelocity(void);
+int32_t getSetAltitude(void);
 void AltRst(void);
 
 
@@ -52,7 +53,6 @@ void AltRst(void);
 
 void correctedWithTof(float ToF_Height);
 void correctedWithBaro(float baroAlt, float dt);
-
 void checkReading();
 void checkBaro();
 
@@ -60,12 +60,18 @@ void updateGains();
 void updateTimeConstantandGains(uint8_t timeConstant);
 float getTimeConstant();
 void apmCalculateEstimatedAltitude(uint32_t currtime);
-void setUserAltitude(int32_t altitude);
-void setRelativeUserAltitude(int32_t altitude);
+void setAltitude(int32_t altitude);
+void setRelativeAltitude(int32_t altitude);
 int32_t getEstAltitude();
+int32_t getEstVelocity(void);
 
 
 bool limitAltitude();
+
+extern int32_t altholdDebug;
+extern int32_t altholdDebug1;
+extern int32_t altholdDebug2;
+extern int32_t altholdDebug3;
 
 
 #ifdef __cplusplus

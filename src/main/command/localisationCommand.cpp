@@ -42,9 +42,8 @@
 #include "config/runtime_config.h"
 #include "flight/posControl.h"
 
-#include "API/API-Utils.h"
-
 #include "command/localisationCommand.h"
+#include "../api/API-Utils.h"
 
 #define timeScale 1000000
 

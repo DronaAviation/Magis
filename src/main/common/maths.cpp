@@ -38,6 +38,7 @@
 #define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
 #endif
 
+
 float sin_approx(float x)
 {
     int32_t xint = x;
@@ -173,6 +174,11 @@ void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3])
     matrix[2][X] = (sinzsinx) - (coszcosx * siny);
     matrix[2][Y] = (coszsinx) + (sinzcosx * siny);
     matrix[2][Z] = cosy * cosx;
+
+
+
+
+
 }
 
 // Rotate a vector *v by the euler angles defined by the 3-vector *delta.
@@ -279,11 +285,50 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
 uint16_t leastSignificantBit(uint16_t myInt)
 {
     uint16_t mask = 1 << 0;
-    for (uint16_t bitIndex = 0; bitIndex <= 7; bitIndex++) {
+    for (uint16_t bitIndex = 0; bitIndex <= 8; bitIndex++) {
         if ((myInt & mask) != 0) {
             return bitIndex;
         }
         mask <<= 1;
     }
     return -1;
+}
+
+
+
+
+
+/* used for mostly dcm */
+// a varient of asin() that checks the input ranges and ensures a
+// valid angle as output. If nan is given as input then zero is
+// returned.
+float safe_asin(float v)
+{
+    if (isnan(v)) {
+        return 0.0;
+    }
+    if (v >= 1.0f) {
+        return M_PIf/2;
+    }
+    if (v <= -1.0f) {
+        return -M_PIf/2;
+    }
+    return asinf(v);
+}
+
+// degrees -> radians
+float radians(float deg) {
+    return deg * DEG_TO_RAD;
+}
+
+// radians -> degrees
+float degrees(float rad) {
+    return rad * RAD_TO_DEG;
+}
+
+
+bool is_positive(float val)
+{
+    return val>=FLT_EPSILON;
+
 }

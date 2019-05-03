@@ -181,6 +181,7 @@ STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature
     uint32_t press;
     int64_t temp;
     int64_t delt;
+
     int64_t dT = (int64_t) T - ((uint64_t) ms5611_c[5] * 256);
     int64_t off = ((int64_t) ms5611_c[2] << 16) + (((int64_t) ms5611_c[4] * dT) >> 7);
     int64_t sens = ((int64_t) ms5611_c[1] << 15) + (((int64_t) ms5611_c[3] * dT) >> 8);

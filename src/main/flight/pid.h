@@ -38,6 +38,7 @@ typedef enum {
     PIDLEVEL,
     PIDMAG,
     PIDVEL,
+    PIDUSER,
     PID_ITEM_COUNT
 } pidIndex_e;
 
@@ -93,6 +94,9 @@ typedef struct pidProfile_s {
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
+
+extern int32_t desiredAngle[3];
+extern int32_t desiredRate[3];
 extern  float derivatives[3];
 extern  float dt;
 extern  uint32_t lastTimedDT;
@@ -113,8 +117,10 @@ void pidResetErrorGyro(void);
 /* debug variables */
 
 extern float debugDterm;
-extern float desiredRate;
 extern float currentRate;
+
+extern int32_t debugPID;
+extern int32_t debugPID1;
 
 
 #ifdef __cplusplus

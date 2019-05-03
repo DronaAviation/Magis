@@ -27,6 +27,7 @@ class MSP_P {
 public:
 
     void setRC(int16_t rcChannels[]);
+    void setCommand(int16_t command);
 
 };
 

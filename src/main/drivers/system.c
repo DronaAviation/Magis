@@ -235,25 +235,25 @@ void failureMode(uint8_t mode)    //DD
 
             while (shortFlashesRemaining || codeFlashesRemaining) {
                 if ((mode & 64) == 64) {
-                    LED_L_TOGGLE;
+                    LED_R_TOGGLE;
                 }
                 if ((mode & 32) == 32) {
                     LED_M_TOGGLE;
                 }
                 if ((mode & 2) == 2) {
-                    LED_R_TOGGLE;
+                    LED_L_TOGGLE;
                 }		//drona
                 BEEP_ON;
                 delay(flashDuration);
 
                 if ((mode & 64) == 64) {
-                    LED_L_TOGGLE;
+                    LED_R_TOGGLE;
                 }
                 if ((mode & 32) == 32) {
                     LED_M_TOGGLE;
                 }
                 if ((mode & 2) == 2) {
-                    LED_R_TOGGLE;
+                    LED_L_TOGGLE;
                 }
                 BEEP_OFF;
                 delay(flashDuration);
