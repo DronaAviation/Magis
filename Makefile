@@ -69,9 +69,6 @@ CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS	 = $(SRC_DIR)
 LINKER_DIR	 = $(ROOT)/src/main/target
 
-#Add compiler path
-#TOOLCHAINDIR =F:\DronaAviation\API\GNU-ARM\6-2017-q2-update\bin
-#TOOLCHAINBASEDIR = F:\DronaAviation\API\GNU-ARM\6-2017-q2-update
 
 
 # Search path for sources
