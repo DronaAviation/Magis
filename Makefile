@@ -15,7 +15,15 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= ALIENWIIF3
+TARGET		?= PRIMUSX
+
+BUILD_TYPE  ?=LIB
+
+LIB_MAJOR_VERSION?=0
+
+LIB_MINOR_VERSION?=3
+
+
 
 # Compile-time options
 OPTIONS		?=
@@ -35,16 +43,16 @@ FLASH_SIZE ?=
 
 FORKNAME			 = Magis
 
-VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 CC3D CHEBUZZF3 CJMCU COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY 
+VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 PRIMUSX CC3D CHEBUZZF3 CJMCU PRIMUSV3R COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY 
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
 ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
 FLASH_SIZE = 64
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1 CC3D NAZE OLIMEXINO RMDO))
-FLASH_SIZE = 128
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1 PRIMUSX PRIMUSV3R  CC3D NAZE OLIMEXINO RMDO))
 FLASH_SIZE = 256
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+FLASH_SIZE = 128
 else
 $(error FLASH_SIZE not configured for target)
 endif
@@ -61,8 +69,9 @@ CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS	 = $(SRC_DIR)
 LINKER_DIR	 = $(ROOT)/src/main/target
 
-
-
+#Add compiler path
+#TOOLCHAINDIR =F:\DronaAviation\API\GNU-ARM\6-2017-q2-update\bin
+#TOOLCHAINBASEDIR = F:\DronaAviation\API\GNU-ARM\6-2017-q2-update
 
 
 # Search path for sources
@@ -85,7 +94,7 @@ VPATH		:= $(VPATH):$(RANGING_DIR)/core/src:$(RANGING_DIR)/platform/src
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
+ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
@@ -255,7 +264,7 @@ COMMON_SRC = build_config.cpp \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
 		   io/beeper.cpp \
-		   io/rc_controls.c \
+		   io/rc_controls.cpp \
 		   io/rc_curves.cpp \
 		   io/serial.cpp \
 		   io/serial_1wire.cpp \
@@ -264,7 +273,7 @@ COMMON_SRC = build_config.cpp \
 		   io/statusindicator.cpp \
 		   io/flashfs.cpp \
 		   io/gps.cpp\
-		   rx/rx.c\
+		   rx/rx.cpp\
 		   rx/pwm.c \
 		   rx/msp.c \
 		   rx/sbus.c \
@@ -423,31 +432,112 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 
 
 DRONA_SRC = flight/acrobats.cpp \
+            drivers/opticflow_cheerson_cxof.cpp \
             drivers/ranging_vl53l0x.cpp \
             flight/posControl.cpp\
             flight/posEstimate.cpp\
+            flight/opticflow.cpp\
             command/command.cpp\
             command/localisationCommand.cpp\
-			API/Hardware/Specifiers.cpp \
-			API/Hardware/Peripheral.cpp \
-		    API/Hardware/Communication.cpp \
-			API/Hardware/Led.cpp \
-			API/Hardware/Motor.cpp \
-			API/Hardware/Servo.cpp \
-			API/App/App.cpp \
-			API/X/Xshield.cpp\
-			API/X/XGPS.cpp\
-			API/Core/Sensor.cpp \
-			API/Debug/Print.cpp \
-			API/Debug/Utils.cpp\
-			API/Core/Control.cpp \
-			API/Core/MSP.cpp \
-			API/Core/Angle.cpp \
-			API/Flight/Althold.cpp\
-			API/Flight/Localisation.cpp\
-			API/Flight/PIDProfile.cpp\
+			API/Specifiers.cpp \
+			API/Peripheral.cpp \
+			API/XRanging.cpp\
+			API/Sensor.cpp \
+			API/Control.cpp \
+			API/Estimate.cpp \
+			API/Utils.cpp\
+			API/User.cpp\
+			API/Motor.cpp\
 			API/API-Utils.cpp\
-		    API/PlutoPilot.cpp\
+			API/Localisation.cpp\
+
+
+		    
+PRIMUSV3R_SRC = \
+		   startup_stm32f10x_md_gcc.S \
+		   $(RANGING_SRC) \
+		   drivers/adc.cpp \
+		   drivers/adc_stm32f10x.cpp \
+		   drivers/accgyro_mpu.cpp \
+		   drivers/accgyro_mpu6500.cpp \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/bus_spi.c \
+		   drivers/compass_ak8963.cpp \
+		   drivers/gpio_stm32f10x.cpp \
+		   drivers/light_led_stm32f10x.cpp \
+		   drivers/flash_m25p16.cpp \
+		   drivers/pwm_mapping.cpp \
+		   drivers/pwm_output.cpp \
+		   drivers/pwm_rx.cpp \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.cpp \
+		   drivers/system_stm32f10x.cpp \
+		   drivers/timer.cpp \
+		   drivers/timer_stm32f10x.cpp \
+		   hardware_revision.cpp \
+		   drivers/barometer_ms5611.cpp \
+		   sensors/barometer.cpp \
+		   $(COMMON_SRC) \
+		   $(DRONA_SRC)		    
+
+PRIMUSX_SRC = \
+		   startup_stm32f30x_md_gcc.S \
+		   $(RANGING_SRC) \
+		   drivers/adc.cpp \
+		   drivers/adc_stm32f30x.c \
+		   drivers/accgyro_mpu.cpp \
+		   drivers/accgyro_mpu6500.cpp \
+		   drivers/bus_i2c_stm32f30x.c \
+		   drivers/bus_spi.c \
+		   drivers/compass_ak8963.cpp \
+		   drivers/gpio_stm32f30x.c \
+		   drivers/light_led_stm32f30x.c \
+		   drivers/flash_m25p16.cpp \
+		   drivers/pwm_mapping.cpp \
+		   drivers/pwm_output.cpp \
+		   drivers/pwm_rx.cpp \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f30x.c \
+		   drivers/sound_beeper_stm32f30x.c \
+		   drivers/system_stm32f30x.c \
+		   drivers/timer.cpp \
+		   drivers/timer_stm32f30x.c \
+		   drivers/barometer_ms5611.cpp \
+		   sensors/barometer.cpp \
+		   $(COMMON_SRC) \
+           $(DRONA_SRC)
+
+
+CJMCU_SRC = \
+		   startup_stm32f10x_md_gcc.S \
+		   $(RANGING_SRC) \
+		   drivers/adc.cpp \
+		   drivers/adc_stm32f10x.cpp \
+		   drivers/accgyro_mpu.cpp \
+		   drivers/accgyro_mpu6500.cpp \
+		   drivers/bus_i2c_stm32f10x.c \
+		   drivers/bus_spi.c \
+		   drivers/compass_ak8963.cpp \
+		   drivers/gpio_stm32f10x.cpp \
+		   drivers/light_led_stm32f10x.cpp \
+			drivers/flash_m25p16.cpp \
+		   drivers/pwm_mapping.cpp \
+		   drivers/pwm_output.cpp \
+		   drivers/pwm_rx.cpp \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f10x.c \
+		   drivers/sound_beeper_stm32f10x.cpp \
+		   drivers/system_stm32f10x.cpp \
+		   drivers/timer.cpp \
+		   drivers/timer_stm32f10x.cpp \
+		   hardware_revision.cpp \
+		   drivers/barometer_ms5611.cpp \
+		   sensors/barometer.cpp \
+		   $(COMMON_SRC) \
+		   $(DRONA_SRC)
+
+
 
 ALIENWIIF3_SRC = \
 		   startup_stm32f30x_md_gcc.S \
@@ -461,7 +551,7 @@ ALIENWIIF3_SRC = \
 		   drivers/compass_ak8963.cpp \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led_stm32f30x.c \
-			drivers/flash_m25p16.cpp \
+		   drivers/flash_m25p16.cpp \
 		   drivers/pwm_mapping.cpp \
 		   drivers/pwm_output.cpp \
 		   drivers/pwm_rx.cpp \
@@ -473,7 +563,7 @@ ALIENWIIF3_SRC = \
 		   drivers/timer_stm32f30x.c \
 		   drivers/barometer_ms5611.cpp \
 		   sensors/barometer.cpp \
-		   $(COMMON_SRC) \
+		    $(COMMON_SRC) \
            $(DRONA_SRC)
 
 
@@ -638,6 +728,15 @@ MOTOLAB_SRC = \
 		   $(COMMON_SRC) \
 		   $(VCP_SRC)
 
+
+ifeq ($(BUILD_TYPE),BIN)
+$(TARGET)_SRC:=$($(TARGET)_SRC)\
+			API/PlutoPilot.cpp\
+
+               
+endif
+
+
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 
@@ -646,11 +745,11 @@ VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 #
 
 # Tool names
-CC		 = arm-none-eabi-g++
+CC		 =arm-none-eabi-g++
 C		 = arm-none-eabi-gcc
-AR       =arm-none-eabi-ar
-OBJCOPY  = arm-none-eabi-objcopy
-SIZE	 = arm-none-eabi-size
+AR               =arm-none-eabi-ar
+OBJCOPY		 =arm-none-eabi-objcopy
+SIZE		 =arm-none-eabi-size
 
 #
 # Tool options.
@@ -661,7 +760,7 @@ OPTIMIZE	 = -O0
 LTO_FLAGS	 = $(OPTIMIZE)
 else
 OPTIMIZE	 = -Os
-LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
+LTO_FLAGS	 = -flto --use-linker-plugin $(OPTIMIZE)
 endif
 
 DEBUG_FLAGS	 = -ggdb3 -DDEBUG
@@ -675,6 +774,7 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
 		   -ffunction-sections \
 		   -fdata-sections \
+		   -ffat-lto-objects\
 		   $(DEVICE_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   $(TARGET_FLAGS) \
@@ -694,6 +794,7 @@ CCFLAGS		 = $(ARCH_FLAGS) \
 		   -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
 		   -ffunction-sections \
 		   -fdata-sections \
+		   -ffat-lto-objects\
 		   $(DEVICE_FLAGS) \
 		   -DUSE_STDPERIPH_DRIVER \
 		   $(TARGET_FLAGS) \
@@ -737,12 +838,12 @@ ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
 endif
 
-TARGET_BIN	 = $(BIN_DIR)/$(FORKNAME)_Experience.bin
-TARGET_HEX	 = $(BIN_DIR)/$(FORKNAME)_Experience.hex
-TARGET_ELF	 = $(OBJECT_DIR)/$(FORKNAME)_Experience.elf
+TARGET_BIN	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).bin
+TARGET_HEX	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).hex
+TARGET_ELF	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
 TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
-TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_Experience.map
+TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -756,6 +857,20 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF) 
+
+# Compile
+
+#libs/libpluto_0.3.a: $(TARGET_OBJS)
+#	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin-0.dll $@ $^
+
+
+libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a: $(TARGET_OBJS)
+	$(AR) rcs $@ $^
+
+
+#for mac and linux	
+#libpluto_0.1.a: $(TARGET_OBJS)
+#	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin.so $@ $^	
 
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
@@ -781,9 +896,15 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
 
+libcreate: libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a
+
 ## all         : default task; compile C code, build firmware
 
+ifeq ($(BUILD_TYPE),LIB)
+all: libcreate
+else ifeq ($(BUILD_TYPE),BIN)
 all: binary
+endif
 
 ## clean       : clean up all temporary / machine-generated files
 clean:

@@ -55,11 +55,14 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "acrobats.h"
-#include "API/Debug/Print.h"
 
-#include "API/Core/Angle.h"
-#include "API/Core/Control.h"
-#include "API/Core/Sensor.h"
+#include "../API/Core/Angle.h"
+#include "../API/Core/Control.h"
+#include "../API/Debug/Print.h"
+#include "../API/Debug/Print.h"
+#include "../API/Flight/Flight.h"
+#include "../API/Sensor.h"
+
 
 uint8_t flipDirection = 0;
 int16_t pitch = 0;
@@ -77,12 +80,24 @@ void flip(bool doFlip)
 {
     if (doFlip) {
         switch (flipState) {
+
+
+     //   rcData[THROTTLE] = 1800;
+
         case ASCEND: //State 1
+
+
+//
+//            LED_L_ON;
+//            LED_M_OFF;
+//            LED_R_OFF;
+
+
 
             if ((millis() - flipStartTime) > 2200) {
                 ACTIVATE_RC_MODE(BOXBARO);
                 flipState = 0;
-                DISABLE_FLIGHT_MODE(ANGLE_MODE);
+                ENABLE_FLIGHT_MODE(ANGLE_MODE);
 
                 return;
 
@@ -92,27 +107,28 @@ void flip(bool doFlip)
             currentControlRateProfile->rates[FD_PITCH] = 75;
             DEACTIVATE_RC_MODE(BOXBARO); //deactivate baromode to ensure greater vertical velocity than when the mode is on.
 
-            if (getSetVelocity() < desiredVelocity) {
+            if (getEstVelocity() < desiredVelocity) {
                   rcData[THROTTLE] = 2000;
-            } else {
+            } else
+            {
                 DISABLE_FLIGHT_MODE(ANGLE_MODE);
                 if (flipDirection == FLIP_BACK) {
-                    currentControlRateProfile->rates[FD_PITCH] = 85;
+                    currentControlRateProfile->rates[FD_PITCH] = 110;
                     rcData[PITCH] = 1000;
                     flipState = 2;
                     stateon = millis();
                 } else if (flipDirection == FLIP_FRONT) {
-                    currentControlRateProfile->rates[FD_PITCH] = 85;
+                    currentControlRateProfile->rates[FD_PITCH] = 110;
                     rcData[PITCH] = 2000;
                     flipState = 5;
                     stateon = millis();
                 } else if (flipDirection == FLIP_LEFT) {
-                    currentControlRateProfile->rates[FD_ROLL] = 85;
+                    currentControlRateProfile->rates[FD_ROLL] = 110;
                     rcData[ROLL] = 1000;
                     flipState = 2;
                     stateon = millis();
                 } else {
-                    currentControlRateProfile->rates[FD_ROLL] = 85;
+                    currentControlRateProfile->rates[FD_ROLL] = 110;
                     rcData[ROLL] = 2000;
                     flipState = 5;
                     stateon = millis();
@@ -121,13 +137,21 @@ void flip(bool doFlip)
             break;
 
         case PITCHING:                   //State 2 continue fliping of the drone
+
+
+//
+//            LED_L_OFF;
+//            LED_M_ON;
+//            LED_R_OFF;
+
+
             DEACTIVATE_RC_MODE(BOXBARO);
             DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
             if (flipDirection == FLIP_BACK) {
-                rcData[PITCH] = 1025;
+                rcData[PITCH] = 1000;
             } else {
-                rcData[ROLL] = 1025;
+                rcData[ROLL] = 1000;
             }
 
             if (flipDirection == FLIP_BACK && (inclination.values.pitchDeciDegrees > 450)) {
@@ -148,11 +172,20 @@ void flip(bool doFlip)
             break;
 
         case SLOWDOWNANDEXIT: //state 3 slowdown down when the angle of the drone is >225 degrees
+
+
+//
+//            LED_L_OFF;
+//            LED_M_OFF;
+//            LED_R_ON;
+//
+
             if (flipDirection == FLIP_BACK
                     && inclination.values.pitchDeciDegrees > 450) {
                 DEACTIVATE_RC_MODE(BOXBARO);
                 DISABLE_FLIGHT_MODE(ANGLE_MODE);
                 rcData[PITCH] = 1150;
+                //rcData[THROTTLE] = 2000;
                 if ((millis() - stateon) >= 2000) {
                     flipState = 0;
                     stateon = 0;
@@ -191,6 +224,13 @@ void flip(bool doFlip)
             break;
 
         case HOLD: // State 4
+
+
+//
+//            LED_L_ON;
+//            LED_M_ON;
+//            LED_R_ON;
+
             ACTIVATE_RC_MODE(BOXBARO);
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
 
@@ -199,22 +239,35 @@ void flip(bool doFlip)
             } else {
                 rcData[THROTTLE] = 2000;
             }
+
+
+            //Althold.setRelativeAltholdHeight(50);
+
             currentControlRateProfile->rates[FD_PITCH] = 75;
             currentControlRateProfile->rates[FD_ROLL] = 75;
 
-            if ((millis() - stateon) <= 3000) {
+            if ((millis() - stateon) <= 1500) {
                 flipState = 4;
             } else {
+
+
+
+//                LED_L_OFF;
+//                LED_M_OFF;
+//                LED_R_OFF;
+
+              //  Althold.setRelativeAltholdHeight(-150);
                 flipState = 0;
                 stateon = 0;
             }
             break;
 
         case PITCHINGPOS: //State 5 continue fliping of the drone
+
             DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
             if (flipDirection == FLIP_FRONT) {
-                rcData[PITCH] = 1975;
+                rcData[PITCH] = 2000;
             } else {
                 rcData[ROLL] = 1975;
             }
@@ -235,6 +288,7 @@ void flip(bool doFlip)
             break;
 
         case SLOWDOWNANDEXITPOS: //State 6 slowdown down when the angle of the drone is >270 degrees
+
             if (flipDirection == FLIP_FRONT && inclination.values.pitchDeciDegrees < -450) {
                 DEACTIVATE_RC_MODE(BOXBARO);
                 DISABLE_FLIGHT_MODE(ANGLE_MODE);
@@ -277,6 +331,7 @@ void flip(bool doFlip)
             break;
 
         case HOLDPOS: //State 7
+
             ACTIVATE_RC_MODE(BOXBARO);
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
 
@@ -290,14 +345,21 @@ void flip(bool doFlip)
             currentControlRateProfile->rates[FD_ROLL] = 75;
             currentControlRateProfile->rates[FD_PITCH] = 75;
 
-            if ((millis() - stateon) <= 1000) {
+            if ((millis() - stateon) <= 1500) {
                 flipState = 7;
             } else {
+
+            //    Althold.setRelativeAltholdHeight(-150);
                 flipState = 0;
+                stateon = 0;
+               // flipState = 0;
             }
             break;
         }
     } else {
+
+
+
         flipState = 0;
         stateon = 0;
         currentControlRateProfile->rates[FD_PITCH] = 75;
@@ -307,39 +369,39 @@ void flip(bool doFlip)
 
 void robustChuck()
 {
+//
+//    if (isChukedArmed) {
+//        pitch = Flight.get(AG_PITCH);
+//        roll = Flight.get(AG_ROLL);
+//
+//        if (ARMING_FLAG(ARMED) && !isPitchStabelised) {
+//
+//            if (pitch < 120 && pitch > -120 && roll < 120 && roll > -120) {
+//                Control.setRC(RC_PITCH, 1500);
+//                isPitchStabelised = true;
+//           } else{
+//                Control.setRC(RC_PITCH, 2000);
+//            }
+//
+//        }
+//
+//        if (ARMING_FLAG(ARMED) && !isRollStabelised) {
+//
+//           if (roll < 120 && roll > -120) {
+//                Control.setRC(RC_ROLL, 1500);
+//                isRollStabelised = true;
+//            } else if (roll > 120 && roll < 900) {
+//                Control.setRC(RC_ROLL, 2000);
+//            }
+//
+//        }
 
-    if (isChukedArmed) {
-        pitch = Angle.get(AG_PITCH);
-        roll = Angle.get(AG_ROLL);
-
-        if (ARMING_FLAG(ARMED) && !isPitchStabelised) {
-
-            if (pitch < 120 && pitch > -120 && roll < 120 && roll > -120) {
-                Control.setRC(RC_PITCH, 1500);
-                isPitchStabelised = true;
-           } else{
-                Control.setRC(RC_PITCH, 2000);
-            }
-
-        }
-
-        if (ARMING_FLAG(ARMED) && !isRollStabelised) {
-
-           if (roll < 120 && roll > -120) {
-                Control.setRC(RC_ROLL, 1500);
-                isRollStabelised = true;
-            } else if (roll > 120 && roll < 900) {
-                Control.setRC(RC_ROLL, 2000);
-            }
-
-        }
-
-        if (isPitchStabelised && isRollStabelised) {
-               Control.setFailsafeState(CRASH, true);
-        } else {
-            Control.setFailsafeState(CRASH, false);
-          }
-    }
+//        if (isPitchStabelised && isRollStabelised) {
+//               Control.setFailsafeState(CRASH, true);
+//        } else {
+//            Control.setFailsafeState(CRASH, false);
+//          }
+ //   }
 
 }
 

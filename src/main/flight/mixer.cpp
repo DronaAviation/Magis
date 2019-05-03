@@ -571,37 +571,75 @@ void writeMotors(void)
 {
     uint8_t i;
 
-    for (i = 0; i < 8; i++)
-    {
-
-    	if(reverseMode)
-    	{
-    		if(i<4)
-    		pwmWriteMotor(i+4, motor[i]);
-    	}
-    	else
-    	{
+    for (i = 0; i < motorCount; i++)
+        pwmWriteMotor(i, motor[i]);
 
 
-    	if(ARMING_FLAG(ARMED))
-    	{
-    		if(i<4&& motorMixer)
-    		pwmWriteMotor(i, motor[i]);
-    		else
-    		{
-    		pwmWriteMotor(i, motor_disarmed[i]);
-    		}
 
-    	}
-
-    	else
-    	{
-    		pwmWriteMotor(i, motor[i]);
-
-    	}
-
-    	}
-    }
+//    for (i = 0; i < 8; i++)
+//    {
+//
+//    	if(reverseMode)
+//    	{
+////    		if(i<4)
+////    		pwmWriteMotor(i+4, motor[i]);
+//
+//
+//    		if(ARMING_FLAG(ARMED))
+//    		        {
+//    		            if(i<4&& motorMixer){
+//
+//    		            if(reverseReferenceFrame){
+//
+//    		                pwmWriteMotor(i+4, motor[3-i]);
+//
+//    		            }else{
+//    		                pwmWriteMotor(i+4, motor[i]);
+//    		            }
+//
+//
+//
+//
+//
+//    		            }
+//    		            else
+//    		            {
+//    		            pwmWriteMotor(i-4, motor_disarmed[i]);
+//    		            }
+//
+//    		        }
+//
+//    		        else
+//    		        {
+//    		            pwmWriteMotor(i, motor[i]);
+//
+//    		        }
+//
+//
+//    	}
+//    	else
+//    	{
+//
+//
+//    	if(ARMING_FLAG(ARMED))
+//    	{
+//    		if(i<4&& motorMixer)
+//    		pwmWriteMotor(i, motor[i]);
+//    		else
+//    		{
+//    		pwmWriteMotor(i, motor_disarmed[i]);
+//    		}
+//
+//    	}
+//
+//    	else
+//    	{
+//    		pwmWriteMotor(i, motor[i]);
+//
+//    	}
+//
+//    	}
+//    }
 
     if (feature(FEATURE_ONESHOT125)) {
         pwmCompleteOneshotMotorUpdate(motorCount);
@@ -719,6 +757,9 @@ void mixTable(void)
         axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
+
+
+
     // motors for non-servo mixes
     for (i = 0; i < motorCount; i++) {
         motor[i] = rcCommand[THROTTLE] * currentMixer[i].throttle + axisPID[PITCH] * currentMixer[i].pitch + axisPID[ROLL] * currentMixer[i].roll + -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
@@ -800,7 +841,7 @@ void mixTable(void)
         case MIXER_CUSTOM_AIRPLANE:
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
-        case MIXER_BICOPTER:
+        case MIXER_BICOPTER:.
         case MIXER_CUSTOM_TRI:
         case MIXER_TRI:
         case MIXER_DUALCOPTER:

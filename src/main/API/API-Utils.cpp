@@ -15,63 +15,94 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "API-Utils.h"
 
+#include <stdbool.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
-#include "build_config.h"
-
-#include "common/axis.h"
 #include "common/maths.h"
+#include "common/axis.h"
+#include "common/color.h"
+#include "common/utils.h"
 
-#include "config/config.h"
-#include "config/runtime_config.h"
-
-#include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
 #include "drivers/light_led.h"
 
 #include "drivers/gpio.h"
+#include "drivers/system.h"
+#include "drivers/pwm_output.h"
+#include "drivers/serial.h"
+#include "drivers/timer.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/flash_m25p16.h"
+#include "drivers/flash.h"
+#include "drivers/ranging_vl53l0x.h"
+#include "drivers/opticflow_cheerson_cxof.h"
 
-#include "sensors/barometer.h"
-#include "sensors/battery.h"
 #include "sensors/sensors.h"
-#include "sensors/gyro.h"
+#include "sensors/boardalignment.h"
+#include "sensors/sonar.h"
+#include "sensors/compass.h"
 #include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/gyro.h"
+#include "sensors/battery.h"
 
-#include "rx/rx.h"
-
-#include "io/gps.h"
 #include "io/beeper.h"
+#include "io/display.h"
 #include "io/escservo.h"
 #include "io/rc_controls.h"
 #include "io/rc_curves.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/serial.h"
+#include "io/serial_cli.h"
+#include "io/serial_msp.h"
+#include "io/statusindicator.h"
 
-#include "io/display.h"
+#include "rx/rx.h"
+#include "rx/msp.h"
+
+#include "telemetry/telemetry.h"
+#include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/navigation.h"
-#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/gtune.h"
+#include "flight/navigation.h"
+#include "flight/filter.h"
+#include "flight/acrobats.h"
+#include "flight/posEstimate.h"
+#include "flight/posControl.h"
+#include "flight/opticflow.h"
 
-#include "blackbox/blackbox.h"
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
 
 #include "mw.h"
 
 
+#include "Utils.h"
+#include "API-Utils.h"
+
 uint8_t resetCounter = 0;
 uint8_t intLogCounter = 0;
 uint8_t floatLogCounter = 0;
-int8_t userRCflag[4] = { 0 };
 int16_t appHeading = 0;
 int16_t AUX3_VALUE = 1500;
 int16_t userHeading = 0;
-uint16_t userLoopFrequency = 100000;
+uint32_t userLoopFrequency = 100000;
 uint32_t autoRcTimerLoop = 0;
 int32_t user_GPS_coord[2];
 int32_t MOTOR_ARRAY[4] = { 0 };
@@ -82,7 +113,9 @@ int32_t RC_ARRAY[4] = { 0 };
 
 bool runUserCode = false;
 bool useAutoRC = false;
-bool External_RC_FLAG[4] = { true };
+bool developerMode=false;
+bool External_RC_FLAG[4] = {true,true,true,true};
+bool userRCflag[4]={false,false,false,false};
 bool callibrateAccelero = true;
 bool FlightStatusEnabled = true;
 bool hasTakeOff = true;
@@ -95,20 +128,52 @@ bool fsCrash = true;
 bool isUserHeadingSet = false;
 bool isUserGPSCoordSet = false;
 bool startShieldRanging = false;
-bool reverseMode = false;
+bool initInternalMotors = false;
 bool reverseReferenceFrame = false;
 bool motorMixer = true;
 bool isLocalisationOn = false;
 bool DONT_USE_STATUS_LED = false;
 
 
-LaserSensor* laser_sensors[3] = { NULL };
+//LaserSensor laser_sensors[4];
+//pwmOutputPort_t* pwm[11];
+//pwmOutputPort_t* userMotor[8];
+
+//LaserSensor laserLEFT;
+//LaserSensor laserRIGHT;
+//LaserSensor laserFRONT;
+//LaserSensor laserBACK;
 
 
-unibus_adc_config_t adc1Config[UB_ADC1_CHANNEL_COUNT];
-unibus_adc_config_t adc2Config[UB_ADC2_CHANNEL_COUNT];
-unibus_adc_config_t adc3Config[UB_ADC3_CHANNEL_COUNT];
-unibus_adc_config_t adc4Config[UB_ADC4_CHANNEL_COUNT];
+
+bool isPwmInit[11]={false};
+bool isUserMotorInit[8]={false};
+bool isUserFlightModeSet[6]={false};
+bool isXLaserInit[4]={false};
+
+
+
+int32_t userDesiredAngle[3]={0};
+int32_t userDesiredRate[3]={0};
+int32_t userMotorPwm[4]={0};
+int32_t userSetVelocity=0;
+int16_t userHeadFreeHoldHeading=0;
+bool isUserDesiredAngle[3]={false};
+bool isUserDesiredRate[3]={false};
+bool isUserMotorPwm[4]={false};
+bool isUserSetVelocity=false;
+bool isUserHeadFreeHoldSet=false;
+
+//unibus_adc_config_t adc1Config[UB_ADC1_CHANNEL_COUNT];
+//unibus_adc_config_t adc2Config[UB_ADC2_CHANNEL_COUNT];
+//unibus_adc_config_t adc3Config[UB_ADC3_CHANNEL_COUNT];
+//unibus_adc_config_t adc4Config[UB_ADC4_CHANNEL_COUNT];
+
+bool isADCEnable[UB_ADC_CHANNEL_COUNT]={false};
+uint8_t adcDmaIndex[UB_ADC_CHANNEL_COUNT];
+
+
+
 
 volatile uint16_t adc1Values[UB_ADC1_CHANNEL_COUNT];
 volatile uint16_t adc2Values[UB_ADC2_CHANNEL_COUNT];
@@ -184,10 +249,20 @@ void resetUser()
     rcData[AUX2] = 1200;
 }
 
+
+#if defined(PRIMUSX)
+
 void unibusAdc1init()
 {
 
-    if (adc1Config[UB_ADC_IN1].enabled || adc1Config[UB_ADC_IN2].enabled) {
+
+
+
+
+    if (isADCEnable[UB_ADC1_IN3] || isADCEnable[UB_ADC1_IN4]) {
+
+
+
         ADC_InitTypeDef ADC_InitStructure;
         DMA_InitTypeDef DMA_InitStructure;
         GPIO_InitTypeDef GPIO_InitStructure;
@@ -198,23 +273,23 @@ void unibusAdc1init()
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
-        if (adc1Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC1_IN3])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
             GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-            adc1Config[UB_ADC_IN1].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC1_IN3] = adcChannelCount;
             adcChannelCount++;
         }
 
-        if (adc1Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC1_IN4])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
             GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-            adc1Config[UB_ADC_IN2].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC1_IN4] = adcChannelCount;
             adcChannelCount++;
         }
 
@@ -279,11 +354,11 @@ void unibusAdc1init()
 
         ADC_Init(ADC1, &ADC_InitStructure);
 
-        if (adc1Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC1_IN3])
             ADC_RegularChannelConfig(ADC1, ADC_Channel_3, 1,
                     ADC_SampleTime_601Cycles5);
 
-        if (adc1Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC1_IN4])
             ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 1,
                     ADC_SampleTime_601Cycles5);
 
@@ -298,14 +373,18 @@ void unibusAdc1init()
 
         ADC_StartConversion(ADC1);
 
+      //  LED.set(BLUE,ON);
+
     }
+
+
 
 }
 
 void unibusAdc2init()
 {
 
-    if (adc2Config[UB_ADC_IN1].enabled || adc2Config[UB_ADC_IN2].enabled) {
+    if (isADCEnable[UB_ADC2_IN1]  || isADCEnable[UB_ADC2_IN2] ) {
 
         ADC_InitTypeDef ADC_InitStructure;
         DMA_InitTypeDef DMA_InitStructure;
@@ -317,23 +396,23 @@ void unibusAdc2init()
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
-        if (adc2Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC2_IN1])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
             GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-            adc2Config[UB_ADC_IN1].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC2_IN1] = adcChannelCount;
             adcChannelCount++;
         }
 
-        if (adc2Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC2_IN2])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
             GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-            adc2Config[UB_ADC_IN2].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC2_IN2] = adcChannelCount;
             adcChannelCount++;
         }
 
@@ -398,11 +477,11 @@ void unibusAdc2init()
 
         ADC_Init(ADC2, &ADC_InitStructure);
 
-        if (adc2Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC2_IN1])
             ADC_RegularChannelConfig(ADC2, ADC_Channel_1, 1,
                     ADC_SampleTime_601Cycles5);
 
-        if (adc2Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC2_IN2])
             ADC_RegularChannelConfig(ADC2, ADC_Channel_2, 1,
                     ADC_SampleTime_601Cycles5);
 
@@ -424,7 +503,7 @@ void unibusAdc2init()
 void unibusAdc3init()
 {
 
-    if (adc3Config[UB_ADC_IN1].enabled) {
+    if (isADCEnable[UB_ADC3_IN5]) {
 
         ADC_InitTypeDef ADC_InitStructure;
         DMA_InitTypeDef DMA_InitStructure;
@@ -436,13 +515,13 @@ void unibusAdc3init()
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
-        if (adc3Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC3_IN5])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
             GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-            adc3Config[UB_ADC_IN1].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC3_IN5] = adcChannelCount;
             adcChannelCount++;
         }
 
@@ -507,7 +586,7 @@ void unibusAdc3init()
 
         ADC_Init(ADC3, &ADC_InitStructure);
 
-        if (adc3Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC3_IN5])
             ADC_RegularChannelConfig(ADC3, ADC_Channel_5, 1,
                     ADC_SampleTime_601Cycles5);
 
@@ -529,8 +608,8 @@ void unibusAdc3init()
 void unibusAdc4init()
 {
 
-    if (adc4Config[UB_ADC_IN1].enabled || adc4Config[UB_ADC_IN2].enabled
-            || adc4Config[UB_ADC_IN3].enabled) {
+    if (isADCEnable[UB_ADC4_IN3]||isADCEnable[UB_ADC4_IN4]
+            || isADCEnable[UB_ADC4_IN5]) {
 
         ADC_InitTypeDef ADC_InitStructure;
         DMA_InitTypeDef DMA_InitStructure;
@@ -542,33 +621,33 @@ void unibusAdc4init()
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
         GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
-        if (adc4Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC4_IN3])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
             GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-            adc4Config[UB_ADC_IN1].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC4_IN3] = adcChannelCount;
             adcChannelCount++;
         }
 
-        if (adc4Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC4_IN4])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
             GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-            adc4Config[UB_ADC_IN2].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC4_IN4] = adcChannelCount;
             adcChannelCount++;
         }
 
-        if (adc4Config[UB_ADC_IN3].enabled)
+        if (isADCEnable[UB_ADC4_IN5])
 
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
             GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-            adc4Config[UB_ADC_IN3].dmaIndex = adcChannelCount;
+            adcDmaIndex[UB_ADC4_IN5] = adcChannelCount;
             adcChannelCount++;
         }
 
@@ -634,15 +713,15 @@ void unibusAdc4init()
 
         ADC_Init(ADC4, &ADC_InitStructure);
 
-        if (adc4Config[UB_ADC_IN1].enabled)
+        if (isADCEnable[UB_ADC4_IN3])
             ADC_RegularChannelConfig(ADC4, ADC_Channel_3, 1,
                     ADC_SampleTime_601Cycles5);
 
-        if (adc4Config[UB_ADC_IN2].enabled)
+        if (isADCEnable[UB_ADC4_IN4])
             ADC_RegularChannelConfig(ADC4, ADC_Channel_4, 1,
                     ADC_SampleTime_601Cycles5);
 
-        if (adc4Config[UB_ADC_IN3].enabled)
+        if (isADCEnable[UB_ADC4_IN5])
             ADC_RegularChannelConfig(ADC4, ADC_Channel_5, 1,
                     ADC_SampleTime_601Cycles5);
 
@@ -661,15 +740,7 @@ void unibusAdc4init()
 
 }
 
-void unibusAdcConfig()
-{
 
-    memset(&adc1Config, 0, sizeof(adc1Config));
-    memset(&adc2Config, 0, sizeof(adc2Config));
-    memset(&adc3Config, 0, sizeof(adc3Config));
-    memset(&adc4Config, 0, sizeof(adc4Config));
-
-}
 
 void unibusAdcInit()
 {
@@ -678,6 +749,8 @@ void unibusAdcInit()
     unibusAdc2init();
     unibusAdc3init();
     unibusAdc4init();
+
+
 
 }
 
@@ -990,6 +1063,8 @@ void reverseMotorGPIOInit()
     GPIO_TypeDef* gpio;
     gpio_config_t cfg;
 
+
+    //M1
     gpio = GPIOB;
 
     cfg.pin = Pin_4;
@@ -999,6 +1074,7 @@ void reverseMotorGPIOInit()
     gpioInit(gpio, &cfg);
     digitalLo(GPIOB, Pin_4);
 
+    //M2
     gpio = GPIOA;
 
     cfg.pin = Pin_7;
@@ -1006,8 +1082,10 @@ void reverseMotorGPIOInit()
     cfg.speed = Speed_2MHz;
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     gpioInit(gpio, &cfg);
-    digitalLo(GPIOA, Pin_7);
+    digitalHi(GPIOA, Pin_7);
 
+
+    //M3
     gpio = GPIOB;
 
     cfg.pin = Pin_1;
@@ -1017,6 +1095,8 @@ void reverseMotorGPIOInit()
     gpioInit(gpio, &cfg);
     digitalLo(GPIOB, Pin_1);
 
+
+    //M4
     gpio = GPIOA;
 
     cfg.pin = Pin_15;
@@ -1024,7 +1104,10 @@ void reverseMotorGPIOInit()
     cfg.speed = Speed_2MHz;
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     gpioInit(gpio, &cfg);
-    digitalLo(GPIOA, Pin_15);
+    digitalHi(GPIOA, Pin_15);
 
 }
 
+
+
+#endif

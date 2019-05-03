@@ -17,17 +17,17 @@
 
 #pragma once
 
-#include "API/Debug/Utils.h"
+#include "../API/Utils.h"
 
 typedef enum {
 
     NONE = 0,
     TAKE_OFF,
     LAND,
-    BACK_FLIP,
-    FRONT_FLIP,
-    RIGHT_FLIP,
-    LEFT_FLIP
+    B_FLIP,
+    F_FLIP,
+    R_FLIP,
+    L_FLIP
 
 } command_e;
 
@@ -53,12 +53,19 @@ extern bool setLandTimer;
 
 extern uint32_t takeOffLoopTime;
 
-extern Timer* takeOffTimer;
 
 extern int32_t takeOffThrottle;
+
+
+extern uint16_t takeOffHeight;
+extern uint16_t landThrottle;
+extern bool isUserLandCommand;
+
 
 void resetCommandRCflag(void);
 
 void executeCommand();
 
 void updateCommandStatus();
+
+

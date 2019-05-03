@@ -31,19 +31,18 @@ extern "C" {
 //#define BEEP_PIN    Pin_5  // White LEDs - PA5
 //#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 #define LED0_GPIO GPIOC
-#define LED0_PIN Pin_14 // PC14 (LED)	//red
-
-#define LED_M
+#define LED0_PIN Pin_14 // PC14 (LED)	//Blue
+#define LED_R
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
 
 #define LED1_GPIO GPIOC
-#define LED1_PIN Pin_13 // PC13 (LED)	//blue
-#define LED_R
+#define LED1_PIN Pin_13 // PC13 (LED)	//Red
+#define LED_L
 #define LED1_PERIPHERAL RCC_AHBPeriph_GPIOC
 
 #define LED2_GPIO GPIOC
-#define LED2_PIN Pin_15 // PC15 (LED)	//green
-#define LED_L		
+#define LED2_PIN Pin_15 // PC15 (LED)	//Green
+#define LED_M
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
@@ -114,17 +113,17 @@ extern "C" {
 //
 //#define USE_SPI
 //
-//#define USE_SPI_DEVICE_2
-//#define SPI2_GPIO               GPIOB
-//#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-//#define SPI2_NSS_PIN            GPIO_Pin_12
-//#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-//#define SPI2_SCK_PIN            GPIO_Pin_13
-//#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-//#define SPI2_MISO_PIN           GPIO_Pin_14
-//#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-//#define SPI2_MOSI_PIN           GPIO_Pin_15
-//#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define USE_SPI_DEVICE_2
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            GPIO_Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            GPIO_Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           GPIO_Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           GPIO_Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 #define USE_ADC
 
@@ -162,9 +161,13 @@ extern "C" {
 //#define BINDPLUG_PORT  GPIOB
 //#define BINDPLUG_PIN   Pin_12
 
+//#define DCM
+
+
+
 //#define LASER_TOF
 
-#define FLIGHT_STATUS_INDICATOR
+//#define FLIGHT_STATUS_INDICATOR
 //#define ENABLE_ACROBAT
 #define LED_ENABLE
 #define TEST_ENABLE

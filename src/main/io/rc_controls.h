@@ -21,7 +21,14 @@
 extern "C" {
 #endif 
 
+#include "common/axis.h"
+
 #include "rx/rx.h"
+
+#include "io/escservo.h"
+
+#include "flight/pid.h"
+
 
 typedef enum {
     BOXARM = 0,
@@ -242,13 +249,22 @@ void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmen
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+
+
+
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
+
 
 extern bool isChukedArmed;
 extern uint8_t isChukedArmedFinished;
+
+extern bool isThrottleStickArmed;
+
 
 #ifdef __cplusplus
 }

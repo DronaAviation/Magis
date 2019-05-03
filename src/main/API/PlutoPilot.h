@@ -18,16 +18,20 @@
 #ifndef _PlutoPilot_H_
 #define _PlutoPilot_H_
 
-//add your includes for the project V3rApi here
-
-//end of add your includes here
-
-//add your function definitions for the project V3rApi here
 
 void plutoInit();
-void plutoPilot();
-void onPilotStart();
-void onPilotFinish();
 
-//Do not add code below this line
-#endif /* _V3rApi_H_ */
+void onLoopStart();
+
+//void onPilotStart();
+
+void plutoLoop();
+
+//void plutoPilot();
+
+//void onPilotFinish();
+
+void onLoopFinish();
+
+
+#endif

@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include "../API-Utils.h"
 #include "platform.h"
 
 #include "build_config.h"
@@ -67,30 +68,4 @@
 
 #include "mw.h"
 
-#include "../API-Utils.h"
 
-int16_t Angle_P::get(inclinations_e angle)
-{
-
-    switch (angle) {
-
-    case AG_ROLL:
-        return inclination.values.rollDeciDegrees;
-        break;
-
-    case AG_PITCH:
-        return inclination.values.pitchDeciDegrees;
-        break;
-
-    case AG_YAW:
-        return heading;
-        break;
-
-    default:
-
-        break;
-    }
-
-}
-
-Angle_P Angle;

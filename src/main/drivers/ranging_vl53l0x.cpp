@@ -34,15 +34,20 @@
 #include "drivers/light_led.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/system.h"
-#include "API/Debug/Print.h"
-
 #include "ranging_vl53l0x.h"
 
+#include "../API/Debug/Print.h"
+#include "../API/Peripheral.h"
 
 
+
+
+VL53L0X_Dev_t MyDevice;
+//VL53L0X_Dev_t *pMyDevice = &MyDevice;
 
 VL53L0X_Error Global_Status = 0;
 VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+
 
 uint8_t Range_Status = 0;
 uint16_t NewSensorRange;
@@ -52,6 +57,8 @@ bool out_of_range = false;
 bool startRanging = false;
 
 
+
+
 void update_status(VL53L0X_Error Status)
 {
     Global_Status = Status;
@@ -59,7 +66,7 @@ void update_status(VL53L0X_Error Status)
 
 #ifdef LASER_TOF
 
-void ranging_init(VL53L0X_Dev_t MyDevice)
+void ranging_init(void)
 {
     VL53L0X_Error Status = Global_Status;
 
@@ -147,7 +154,7 @@ void ranging_init(VL53L0X_Dev_t MyDevice)
 
 }
 
-void getRange(VL53L0X_Dev_t MyDevice, uint16_t range)
+void getRange()
 {
     VL53L0X_Error Status = Global_Status;
     static uint8_t dataFlag = 0, SysRangeStatus = 0;
@@ -177,7 +184,7 @@ void getRange(VL53L0X_Dev_t MyDevice, uint16_t range)
             Status = VL53L0X_GetRangingMeasurementData(&MyDevice, &RangingMeasurementData);
             update_status(Status);
             // printInt("return status#4:",Global_Status);
-            range = RangingMeasurementData.RangeMilliMeter;
+
             if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
                 debug_range = RangingMeasurementData.RangeDMaxMilliMeter/10;
             }
@@ -186,6 +193,7 @@ void getRange(VL53L0X_Dev_t MyDevice, uint16_t range)
             isTofDataNewflag = true;
             Range_Status = RangingMeasurementData.RangeStatus;
             if(RangingMeasurementData.RangeStatus == 0) {
+                NewSensorRange = RangingMeasurementData.RangeMilliMeter;
                 out_of_range = false;
             } else
             out_of_range = true;
@@ -223,6 +231,8 @@ void LaserSensor::init()
     this->MyDevice.I2cDevAddr = 0x29;
     this->MyDevice.comms_type = 1;
     this->MyDevice.comms_speed_khz = 400;
+
+   // this->statusLEDPin=pin;
 
     Status = VL53L0X_DataInit(&this->MyDevice); // Data initialization
 
@@ -296,6 +306,7 @@ void LaserSensor::init()
     }
 
 
+   // GPIO.Init(this->statusLEDPin, Out_PP, SP_2MHz);
 }
 
 void LaserSensor::setAddress(uint8_t address)
@@ -307,7 +318,7 @@ void LaserSensor::setAddress(uint8_t address)
 
 }
 
-void LaserSensor::startRanging()
+int16_t LaserSensor::startRanging()
 {
 
 
@@ -334,17 +345,38 @@ void LaserSensor::startRanging()
         isTofDataNewflag = true;
         Range_Status = RangingMeasurementData.RangeStatus;
         if (RangingMeasurementData.RangeStatus == 0) {
-            this->range = RangingMeasurementData.RangeMilliMeter;
+            this->range = (int16_t)RangingMeasurementData.RangeMilliMeter;
+
+
             out_of_range = false;
-        } else
+         //   GPIO.setLow(this->statusLEDPin);
+
+
+
+        } else{
+
+            this->range = -100;
+
+            if(RangingMeasurementData.RangeStatus == 2)
             out_of_range = true;
 
+           // GPIO.setLow(this->statusLEDPin);
+
+
+        }
+
+    } else{
+
+        this->range = -100;
+       // GPIO.setLow(this->statusLEDPin);
     }
 
 
+    return this->range;
+
 }
 
-uint16_t LaserSensor::getLaserRange()
+int16_t LaserSensor::getLaserRange()
 {
 
     return this->range;

@@ -41,6 +41,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
 #include "drivers/ranging_vl53l0x.h"
+#include "drivers/opticflow_cheerson_cxof.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -81,29 +82,27 @@
 #include "flight/acrobats.h"
 #include "flight/posEstimate.h"
 #include "flight/posControl.h"
+#include "flight/opticflow.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "API/Debug/Print.h"
-
-#include "API/Hardware/Specifiers.h"
-#include "API/Core/Control.h"
-#include "API/Hardware/Communication.h"
-
 #include "mw.h"
 
+#include "API/API-Utils.h"
+#include "API/Utils.h"
+#include "API/User.h"
+#include "API/Estimate.h"
+#include "API/Specifiers.h"
+#include "API/Peripheral.h"
+#include "API/PlutoPilot.h"
+#include "API/XRanging.h"
+#include "API/Localisation.h"
 #include "command/command.h"
 #include "command/localisationCommand.h"
 
-#include "API/API-Utils.h"
-#include "API/Hardware/Led.h"
-#include "API/Hardware/Peripheral.h"
-#include "API/X/Xshield.h"
-#include "API/Debug/Utils.h"
-#include "API/Core/MSP.h"
 
 
 
@@ -114,8 +113,6 @@
 
 
 int8_t returnValue = 100;
-uint8_t getPos[2] = { 0x02, 0x00 };
-uint8_t ch;
 uint8_t motorControlEnable = false;
 extern uint8_t dynP8[3];
 extern uint8_t dynI8[3];
@@ -143,6 +140,9 @@ uint32_t previous_time = 0;
 uint32_t mode_checker = 0;
 static uint32_t disarmAt; // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
+uint32_t userCurrentTime = 0;
+uint32_t userLoopTime = 0;
+
 
 
 bool receivingRxData;
@@ -150,9 +150,12 @@ bool isHeadSet = false;
 bool isCalibrated = false;
 bool shouldStart = false;
 bool tookOff = false;
+bool crashRecoveryCheck=false;
 static bool isRXDataNew;
 static bool isBatteryLow = false;
 
+//bool isFlipDone=false;
+//bool startStable=false;
 
 enum {
     ALIGN_GYRO = 0,
@@ -161,16 +164,71 @@ enum {
 };
 
 
+//Interval crashTimer;
 
 
-Timer dataLog; // Timer for controlling logging interval
+Interval dataLog; // Timer for controlling logging interval
 
 
-
+int16_t myRC[8]={1500,1500,1500,1500,1500,1500,1500,1500};
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig); // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
+
+
+
+uint8_t getPos[2]={0x02, 0x00};
+uint8_t ch;
+
+
+Interval UartTimer;
+uint32_t loopTime3;
+
+uint32_t Uwbtime;
+
+
+
+// UWB Data Read
+
+void uwbUpdate(){
+
+
+
+	if(GPIO.read(Pin8)){ //When UWB TAG gets new data GPIO 8 on UNIBUS gets HIGH: works as a ready flag
+
+		    LED_M_TOGGLE; // Toggling green LED for data received indication
+
+	    	 UART.write(UART2,getPos,2);
+
+	    	 while(UART.rxBytesWaiting(UART2)){
+				 ch=UART.read8(UART2);
+				 if(ch==0x40){
+					 ch=UART.read8(UART2);
+					 if(ch==0x01){
+						 ch=UART.read8(UART2);
+						 if(ch==0x00){
+							 ch=UART.read8(UART2);
+							 if(ch==0x41){
+								 ch=UART.read8(UART2);
+								 posX=(int16_t)(((int32_t)UART.read32(UART2))/10);
+								 posY=(int16_t)(((int32_t)UART.read32(UART2))/10);
+								 posZ=(int16_t)(((int32_t)UART.read32(UART2))/10);
+								 Quality=(int8_t)((int32_t)UART.read8(UART2));
+
+								 if (Quality>51)  // only if quality is greater than 50% take as a new position
+									 new_position=true;
+								 }
+							 }
+						 }
+				 }
+	    	 }
+	}
+}
+
+
+
+
 
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
@@ -248,6 +306,10 @@ void annexCode(void)
     static uint32_t ibatLastServiced = 0;
 
 
+
+
+
+
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop2 = 100;
     } else {
@@ -257,6 +319,8 @@ void annexCode(void)
             prop2 = 100 - currentControlRateProfile->dynThrPID;
         }
     }
+
+
 
     for (axis = 0; axis < 3; axis++) {
         tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
@@ -308,9 +372,11 @@ void annexCode(void)
     }
 
     if (isLanding) {
-        rcData[THROTTLE] = 1280;
+        rcData[THROTTLE] = landThrottle;
 
     }
+
+
 
 
 
@@ -319,23 +385,17 @@ void annexCode(void)
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100; // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
-    if (runUserCode) {
 
-        for (int channel = 0; channel < 4; channel++) {
-            if (External_RC_FLAG[channel] == false)
-                rcCommand[channel] = 0;
+   /*
+    if(isLocalisationOn) {	// for localisation
+    		rcCommand[ROLL] = (getrcDataRoll());
+    		rcCommand[PITCH] = (getrcDataPitch());
+    	}else{
+    		resetPosIntegral();
+    		command_jump(-1);
+    	}
 
-        }
-
-        rcCommand[ROLL] += RC_ARRAY[ROLL];
-        rcCommand[PITCH] += RC_ARRAY[PITCH];
-        rcCommand[YAW] += RC_ARRAY[YAW];
-        rcData[THROTTLE] += RC_ARRAY[THROTTLE];
-
-
-    }
-
-
+   */
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(heading - headFreeModeHold);
@@ -367,19 +427,41 @@ void annexCode(void)
 
     if (ARMING_FLAG(ARMED)) {
         set_FSI(Armed);
+        reset_FSI(Ok_to_arm);
+        reset_FSI(Not_ok_to_arm);
     } else {
         reset_FSI(Armed);
         if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+
             //LED_L_ON;
             if (!STATE(SMALL_ANGLE) || !isCalibrated) {
                 DISABLE_ARMING_FLAG(OK_TO_ARM);
                 reset_FSI(Ok_to_arm);
                 set_FSI(Not_ok_to_arm);
             } else {
+
                 ENABLE_ARMING_FLAG(OK_TO_ARM);
                 set_FSI(Ok_to_arm);
                 reset_FSI(Not_ok_to_arm);
             }
+
+        }
+
+        if(status_FSI(Crash)&&!crashRecoveryCheck){
+
+            if(crashTimer.set(300,false)){
+
+             crashRecoveryCheck=true;
+             crashTimer.reset();
+
+            }
+         }
+
+         if(crashRecoveryCheck&&STATE(SMALL_ANGLE))
+         { reset_FSI(Crash);
+           crashRecoveryCheck=false;
+         }
+
             if (vbat > 34) {
                 isBatteryLow = false;
                 //ENABLE_ARMING_FLAG(OK_TO_ARM);???
@@ -387,8 +469,9 @@ void annexCode(void)
             } else if (fsLowBattery) {
                 isBatteryLow = true;
                 set_FSI(Low_battery);
+
             }
-        }
+     //   }
 
         if (isCalibrating()) {
             warningLedFlash();
@@ -443,8 +526,8 @@ void mwDisarm(void)
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 
-    current_command = NONE;
-    command_status = ABORT;
+    if(current_command!=NONE)
+       command_status=FINISHED;
 
     isLanding = false;
     setLandTimer = true;
@@ -452,16 +535,24 @@ void mwDisarm(void)
     setTakeOffThrottle = false;
     setTakeOffTimer = true;
     takeOffThrottle = 950;
+    takeOffHeight=200;
+    landThrottle=1200;
     flipState = 0;
     reset_FSI(LowBattery_inFlight);
     reset_FSI(Signal_loss);
-    reset_FSI(Crash);
+
+
 
     isPitchStabelised = false;
     isRollStabelised = false;
     isHeadSet = false;
     isChukedArmed = false;
-    Control.setFailsafeState(CRASH, true);
+    isThrottleStickArmed=false;
+   // Control.setFailsafeState(CRASH, true);
+
+
+
+
 }
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_MSP | FUNCTION_TELEMETRY_SMARTPORT)
@@ -478,7 +569,9 @@ void releaseSharedTelemetryPorts(void)
 void mwArm(void)
 {
 
-    if ((ARMING_FLAG(OK_TO_ARM) || netAccMagnitude < 2) && isCalibrated) {
+
+
+    if ((ARMING_FLAG(OK_TO_ARM) || netAccMagnitude < 2) && isCalibrated&&!isBatteryLow) {
         if (ARMING_FLAG(ARMED)) {
             return;
         }
@@ -488,7 +581,13 @@ void mwArm(void)
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
 
+            if(isUserHeadFreeHoldSet){
+
+            headFreeModeHold = userHeadFreeHoldHeading;
+
+            }else
             headFreeModeHold = heading;
+
 
             // headFreeModeHold=83;
 
@@ -562,29 +661,41 @@ void updateInflightCalibrationState(void)
         AccInflightCalibrationSavetoEEProm = true;
     }
 }
+
 void updateMagHold(void)
 {
+static bool isMagHoldChanged=false;
+int16_t headingError;
 
-    if (isUserHeadingSet) {
+    if (ABS(rcData[YAW]-1500) < 200 && (FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(HEADFREE_MODE))) {
 
-        magHold = userHeading;
-        isUserHeadingSet = false;
+        if(isMagHoldChanged && ABS(gyroADC[YAW]/4) < 70)
+        {
+            isMagHoldChanged = false;
+            magHold = heading;
 
-    }
-
-    if (ABS(rcCommand[YAW]) < 70 && (FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(HEADFREE_MODE))) {
-        int16_t dif = heading - magHold;
-        if (dif <= -180)
-            dif += 360;
-        if (dif >= +180)
-            dif -= 360;
-        //dif *= -masterConfig.yaw_control_direction;
-        if (STATE(SMALL_ANGLE)) {
-            rcCommand[YAW] = dif * currentProfile->pidProfile.P8[PIDMAG];
-            rcCommand[YAW] = constrain(rcCommand[YAW], -400, 400);
         }
+
+        if(!isMagHoldChanged){
+        headingError = heading - magHold;
+        if (headingError <= -180)
+            headingError += 360;
+        if (headingError >= +180)
+            headingError -= 360;
+
+
+         headingError = constrain(headingError, -30, 30);
+
+            rcCommand[YAW] = headingError * currentProfile->pidProfile.P8[PIDMAG];
+            rcCommand[YAW] = constrain(rcCommand[YAW], -400, 400);
+
+
+            }
+
     } else {
+        isMagHoldChanged=true;
         magHold = heading;
+
 
     }
 }
@@ -602,13 +713,15 @@ typedef enum {
 #if defined(BARO) || defined(SONAR)
     CALCULATE_ALTITUDE_TASK,
 #endif
+#ifdef DISPLAY
+    UPDATE_DISPLAY_TASK,
+#endif
 
-    UPDATE_LASER_TOF_TASK,
+	UPDATE_LASER_TOF_TASK,
 
-    UPDATE_DISPLAY_TASK
 } periodicTasks;
 
-#define PERIODIC_TASK_COUNT (UPDATE_DISPLAY_TASK + 1)
+#define PERIODIC_TASK_COUNT (UPDATE_LASER_TOF_TASK+1)
 
 void executePeriodicTasks(void)
 {
@@ -647,7 +760,12 @@ void executePeriodicTasks(void)
                         ) {
 
             if (!isCalibrating()) {
+
                 apmCalculateEstimatedAltitude(currentTime);
+
+                if(localisationType==UWB)
+                PosXYEstimate(currentTime);
+
                 isCalibrated = true;
 
             }
@@ -676,15 +794,18 @@ void executePeriodicTasks(void)
         break;
 #endif
 
+
     case UPDATE_LASER_TOF_TASK:
-        if (startShieldRanging) {
 
-            laser_sensors[0]->startRanging();
-            laser_sensors[1]->startRanging();
+     #ifdef LASER_TOF
+
+            getRange();
+
+     #endif
+            break;
 
 
-        }
-        break;
+
 
     }
 
@@ -770,12 +891,9 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-    if (runUserCode) {
 
-        rcData[AUX3] = AUX3_VALUE;
-
-    }
     updateActivatedModes(currentProfile->modeActivationConditions);
+
 
     if (!cliMode) {
         updateAdjustmentStates(currentProfile->adjustmentRanges);
@@ -832,6 +950,8 @@ void processRx(void)
             headFreeModeHold = heading; // acquire new heading
         }
 
+
+        // Used while inFligght Mode change
         if (IS_RC_MODE_ACTIVE(BOXBARO) && !isHeadSet) {
             headFreeModeHold = heading; // acquire new heading
             isHeadSet = true;
@@ -915,6 +1035,92 @@ void filterRc(void)
     }
 }
 
+
+void userCode(){
+
+    if ((rcData[AUX2] == 1500 && rxIsReceivingSignal())) {
+           runUserCode = true;
+
+
+       } else {
+           runUserCode = false;
+
+       }
+
+    if (runUserCode) {
+
+            userCurrentTime = micros();
+            if ((int32_t)(userCurrentTime - userLoopTime) >= 0) {
+                {
+                    userLoopTime = userCurrentTime + userLoopFrequency;    //100ms default
+                    if (callOnPilotStart) {
+                        onLoopStart();
+                        callOnPilotStart = false;
+                        callonPilotFinish = true;
+                    }
+
+
+                    plutoLoop();
+
+                }
+            }else {
+
+                for (int i = 0; i < 4; i++){
+
+                      if(userRCflag[i]){
+
+                          if(i<3)
+                              rcCommand[i]=RC_ARRAY[i];
+                          else if(i==3)
+                              rcData[i]=RC_ARRAY[i];
+
+
+                      }
+                }
+
+                if (isUserHeadingSet) {
+
+                    magHold = userHeading;
+
+
+                }
+
+
+                for(int i=0; i<6; i++){
+
+                    if(isUserFlightModeSet[i])
+                        FlightMode.set((flight_mode_e)i);
+
+
+                }
+
+            }
+
+
+        }
+
+        else {
+
+            if (callonPilotFinish) {
+                for (int i = 0; i < 4; i++){
+                    RC_ARRAY[i] = 0;
+                    userRCflag[i]=false;
+
+                }
+
+                isUserHeadingSet = false;
+                onLoopFinish();
+                callOnPilotStart = true;
+                callonPilotFinish = false;
+
+            }
+
+        }
+
+}
+
+
+
 void loop(void)
 {
 
@@ -924,7 +1130,7 @@ void loop(void)
 #endif
 
     updateRx(currentTime);
-    failsafeOnCrash();
+
 
 #ifdef FLIGHT_STATUS_INDICATOR
    flightStatusIndicator();
@@ -1001,21 +1207,30 @@ void loop(void)
         }
 
 
+        if(localisationType==UWB)
+          uwbUpdate();
 
-
-         if (command_verify()){
-
-         command_next();
-
-         }
-
-         command_run(currentTime);
 
         annexCode();
 
         if (masterConfig.rxConfig.rcSmoothing) {
             filterRc();
         }
+
+
+        userCode();
+
+
+/* used in localisation
+        if (command_verify()){
+
+               command_next();
+
+               }
+
+               command_run(currentTime);
+*/
+
 
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
@@ -1074,7 +1289,7 @@ void loop(void)
         mixTable();
 
 #ifdef USE_SERVOS
-        //     filterServos();
+        //   filterServos();
         //   writeServos();
 #endif
 
@@ -1098,6 +1313,11 @@ void loop(void)
         }
 #endif
 */
+
+        failsafeOnCrash();
+        executeCommand();
+
+
     }
 
 #ifdef TELEMETRY
@@ -1112,15 +1332,6 @@ void loop(void)
     }
 #endif
 
-    if (rcData[AUX2] == 1500 && rxIsReceivingSignal()) {
-        runUserCode = true;
 
 
-    } else {
-        runUserCode = false;
-
-    }
-
-
-    executeCommand();
 }

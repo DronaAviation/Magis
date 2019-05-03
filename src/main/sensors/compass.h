@@ -43,6 +43,8 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
 void recalculateMagneticDeclination(void);
 
 extern int16_t magADC[XYZ_AXIS_COUNT];
+extern uint32_t compassLastUpdatedAt;
+extern bool have_initial_yaw;
 
 extern sensor_align_e magAlign;
 extern mag_t mag;

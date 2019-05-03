@@ -24,7 +24,7 @@
 
 #include "config/runtime_config.h"
 
-#include "../API/API-Utils.h"
+#include "../api/API-Utils.h"
 #include "io/beeper.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
@@ -111,33 +111,56 @@ void flightStatusIndicator(void)
     static int delay_time=100;   //reduce this to make led blink faster
     static int32_t ActiveTime = 500;
     static uint8_t counter=0;
+    static uint8_t toggle_switch=1;
     LedTime = millis();//indicates the current time in milliseconds//
     if ((int32_t)(LedTime - ActiveTime) >= delay_time && FlightStatusEnabled) { //LedTime - ActiveTime is the time for which the LED should be ON//
         counter++;
         switch (leastSignificantBit(flightIndicatorFlag)) {
             case Accel_Gyro_Calibration: {
                 delay_time = 100;
-                ledOperator(LEDm,LED_TOGGLE);
-                ledOperator(LEDr,LED_OFF);
-                ledOperator(LEDl,LED_OFF);
+
+                if(toggle_switch){
+
+                ledOperator(LEDm,LED_OFF);
+                ledOperator(LEDr,LED_ON);
+                ledOperator(LEDl,LED_ON);
+
+                toggle_switch=0;
+
+                }else {
+
+                    ledOperator(LEDm,LED_OFF);
+                    ledOperator(LEDr,LED_OFF);
+                    ledOperator(LEDl,LED_OFF);
+
+                    toggle_switch=1;
+
+                }
+
             }
             break;
             case Mag_Calibration: {
+
                 delay_time = 100;
-                switch(counter%2) {
 
-                    case 0: {
-                        ledOperator(LEDl,LED_OFF);
-                        ledOperator(LEDm,LED_OFF);
-                        ledOperator(LEDr,LED_OFF);
-                        break;}
+                if(toggle_switch){
 
-                    case 1: {
-                        ledOperator(LEDl,LED_ON);
-                        ledOperator(LEDm,LED_ON);
-                        ledOperator(LEDr,LED_ON);
-                        break;}
+                ledOperator(LEDm,LED_ON);
+                ledOperator(LEDr,LED_OFF);
+                ledOperator(LEDl,LED_ON);
+
+                toggle_switch=0;
+
+                }else {
+
+                    ledOperator(LEDm,LED_OFF);
+                    ledOperator(LEDr,LED_OFF);
+                    ledOperator(LEDl,LED_OFF);
+
+                    toggle_switch=1;
+
                 }
+
             }
             break;
             case Ok_to_arm: {
@@ -179,55 +202,57 @@ void flightStatusIndicator(void)
             }
             break;
             case Not_ok_to_arm: {
-
+                if(rc_connected) {
                 delay_time = 100;
                 ledOperator(LEDm,LED_TOGGLE);
                 ledOperator(LEDr,LED_OFF);
                 ledOperator(LEDl,LED_OFF);
+                }
+                else {
+                        delay_time = 120;
+                        //ledOperator(counter%3,LED_TOGGLE);
+                        switch(counter%4) {
+                            case 0: {
+                                ledOperator(LEDl,LED_ON);
+                                ledOperator(LEDm,LED_OFF);
+                                ledOperator(LEDr,LED_OFF);
+                                break;}
 
+                            case 1: {
+                                ledOperator(LEDl,LED_ON);
+                                ledOperator(LEDm,LED_ON);
+                                ledOperator(LEDr,LED_OFF);
+                                break;}
+
+                            case 2: {
+                                ledOperator(LEDl,LED_ON);
+                                ledOperator(LEDm,LED_ON);
+                                ledOperator(LEDr,LED_ON);
+                                break;}
+
+                            case 3: {
+                                ledOperator(LEDl,LED_OFF);
+                                ledOperator(LEDm,LED_OFF);
+                                ledOperator(LEDr,LED_OFF);
+                                break;}
+                        }
+                   }
             }
             break;
             case Armed: {
                 if(rc_connected) {
                     delay_time = 100;
-                    ledOperator(LEDm,LED_ON);
+
+                    ledOperator(LEDm,LED_OFF);
                     ledOperator(LEDr,LED_ON);
-                    ledOperator(LEDl,LED_ON);
-                } else {
-                    delay_time = 120;
-                    //ledOperator(counter%3,LED_TOGGLE);
-                    switch(counter%4) {
-                        case 0: {
-                            ledOperator(LEDl,LED_ON);
-                            ledOperator(LEDm,LED_OFF);
-                            ledOperator(LEDr,LED_OFF);
-                            break;}
-
-                        case 1: {
-                            ledOperator(LEDl,LED_ON);
-                            ledOperator(LEDm,LED_ON);
-                            ledOperator(LEDr,LED_OFF);
-                            break;}
-
-                        case 2: {
-                            ledOperator(LEDl,LED_ON);
-                            ledOperator(LEDm,LED_ON);
-                            ledOperator(LEDr,LED_ON);
-                            break;}
-
-                        case 3: {
-                            ledOperator(LEDl,LED_OFF);
-                            ledOperator(LEDm,LED_OFF);
-                            ledOperator(LEDr,LED_OFF);
-                            break;}
-                    }
+                    ledOperator(LEDl,LED_OFF);
                 }
             }
             break;
             case LowBattery_inFlight: {                   //to indicate that battery is too low to arm//
                 delay_time = 100;
                 ledOperator(LEDm,LED_OFF);
-                ledOperator(LEDr,LED_TOGGLE);
+                ledOperator(LEDr,LED_OFF);
                 ledOperator(LEDl,LED_TOGGLE);
             }
             break;
@@ -235,7 +260,7 @@ void flightStatusIndicator(void)
                 delay_time = 100;
                 ledOperator(LEDm,LED_OFF);
                 ledOperator(LEDr,LED_OFF);
-                ledOperator(LEDl,LED_TOGGLE);
+                ledOperator(LEDl,LED_ON);
             }
             break;
             case Signal_loss: {                  //to indicate that signal loss has occurred//
@@ -247,17 +272,17 @@ void flightStatusIndicator(void)
             }
             break;
             case Crash: {
-                delay_time = 60;
+                delay_time = 100;
                 switch(counter%2) {
 
                     case 0: {
-                        ledOperator(LEDl,LED_OFF);
-                        ledOperator(LEDm,LED_ON);
+                        ledOperator(LEDl,LED_ON);
+                        ledOperator(LEDm,LED_OFF);
                         ledOperator(LEDr,LED_OFF);
                         break;}
 
                     case 1: {
-                        ledOperator(LEDl,LED_ON);
+                        ledOperator(LEDl,LED_OFF);
                         ledOperator(LEDm,LED_OFF);
                         ledOperator(LEDr,LED_ON);
                         break;}
@@ -266,6 +291,7 @@ void flightStatusIndicator(void)
             break;
         }
         ActiveTime = LedTime + delay_time;
+
     }
 }
 #endif

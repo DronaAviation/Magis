@@ -28,7 +28,10 @@ typedef enum rc_channels {
     RC_ROLL = 0,
     RC_PITCH,
     RC_YAW,
-    RC_THROTTLE
+    RC_THROTTLE,
+    RC_USER1,
+    RC_USER2,
+    RC_USER3
 
 } rc_channels_e;
 
@@ -67,19 +70,15 @@ public:
     bool isArmed();
     bool arm(void);
     bool disArm(void);
-    void setRC(rc_channels_e channel, int16_t value);
-    int16_t getRC(rc_channels_e channel);
-    void disableExternalRC(rc_channels_e channel);
-    void disableAllExternalRC(void);
-    void enableExternalRC(rc_channels_e channel);
-    void enableAllExternalRC(void);
+    void setRcCommand(rc_channels_e channel, int16_t value);
+    int16_t getRcData(rc_channels_e channel);
     void disableFlightStatus(bool disable);
     bool checkFlightStatus(f_status_e status);
     f_status_e getCurrentFlightStatus(void);
     void setCommand(flight_command_e command);
     void setFailsafeState(failsafe_e failsafe, bool active);
     void setHeading(int16_t heading);
-    void setUserLoopFrequency(uint16_t userLoopFrequency);
+    void setUserLoopFrequency(float userLoopFrequency);
     void enableDeveloperMode(void);
     void disableDeveloperMode(void);
 

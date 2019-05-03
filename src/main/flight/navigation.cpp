@@ -42,16 +42,16 @@
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
+
+#include "../API/API-Utils.h"
+#include "../API/Debug/Print.h"
+#include "../API/X/XGPS.h"
 #include "flight/gps_conversion.h"
 
 #include "rx/rx.h"
 
-#include "API/Debug/Print.h"
-
 #include "config/config.h"
 #include "config/runtime_config.h"
-#include "API/X/XGPS.h"
-#include "API/API-Utils.h"
 
 extern int16_t magHold;
 

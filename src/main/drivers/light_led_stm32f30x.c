@@ -40,20 +40,20 @@ void ledInit(void)
     }gpio_setup[] = {
 #ifdef LED_M
         {
-            .gpio = LED0_GPIO,
-            .cfg = {LED0_PIN, Mode_Out_PP, Speed_2MHz}
+            .gpio = LED2_GPIO,
+            .cfg = {LED2_PIN, Mode_Out_PP, Speed_2MHz}
         },
 #endif
 #ifdef LED_R
         {
-            .gpio = LED1_GPIO,
-            .cfg = {LED1_PIN, Mode_Out_PP, Speed_2MHz}
+            .gpio = LED0_GPIO,
+            .cfg = {LED0_PIN, Mode_Out_PP, Speed_2MHz}
         },
 #endif
 #ifdef LED_L
         {
-            .gpio = LED2_GPIO,
-            .cfg = {LED2_PIN, Mode_Out_PP, Speed_2MHz}
+            .gpio = LED1_GPIO,
+            .cfg = {LED1_PIN, Mode_Out_PP, Speed_2MHz}
         },
 #endif
 #ifdef LED3
@@ -93,13 +93,13 @@ void ledInit(void)
     uint8_t gpio_count = ARRAYLEN(gpio_setup);
 
 #ifdef LED_M
-    RCC_AHBPeriphClockCmd(LED0_PERIPHERAL, ENABLE);
+    RCC_AHBPeriphClockCmd(LED2_PERIPHERAL, ENABLE);
 #endif
 #ifdef LED_R
-    RCC_AHBPeriphClockCmd(LED1_PERIPHERAL, ENABLE);
+    RCC_AHBPeriphClockCmd(LED0_PERIPHERAL, ENABLE);
 #endif
 #ifdef LED_L
-    RCC_AHBPeriphClockCmd(LED2_PERIPHERAL, ENABLE);
+    RCC_AHBPeriphClockCmd(LED1_PERIPHERAL, ENABLE);
 #endif
 #ifdef LED3
     RCC_AHBPeriphClockCmd(LED3_PERIPHERAL, ENABLE);

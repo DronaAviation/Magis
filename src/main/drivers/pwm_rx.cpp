@@ -35,6 +35,10 @@
 
 #include "pwm_rx.h"
 
+#include "API/Utils.h"
+
+
+
 #define PPM_CAPTURE_COUNT 12
 #define PWM_INPUT_PORT_COUNT 8
 
@@ -138,14 +142,20 @@ static void ppmInit(void)
 
 static void ppmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t capture)
 {
+
+    //LED.set(GREEN,ON);
     UNUSED(cbRec);
     ppmDev.largeCounter += capture + 1;
 }
 
 static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture)
 {
+
+    //LED.set(RED,ON);
     UNUSED(cbRec);
     int32_t i;
+
+
 
     /* Shift the last measurement out */
     ppmDev.previousTime = ppmDev.currentTime;
@@ -217,6 +227,9 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
             }
         }
     }
+
+
+
 }
 
 #define MAX_MISSED_PWM_EVENTS 10
@@ -329,19 +342,30 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 {
     ppmInit();
 
-    pwmInputPort_t *self = &pwmInputPorts[FIRST_PWM_PORT];
+
+
+   pwmInputPort_t *self = &pwmInputPorts[FIRST_PWM_PORT];
 
     self->mode = INPUT_MODE_PPM;
     self->timerHardware = timerHardwarePtr;
 
     pwmGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
-    pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
+    //pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
+    pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
+
+
 
     timerConfigure(timerHardwarePtr, (uint16_t) PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
 
     timerChCCHandlerInit(&self->edgeCb, ppmEdgeCallback);
     timerChOvrHandlerInit(&self->overflowCb, ppmOverflowCallback);
-    timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
+
+
+
+   timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
+
+
+
 }
 
 uint16_t ppmRead(uint8_t channel)

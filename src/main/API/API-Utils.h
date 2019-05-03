@@ -31,9 +31,12 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/ranging_vl53l0x.h"
+#include "drivers/nvic.h"
 #include "drivers/gpio.h"
+#include "drivers/light_led.h"
+#include "drivers/pwm_output.h"
 
-#include "API/Hardware/Specifiers.h"
+#include "Hardware/Specifiers.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,11 +47,10 @@ extern "C" {
 extern uint8_t resetCounter;
 extern uint8_t intLogCounter;
 extern uint8_t floatLogCounter;
-extern int8_t userRCflag[4];
 extern int16_t appHeading;
 extern int16_t AUX3_VALUE;
 extern int16_t userHeading;
-extern uint16_t userLoopFrequency;
+extern uint32_t userLoopFrequency;
 extern int32_t user_GPS_coord[2];
 extern uint32_t autoRcTimerLoop;
 extern int32_t MOTOR_ARRAY[4];
@@ -57,8 +59,10 @@ extern int32_t RC_ARRAY[4];
 
 
 extern bool runUserCode;
+extern bool developerMode;
 extern bool useAutoRC;
 extern bool External_RC_FLAG[4];
+extern bool userRCflag[4];
 extern bool callibrateAccelero;
 extern bool FlightStatusEnabled;
 extern bool hasTakeOff;
@@ -71,14 +75,38 @@ extern bool fsCrash;
 extern bool isUserHeadingSet;
 extern bool isUserGPSCoordSet;
 extern bool startShieldRanging;
-extern bool reverseMode;
+extern bool initInternalMotors;
 extern bool reverseReferenceFrame;
 extern bool motorMixer;
 extern bool isLocalisationOn;
 extern bool DONT_USE_STATUS_LED;
 
-extern LaserSensor* laser_sensors[3];
 
+//extern LaserSensor laser_sensors[4];
+//extern pwmOutputPort_t* pwm[11];
+//extern pwmOutputPort_t* userMotor[8];
+
+//extern LaserSensor laserLEFT;
+//extern LaserSensor laserRIGHT;
+//extern LaserSensor laserFRONT;
+//extern LaserSensor laserBACK;
+
+extern bool isPwmInit[11];
+extern bool isUserMotorInit[8];
+extern bool isUserFlightModeSet[6];
+extern bool isXLaserInit[4];
+
+
+extern int32_t userDesiredAngle[3];
+extern int32_t userDesiredRate[3];
+extern int32_t userMotorPwm[4];
+extern int32_t userSetVelocity;
+extern int16_t userHeadFreeHoldHeading;
+extern bool isUserDesiredAngle[3];
+extern bool isUserDesiredRate[3];
+extern bool isUserMotorPwm[4];
+extern bool isUserSetVelocity;
+extern bool isUserHeadFreeHoldSet;
 
 void setM1GPIO(bool direction);
 void setM2GPIO(bool direction);
@@ -92,26 +120,37 @@ void resetUserRCflag(void);
 #define UB_ADC1_CHANNEL_COUNT 2
 #define UB_ADC2_CHANNEL_COUNT 2
 #define UB_ADC3_CHANNEL_COUNT 1
-#define UB_ADC4_CHANNEL_COUNT 4
+#define UB_ADC4_CHANNEL_COUNT 3
 
 typedef enum {
-    UB_ADC_IN1 = 0,
-    UB_ADC_IN2 = 1,
-    UB_ADC_IN3 = 2,
+    UB_ADC1_IN3,
+    UB_ADC1_IN4,
+    UB_ADC2_IN1,
+    UB_ADC2_IN2,
+    UB_ADC3_IN5,
+    UB_ADC4_IN3,
+    UB_ADC4_IN4,
+    UB_ADC4_IN5,
 
 } unibus_AdcChannel;
 
-#define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)
+#define UB_ADC_CHANNEL_COUNT 8
 
-typedef struct unibus_adc_config_s {
-    uint8_t dmaIndex;        // index into DMA buffer in case of sparse channels
-    bool enabled;
-} unibus_adc_config_t;
+//typedef struct unibus_adc_config_s {
+//    uint8_t dmaIndex;        // index into DMA buffer in case of sparse channels
+//    bool enabled;
+//} unibus_adc_config_t;
 
-extern unibus_adc_config_t adc1Config[UB_ADC1_CHANNEL_COUNT];
-extern unibus_adc_config_t adc2Config[UB_ADC2_CHANNEL_COUNT];
-extern unibus_adc_config_t adc3Config[UB_ADC3_CHANNEL_COUNT];
-extern unibus_adc_config_t adc4Config[UB_ADC4_CHANNEL_COUNT];
+
+extern bool isADCEnable[UB_ADC_CHANNEL_COUNT];
+extern uint8_t adcDmaIndex[UB_ADC_CHANNEL_COUNT];
+
+
+//
+//static unibus_adc_config_t adc1Config[UB_ADC1_CHANNEL_COUNT];
+//static unibus_adc_config_t adc2Config[UB_ADC2_CHANNEL_COUNT];
+//static unibus_adc_config_t adc3Config[UB_ADC3_CHANNEL_COUNT];
+//static unibus_adc_config_t adc4Config[UB_ADC4_CHANNEL_COUNT];
 
 extern volatile uint16_t adc1Values[UB_ADC1_CHANNEL_COUNT];
 extern volatile uint16_t adc2Values[UB_ADC2_CHANNEL_COUNT];
@@ -119,8 +158,10 @@ extern volatile uint16_t adc3Values[UB_ADC3_CHANNEL_COUNT];
 extern volatile uint16_t adc4Values[UB_ADC4_CHANNEL_COUNT];
 
 
-void unibusAdcConfig();
 void unibusAdcInit();
+void xRangingInit();
+//void userMotorInit();
+//void userPWMInit();
 
 int getGPIOport(unibus_e pin);
 GPIO_Pin getGPIOpin(unibus_e pin);

@@ -23,11 +23,14 @@
 extern "C" {
 #endif
 
-typedef enum laser {
-    LEFT = 0,
-    RIGHT,
+typedef enum laser_sensors {
+    LS_LEFT = 0,
+    LS_RIGHT,
+    LS_FRONT,
+    LS_BACK
 
 } laser_e;
+
 
 class Xshield_P {
 
@@ -36,7 +39,7 @@ public:
     void init();
     void startRanging();
     void stopRanging();
-    uint16_t getRange(laser_e laser);
+    int16_t getRange(laser_e laser);
 
 };
 

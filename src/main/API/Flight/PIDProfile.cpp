@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "PIDProfile.h"
+
 #include <stdint.h>
 
 #include "platform.h"
@@ -75,7 +77,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "PIDProfile.h"
 
 uint8_t PID_P::getRoll_P()
 {
