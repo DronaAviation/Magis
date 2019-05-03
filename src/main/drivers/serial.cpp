@@ -32,10 +32,10 @@
 #include "drivers/serial_uart.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
-#include "API/Debug/Print.h"
 #include "platform.h"
 
 #include "serial.h"
+#include "API//Debug/Print.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
 {

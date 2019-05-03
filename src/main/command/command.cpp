@@ -59,13 +59,11 @@
 #include "flight/acrobats.h"
 
 #include "command/command.h"
-#include "API/Debug/Utils.h"
-#include "API/Debug/Print.h"
 
+#include "../API/Control.h"
+#include "../API/Utils.h"
 #include "mw.h"
 
-#include "API/Flight/Althold.h"
-#include "API/Core/Control.h"
 
 uint8_t current_command = 0;
 uint8_t command_status = 2;
@@ -82,46 +80,62 @@ uint32_t takeOffLoopTime;
 int32_t takeOffThrottle = 950;
 int8_t checkVelocity = -8;
 
-Timer* landingTimer;
-Timer* takeOffTimer;
+
+uint16_t takeOffHeight=200;
+uint16_t landThrottle=1200;
+bool isUserLandCommand=false;
+
 
 void takeOff()
 {
 
+   // if (command_status == ABORT) {
 
-    if (command_status != FINISHED) {
 
-        command_status = RUNNING;
+   // }
 
-        Print.monitor("##takeoff");
+
+   if (command_status != FINISHED) {
+
+
+     //  command_status = RUNNING;
+
 
         if (ARMING_FLAG(ARMED)) {
-            command_status = FINISHED;
+
+            current_command = NONE;
+            command_status = ABORT;
 
         } else {
-            ENABLE_ARMING_FLAG(OK_TO_ARM);
-            mwArm();
-            Althold.setRelativeAltholdHeight(150);
+            if(IS_RC_MODE_ACTIVE(BOXARM))
+            {
+               // Print.monitor("inARM\n");
 
+               pidResetErrorAngle();
+               pidResetErrorGyro();
+               mwArm();
+               DesiredPosition.setRelative(Z, takeOffHeight);
+
+            }
         }
 
 
-    } else {
-
-
-        current_command = NONE;
-        command_status = ABORT;
-
     }
 
-}
 
+}
 void land()
 {
 
+  //  if (command_status == FINISHED) {
+
+
+      // }
+
     if (command_status != FINISHED) {
 
-        command_status = RUNNING;
+
+
 
         isLanding = true;
 
@@ -129,37 +143,100 @@ void land()
 
             loopTime = millis() + 30000;
             setLandTimer = false;
+
+//            if(!isUserLandCommand){
+//
+//                if(getEstAltitude()>500)
+//                landThrottle=1050;
+//                else
+//                landThrottle=1200;
+//
+//            }
         }
 
         if ((int32_t)(millis() - loopTime) >= 0) {
-            DEACTIVATE_RC_MODE(BOXARM);
+           // DEACTIVATE_RC_MODE(BOXARM);
             mwDisarm();
+         //   current_command = NONE;
+            command_status = FINISHED;
+
             isLanding = false;
             setLandTimer = true;
         } else {
 
-            if (accADC[2] > 11000) {
+//            if (accADC[2] > 11000) {
+//
+//                //DEACTIVATE_RC_MODE(BOXARM);
+//                mwDisarm();
+//            //    current_command = NONE;
+//                command_status = FINISHED;
+//                isLanding = false;
+//                setLandTimer = true;
+//
+//            }
 
-                DEACTIVATE_RC_MODE(BOXARM);
-                mwDisarm();
-                isLanding = false;
-                setLandTimer = true;
+
+            if(ABS(accADC[2]) > 8500)
+            {
+
+            command_status = FINISHED;
+
+            mwDisarm();
+
+            isLanding = false;
+            setLandTimer = true;
+            isUserLandCommand=false;
+
+            return;
 
             }
 
-            if (ABS((int32_t)(millis()-loopTime)) <= 20000 && getSetVelocity() > -8) {
 
-                DEACTIVATE_RC_MODE(BOXARM);
+
+
+            if (ABS((int32_t)(millis()-loopTime)) <= 28000 ) {
+
+             //   DEACTIVATE_RC_MODE(BOXARM);
+             //    current_command = NONE;
+
+
+
+
+                if(getEstVelocity() > -8)
+                {
+
+                command_status = FINISHED;
 
                 mwDisarm();
 
                 isLanding = false;
                 setLandTimer = true;
+                isUserLandCommand=false;
 
+                }
             }
         }
+ }else
+ {
 
-    }
+//      if(setLandTimer)
+//      {
+//
+//          loopTime=millis()+20000;
+//          setLandTimer=false;
+//      }
+//
+//
+// if((int32_t)(millis()-loopTime)>=0)
+//     {
+//                         current_command=NONE;
+//                         command_status=ABORT;
+//                     //  isLanding=false;
+//                         setLandTimer=true;
+//
+//     }
+
+ }
 
 }
 
@@ -169,16 +246,17 @@ void executeCommand()
     switch (current_command) {
 
     case NONE:
+
+ //       LED.set(GREEN, OFF);
         break;
 
     case TAKE_OFF:
 
-        if (command_status == ABORT) {
-            pidResetErrorAngle();
-            pidResetErrorGyro();
-            Print.monitor("##takeoff###");
-
-        }
+//        if (command_status == ABORT) {
+//
+//            Print.monitor("#takeoff#\n");
+//
+//        }
 
         takeOff();
 
@@ -186,35 +264,40 @@ void executeCommand()
 
     case LAND:
 
+//        LED.set(GREEN, ON);
         land();
         break;
 
-    case BACK_FLIP:
+    case B_FLIP:
 
 
-        if (flipState == 0) {
+
+        if (flipState == 0 && FLIGHT_MODE(MAG_MODE))  {
 
             flipDirection = 0;
             flipState = 1;
             flipStartTime = millis();
 
+
         }
-
         current_command = NONE;
-        command_status = ABORT;
-        break;
-
-    case FRONT_FLIP:
+        command_status = FINISHED;
 
 
 
         break;
 
-    case RIGHT_FLIP:
+    case F_FLIP:
+
+
 
         break;
 
-    case LEFT_FLIP:
+    case R_FLIP:
+
+        break;
+
+    case L_FLIP:
 
 
         break;
@@ -233,7 +316,7 @@ void updateCommandStatus()
 
         current_command = NONE;
 
-        command_status = ABORT;
+        command_status = FINISHED;
 
     }
 

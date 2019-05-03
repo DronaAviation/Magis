@@ -41,9 +41,21 @@ typedef enum {
 typedef enum {
     AI_ROLL = 0,
     AI_PITCH,
+    AI_YAW
 } angle_index_t;
 
-#define ANGLE_INDEX_COUNT 2
+#define ANGLE_INDEX_COUNT 3
+
+// for use in API set
+typedef enum {
+    AG_ROLL = 0,
+    AG_PITCH,
+    AG_YAW,
+} angle_e;
+
+
+
+
 
 #ifdef __cplusplus
 }

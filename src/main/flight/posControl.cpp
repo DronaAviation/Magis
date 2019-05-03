@@ -44,9 +44,10 @@
 #include "posEstimate.h"
 
 #include "posControl.h"
+
+#include "../API/API-Utils.h"
 #include "io/rc_controls.h"
 
-#include "API/API-Utils.h"
 
 #define corr_scale 512/100
 #define corr_scale2 1096/100
@@ -120,8 +121,8 @@ void VelocityController(int16_t VdesiredX, int16_t VdesiredY)
 
     debugPosCtr_1 = IoutX;
 
-    DoutX = (kd_velx * (accel[0] + accel_prev[0])) / 10;
-    DoutY = (kd_vely * (accel[1] + accel_prev[1])) / 10;
+    DoutX = (kd_velx * (accel_EF[0] + accel_EF_prev[0])) / 10;
+    DoutY = (kd_vely * (accel_EF[1] + accel_EF_prev[1])) / 10;
 
     debugPosCtr_2 = DoutX;
 

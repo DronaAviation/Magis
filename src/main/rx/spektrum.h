@@ -27,8 +27,8 @@ extern "C" {
 #define SPEKTRUM_SAT_BIND_MAX 10
 
 uint8_t spektrumFrameStatus(void);
-
 void spektrumBind(rxConfig_t *rxConfig);
+bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 #ifdef __cplusplus
 }

@@ -41,13 +41,15 @@
 
 #include "config/runtime_config.h"
 
-#include "API/Debug/Print.h"
-
 #include "posEstimate.h"
+
+#include "../API/Debug/Print.h"
 #include "posControl.h"
 
 #define corr_scale 512/100
 #define corr_scale2 1096/100
+#define MILLI_SEC 1000
+#define SEC 1000000
 
 static pidProfile_t *pidProfile; //PS2
 
@@ -63,8 +65,9 @@ int16_t posY = 0;
 int16_t posZ = 0;
 int16_t deltaTime = 0;
 
-bool read_position = false;
-uint8_t localisationType = 64;
+int8_t Quality=-1;
+bool new_position=false;
+int8_t localisationType = -1;
 
 float inputX = 0.0f;
 float inputY = 0.0f;
@@ -77,10 +80,10 @@ float inputPreY = 0.0f;
 static int16_t first_read = 0;
 int16_t i;
 
-float accel[2];
-float accel_correction[2];
-float acc_velocity[2];
-float accel_prev[2];
+float accel_EF[2];
+float accel_EF_correction[2];
+float est_velocity[2];
+float accel_EF_prev[2];
 float position_error[2];
 float position_base[2];
 float position_correction[2];
@@ -91,7 +94,7 @@ uint8_t hist_xy_counter; // counter used to slow saving of position estimates fo
 float hist_position_baseX;
 float hist_position_baseY;
 
-float time_constant_xy = 2.5f;
+float time_constant_xy = 1.5f;  // can be tuned
 float k1;
 float k2;
 float k3;
@@ -105,12 +108,11 @@ int16_t VelocityY = 0;
 int16_t inputVx = 0;
 int16_t inputVy = 0;
 
-int32_t debugPosEst = 0;
-int32_t debugPosEst_1 = 0;
 
-#define MAXIMUM_QUEUE_SIZE 10
+#define BUFFER_XY_MAXIMUM 6 //can be tuned
+#define INTERTIALNAV_SAVE_POS_AFTER_ITERATIONS 10
 
-static float bufferX[MAXIMUM_QUEUE_SIZE], bufferY[MAXIMUM_QUEUE_SIZE];
+static float bufferX[BUFFER_XY_MAXIMUM], bufferY[BUFFER_XY_MAXIMUM];
 static int16_t head = 0;
 static int16_t rear = -1;
 static int16_t itemCount = 0;
@@ -119,208 +121,175 @@ void resetPosition(void)
 {       //Reset Pos and velocity
     est_position[0] = 0;
     est_position[1] = 0;
-    acc_velocity[0] = 0;
-    acc_velocity[1] = 0;
+    est_velocity[0] = 0;
+    est_velocity[1] = 0;
     resetPosIntegral();
 }
 
-void addHistPositionBaseEstXY(float positionX, float positionY)
-{
-    if (itemCount < MAXIMUM_QUEUE_SIZE) {
-        rear++;
-        if (rear >= MAXIMUM_QUEUE_SIZE) {
-            rear = 0;
-        }
-        bufferX[rear] = positionX;
-        bufferY[rear] = positionY;
+
+void addHistPositionBaseEstXY(float positionX, float positionY){
+    // determine position of new item
+    rear = head + itemCount;
+    if( rear >= BUFFER_XY_MAXIMUM ) {
+        rear -= BUFFER_XY_MAXIMUM;
+    }
+
+    // add item to buffer
+
+    bufferX[rear] = positionX;
+    bufferY[rear] = positionY;
+
+    // increment number of items
+    if( itemCount < BUFFER_XY_MAXIMUM ) {
         itemCount++;
-
-    } else {
-        if (++rear == MAXIMUM_QUEUE_SIZE) {
-            rear = 0;
-            bufferX[rear] = positionX;
-            bufferY[rear] = positionY;
-            head++;
-
-        } else {
-
-            bufferX[rear] = positionX;
-            bufferY[rear] = positionY;
-            head++;
-            if (head == MAXIMUM_QUEUE_SIZE) {
-                head = 0;
-            }
+    }else{
+        // no room for new items so drop oldest item
+        head++;
+        if( head >= BUFFER_XY_MAXIMUM ) {
+            head = 0;
         }
     }
 }
 
 void getFrontHistPositionBaseEstXY(float *posbaseX, float *posbaseY)
 {
-    *posbaseX = bufferX[head];
-    *posbaseY = bufferY[head];
-    head++;
 
-    if (head == MAXIMUM_QUEUE_SIZE) {
-        head = 0;
-    }
-    itemCount--;
+	if(itemCount==0){
+		*posbaseX=bufferX[head];
+		*posbaseY=bufferY[head];
+	return;
+	}
+
+	*posbaseX=bufferX[head];
+	*posbaseY=bufferY[head];
+	head++;
+
+	if(head>=BUFFER_XY_MAXIMUM)
+	{
+		head=0;
+	}
+	itemCount--;
 }
+
+
 
 bool isPositionBaseXYQueueIsFull(void)
 {
-    return itemCount == MAXIMUM_QUEUE_SIZE;
+	return itemCount>=BUFFER_XY_MAXIMUM;
 }
 
-void clearQueue()
+
+
+void checkPosition()
 {
-    head = 0;
-    itemCount = 0;
+
+	switch(localisationType)
+	{
+		case LOC_UWB:
+		// for uwb
+
+		inputX = 1.0f*(float)posX;///10;	//centimeter
+		inputY = -1.0f*(float)posY;///10;
+		inputZ = 1.0f*(float)posZ;//10;
+		break;
+
+		case LOC_WHYCON:
+		// for whycon
+		inputX = -1.0f*(float)posY;///10;	//centimeter
+		inputY = -1.0f*(float)posX;///10;
+		break;
+
+		case LOC_VICON:
+		// for vicon
+		inputX = 1.0f*(float)posX;///10;	//centimeter
+		inputY = 1.0f*(float)posY;///10;
+		inputZ = 1.0f*(float)posZ;//10;
+		break;
+
+		default:
+		break;
+
+	}
+
+	//Discard the first 10 readings
+	if(first_read <= 10) {
+		setPos(inputX, inputY);
+		first_read++;
+	}
+
+
+	if (isPositionBaseXYQueueIsFull())
+		getFrontHistPositionBaseEstXY(&hist_position_baseX, &hist_position_baseY);
+	else{
+		hist_position_baseX = position_base[0];
+		hist_position_baseY = position_base[1];
+	}
+
+	position_error[0] = inputX - (hist_position_baseX + position_correction[0]);
+	position_error[1] = inputY - (hist_position_baseY + position_correction[1]);
 
 }
+
+
+
+
 
 void PosXYEstimate(uint32_t currentTime)
 {
     static uint32_t previousTime = 0, previousReadTime = 0;
-    float dt = (currentTime - previousTime) / 1000000.0f;       //sec
+    float dt = ((float)currentTime - (float)previousTime) / 1000000.0f;       //sec
 
-    if ((currentTime - previousTime) < 10000)	//10ms
+    if ((currentTime - previousTime) < 10*MILLI_SEC)	//10ms
         return;
 
     previousTime = currentTime;
 
-    if (read_position) {
+	if(new_position){
+		checkPosition();
+		new_position = false;
+		}
+		else if((currentTime-previousReadTime > 3*SEC) && (!ARMING_FLAG(ARMED)))//Didn't receive data for 2 seconds reset integrator
+		{
+//			resetPosition(); Later uncomment for faster convergence
+		}
 
-        previousReadTime = currentTime;
-
-        //WhyconVx = (int16_t)whyconX;//*10;//Storing previous values
-        //WhyconVy = (int16_t)whyconY;//*10;//
-
-        switch (localisationType) {
-
-        case LOC_UWB:
-            // for uwb
-
-            inputX = 1.0f * (float) posY;		///10;	//centimeter
-            inputY = -1.0f * (float) posX;		///10;
-            inputZ = 1.0f * (float) posZ;		//10;
-
-            break;
-
-        case LOC_WHYCON:
-
-            // for whycon
-            inputX = -1.0f * (float) posY;		///10;	//centimeter
-            inputY = -1.0f * (float) posX;		///10;
-
-            break;
-
-        case LOC_VICON:
-            // for vicon
-
-            inputX = 1.0f * (float) posX;		///10;	//centimeter
-            inputY = 1.0f * (float) posY;		///10;
-            inputZ = 1.0f * (float) posZ;		//10;
-
-            break;
-
-        default:
-
-            break;
-
-        }
-
-        dTime = (float) deltaTime;		//millisecond
-
-        //WhyconVx = (100*(-posY - WhyconVx))/(deltaTime); // Units cm/s
-        //WhyconVy = (100*(-posX - WhyconVy))/(deltaTime); // Units cm/s
-
-        read_position = false;
-
-        if (first_read == 0) {
-            setPos(inputX, inputY);
-            first_read++;
-        }
-
-        if (isPositionBaseXYQueueIsFull())
-            getFrontHistPositionBaseEstXY(&hist_position_baseX,
-                    &hist_position_baseY);
-        else {
-            hist_position_baseX = position_base[0];
-            hist_position_baseY = position_base[1];
-        }
-
-        /*position_error[0] = whyconX - PositionX;
-         position_error[1] = whyconY - PositionY;*/
-        position_error[0] = inputX - (hist_position_baseX + position_correction[0]);
-        position_error[1] = inputY - (hist_position_baseY + position_correction[1]);
-        /* if(time_constant_xy!=(float)pidProfile->I8[PIDNAVR]/10){
-         updatePosGains();
-         } */
-
-        /* if(pidProfile->P8[PIDNAVR]==6) //Desired States
-         {
-         print_posvariable3 = (int16_t)position_error[0]*corr_scale;//ax
-         print_posvariable4 = (int16_t)position_error[1]*corr_scale;//ay
-         print_posvariable1 = VelocityX*corr_scale2;//mx
-         print_posvariable2 = VelocityY*corr_scale2;//my
-         } */
-
-    } else {
-        if (currentTime - previousReadTime > 2000000)//Didn't recieve data for 2 seconds reset integrator
-                {
-            if (!ARMING_FLAG(ARMED))
-                resetPosition();
-        }
-
-    }		//read_pos
-
-    /* if(pidProfile->P8[PIDNAVR]==7) //Desired States
-     {
-     print_posvariable3 = (int16_t)accel[0]*corr_scale;//ax
-     print_posvariable4 = ((int16_t)(accel[1]))*corr_scale;//ay
-     print_posvariable1 = (int16_t)accSumCountXY*corr_scale2;//mx
-     print_posvariable2 = (int16_t)(dt*10000)*corr_scale2;//my
-     } */
 
     for (i = 0; i < 2; i++) {
-        if (accSumCountXY) {
-            accel_prev[i] = accel[i];
-            accel[i] = (float) accSum[i] / (float) accSumCountXY;
+        if (accSumCountXYZ) {
+            accel_EF_prev[i] = accel_EF[i];
+            accel_EF[i] = (float) accSum[i] / (float) accSumCountXYZ;
         } else {
-            accel[i] = 0;
+        	accel_EF[i] = 0;
         }
 
-        accel[i] = accel[i] * accVelScale;
-        accel[i] = constrainf(accel[i], -800, 800);
+        accel_EF[i] = accel_EF[i] * accVelScale;
+        accel_EF[i] = constrainf(accel_EF[i], -800, 800);
+
+
 
         if (i == 1)
             imuResetAccelerationSum(0);
 
-        if (i == 0)
-            debugPosEst = accel[0];
-        else {
-            debugPosEst_1 = accel[1];
-
-        }
-
-        accel_correction[i] += position_error[i] * k3 * dt;
-        acc_velocity[i] += position_error[i] * k2 * dt;
+        accel_EF_correction[i] += position_error[i] * k3 * dt;
+        est_velocity[i] += position_error[i] * k2 * dt;
         position_correction[i] += position_error[i] * k1 * dt;
 
         //Estimation
-        accel[i] += accel_correction[i];
-        velocity_increase[i] = (accel[i]) * dt; // acc * dt
-        position_base[i] += (acc_velocity[i] + velocity_increase[i] * 0.5f)
+        accel_EF[i] += accel_EF_correction[i];
+        velocity_increase[i] = (accel_EF[i]) * dt; // acc * dt
+        position_base[i] += (est_velocity[i] + velocity_increase[i] * 0.5f)
                 * dt; //S = S0 + u + (1/2) at^2
 
         //Updated pos and vel
         est_position[i] = position_base[i] + position_correction[i];
-        acc_velocity[i] += velocity_increase[i]; //v = u + at
+        est_velocity[i] += velocity_increase[i]; //v = u + at
     }
+
+
 
     // store 3rd order estimate (i.e. horizontal position) for future use at 10hz
     hist_xy_counter++;
-    if (hist_xy_counter >= 10) {
+    if (hist_xy_counter >= INTERTIALNAV_SAVE_POS_AFTER_ITERATIONS) {
 
         hist_xy_counter = 0;
         addHistPositionBaseEstXY(position_base[0], position_base[1]);
@@ -329,8 +298,8 @@ void PosXYEstimate(uint32_t currentTime)
 
     PositionX = (int16_t) est_position[0];
     PositionY = (int16_t) est_position[1];
-    VelocityX = (int16_t) acc_velocity[0];
-    VelocityY = (int16_t) acc_velocity[1];
+    VelocityX = (int16_t) est_velocity[0];
+    VelocityY = (int16_t) est_velocity[1];
 
 }
 
@@ -351,13 +320,13 @@ void setPos(float newX, float newY)
     position_base[0] = newX;
     position_base[1] = newY;
     position_correction[0] = position_correction[1] = 0;
-//	est_position[0] = newX;
-//	est_position[1] = newY;
+	est_position[0] = newX;
+	est_position[1] = newY;
 
-    clearQueue();
+//    clearQueue();
 
-    hist_xy_counter = 0;
-    addHistPositionBaseEstXY(position_base[0], position_base[1]);
+//    hist_xy_counter = 0;
+//    addHistPositionBaseEstXY(position_base[0], position_base[1]);
     imuResetAccelerationSum(0);
 }
 

@@ -6,6 +6,8 @@
  */
 
 
+#include "Utils.h"
+
 #include <stdint.h>
 
 #include "platform.h"
@@ -15,7 +17,6 @@
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"
-#include "Utils.h"
 
 
 uint32_t microsT(void)
@@ -35,7 +36,7 @@ loopTime=0;
 
 
 
-bool Timer::start(uint32_t time)
+bool Timer::set(uint32_t time, bool repeat)
 {
 
 
@@ -51,7 +52,9 @@ if(this->time==0)
 
 if((int32_t)(millis()-this->loopTime)>=0)
 {
+    if(repeat)
 	loopTime=millis()+this->time;
+
     return true;
 
 }

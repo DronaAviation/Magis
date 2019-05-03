@@ -52,7 +52,7 @@
 
 void adcInit(drv_adc_config_t *init)
 {
-#if defined(CJMCU) || defined(CC3D)
+#if defined(CJMCU) || defined(PRIMUSV3R) || defined(CC3D)
     UNUSED(init);
 #endif
 

@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "MSP.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -33,9 +35,9 @@
 
 #include "io/serial_msp.h"
 
-#include "MSP.h"
 
 #define MSP_API_SET_RAW_RC           200    //in message          8 rc chan
+#define MSP_API_SET_COMMAND          217    //in message          command
 
 static uint8_t msp_checksum = 0;
 
@@ -87,6 +89,18 @@ void MSP_P::setRC(int16_t rcChannels[])
 
     for (int i = 0; i < 8; i++)
         msp_write16(rcChannels[i]);
+
+    mspSendTail();
+
+}
+
+void MSP_P::setCommand(int16_t command)
+{
+
+    mspSendHeader(MSP_API_SET_COMMAND, 2);
+
+
+    msp_write16(command);
 
     mspSendTail();
 

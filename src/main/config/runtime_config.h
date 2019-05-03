@@ -87,10 +87,27 @@ typedef enum{
 	Ok_to_arm = 7,
 	Not_ok_to_arm = 6,
 	Signal_loss = 5,
-    Crash = 4,
-    LowBattery_inFlight = 3,
-    Low_battery = 2
+    Crash = 2,
+    LowBattery_inFlight = 4,
+    Low_battery = 3
 }FlightStatus_e;
+
+
+
+typedef enum{
+    App_Accel_Gyro_Calibration = 0,
+    App_Mag_Calibration = 1,
+    App_Armed = 2,
+    App_Ok_to_arm = 3,
+    App_Not_ok_to_arm = 4,
+    App_Signal_loss = 5,
+    App_Crash = 6,
+    App_LowBattery_inFlight = 7,
+    App_Low_battery = 8
+}AppFlightStatus_e;
+
+
+
 
 #ifdef FLIGHT_STATUS_INDICATOR
 void flightStatusIndicator(void);

@@ -29,6 +29,9 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
+
+#include "API/Utils.h"
+
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
 void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex);
@@ -208,7 +211,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#ifdef CJMCU
+#if defined(CJMCU) || defined(PRIMUSV3R)
 static const uint16_t multiPPM[] = {
     PWM1 | (MAP_TO_PPM_INPUT << 8), // PPM input
     PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),//changes made by DD
@@ -283,21 +286,21 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#if defined(SPARKY) || defined(ALIENWIIF3)
+#if defined(SPARKY) || defined(ALIENWIIF3) || defined(PRIMUSX)
 static const uint16_t multiPPM[] = {
    // PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
 
-    PWM1 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
+    PWM1 | (MAP_TO_PPM_INPUT << 8),// TIM2
     PWM2 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
     PWM3 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
     PWM4 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3		//DD
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
-    PWM9  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
+    PWM5 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3		//DD
+    PWM6 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
+    PWM7 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM8 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
+    PWM9 | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
     //PWM10 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
-   // 0xFFFF
+    0xFFFF
 };
 
 static const uint16_t multiPWM[] = {
@@ -458,6 +461,10 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         i = 2; // switch to air hardware config
     if (init->usePPM || init->useSerialRx)
         i++; // next index is for PPM
+
+
+
+
 
     setup = hardwareMaps[i];
 
@@ -627,7 +634,10 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif
-            ppmInConfig(timerHardwarePtr);
+              ppmInConfig(timerHardwarePtr);
+//            pwmInConfig(timerHardwarePtr,channelIndex);
+//            channelIndex++;
+
         } else if (type == MAP_TO_PWM_INPUT) {
             pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;

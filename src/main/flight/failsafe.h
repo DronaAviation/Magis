@@ -22,6 +22,7 @@ extern "C" {
 #endif 
 
 #include "rx/rx.h"
+#include "API/Utils.h"
 
 #define FAILSAFE_POWER_ON_DELAY_US (1000 * 1000 * 5)
 #define MILLIS_PER_TENTH_SECOND      100
@@ -88,6 +89,8 @@ void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
 
 void failsafeOnLowBattery(void);
 void failsafeOnCrash(void);
+
+extern Interval crashTimer;
 
 #ifdef __cplusplus
 }

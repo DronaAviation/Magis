@@ -72,7 +72,8 @@
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 
-#include "../API/API-Utils.h"
+#include "../api/API-Utils.h"
+#include "../api/Debug/Print.h"
 #include "flight/gtune.h"
 #include "flight/navigation.h"
 #include "flight/filter.h"
@@ -84,6 +85,9 @@
 #include "config/config_master.h"
 
 #include "command/command.h"
+
+#include "API/Utils.h"
+#include "API/User.h"
 
 
 #define VBATT_HYSTERESIS 1 //TESTING NEW BATT FAILSAFE CONDITION
@@ -115,6 +119,8 @@ throttleStatus_e throttleStatus;
 
 extern uint8_t Indicator;
 
+Interval crashTimer;
+
 
 static void failsafeReset(void)
 {
@@ -127,6 +133,7 @@ static void failsafeReset(void)
     failsafeState.receivingRxDataPeriodPreset = 0;
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
+    crashTimer.reset();
 }
 
 /*
@@ -145,6 +152,8 @@ void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
     deadband3dThrottle = deadband3d_throttle;
     failsafeState.events = 0;
     failsafeState.monitoring = false;
+
+    crashTimer.reset();
 
     return;
 }
@@ -362,7 +371,7 @@ void failsafeOnLowBattery(void)
     if (vbat < 30 &&fsInFlightLowBattery) {
          set_FSI(LowBattery_inFlight);
 
-    	  current_command=LAND;
+    	 // current_command=LAND;
 
     }
 
@@ -371,14 +380,43 @@ void failsafeOnLowBattery(void)
 void failsafeOnCrash(void)
 {
 
-    if (ARMING_FLAG(ARMED)&&fsCrash) {
-        if ( ABS(inclination.values.rollDeciDegrees) > 700 || ABS(inclination.values.pitchDeciDegrees) > 700 || (ABS(accSmooth[0]) > 5000) || (ABS(accSmooth[1]) > 5000)){ //to indicate that a crash has occurred// || (ABS(accSmooth[0])>5000)||(ABS(accSmooth[1])>5000)
+//
+//#ifdef ENABLE_ACROBAT
+//        if(flipState>=1&&(flipState != 4 || flipState != 7 || flipState != 3 || flipState != 6 )){
+//             return;
+//
+//         }else if( (ABS(accSmooth[0]) > 2000) || (ABS(accSmooth[1]) > 2000))
+//         {
+//
+//             set_FSI(Crash);
+//             mwDisarm();
+//
+//             return;
+//         }
+//
+//
+//            #endif
+
+
+
+
+    if (ARMING_FLAG(ARMED)&&fsCrash&&FLIGHT_MODE(ANGLE_MODE)) {
+        if ( ABS(inclination.values.rollDeciDegrees) > 700 || ABS(inclination.values.pitchDeciDegrees) > 700 || (ABS(accSmooth[0]) > 12000) || (ABS(accSmooth[1]) > 12000)){ //to indicate that a crash has occurred// || (ABS(accSmooth[0])>5000)||(ABS(accSmooth[1])>5000)
+
+
+      //  Print.monitor("###################");
+     //       Monitor.println("Fail---: ",FLIGHT_MODE(ANGLE_MODE));
+//             LED_L_ON;
+//             LED_M_OFF;
+      //       LED_R_ON;
+
 
 #ifdef ENABLE_ACROBAT
-     	if(flipState >= 1){
-             return;
-         }
-     		#endif
+      //  if(flipState > 1 && (millis() - flipStartTime) <= 1500){
+          if(flipState >= 1){
+            return;
+        }
+          #endif
 
         	 set_FSI(Crash);
              mwDisarm();

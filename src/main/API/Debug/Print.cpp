@@ -1,3 +1,5 @@
+#include "Print.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,7 +19,6 @@
 
 #include "io/serial_msp.h"
 
-#include "Print.h"
 
 
 

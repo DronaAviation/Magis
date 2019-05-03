@@ -27,7 +27,7 @@ uint32_t loopTime;
 public:
 
     Timer();
-    bool start(uint32_t time);
+    bool set(uint32_t time, bool repeat);
     void reset(void);
 
 

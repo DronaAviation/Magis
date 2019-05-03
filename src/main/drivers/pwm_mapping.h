@@ -39,7 +39,7 @@ extern "C" {
 
 #define PWM_TIMER_MHZ 1
 #define ONESHOT125_TIMER_MHZ 8
-#define PWM_BRUSHED_TIMER_MHZ 8
+#define PWM_BRUSHED_TIMER_MHZ 72
 
 typedef struct sonarGPIOConfig_s {
         GPIO_TypeDef *gpio;

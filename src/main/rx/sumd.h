@@ -20,7 +20,10 @@
 extern "C" {
 #endif 
 
+#include "rx/rx.h"
+
 uint8_t sumdFrameStatus(void);
+bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
 
 #ifdef __cplusplus
 }

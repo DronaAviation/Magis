@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Servo.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -27,7 +29,6 @@
 
 #include "drivers/pwm_output.h"
 
-#include "Servo.h"
 
 void Servo_P::set(servo_e servo, int16_t value)
 {

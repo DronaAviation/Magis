@@ -38,7 +38,7 @@ const escHardware_t escHardware[ESC_COUNT] = {
         {   GPIOD, 15},
         {   GPIOA, 1},
         {   GPIOA, 2}
-#elif defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
+#elif defined(CJMCU) || defined(PRIMUSV3R) || defined(EUSTM32F103RC) || defined(NAZE) || defined(OLIMEXINO) || defined(PORT103R)
         {   GPIOA, 8},
         {   GPIOA, 11},
         {   GPIOB, 6},

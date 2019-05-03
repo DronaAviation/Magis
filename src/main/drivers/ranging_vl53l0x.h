@@ -24,25 +24,27 @@ extern "C" {
 #include "vl53l0x_def.h"
 #include "vl53l0x_device.h"
 #include "vl53l0x_platform.h"
+#include "../api/Hardware/Specifiers.h"
 
 class LaserSensor {
 
-    uint16_t range;
+    int16_t range;
     VL53L0X_Dev_t MyDevice;
+    unibus_e statusLEDPin;
 
 public:
 
     void init();
     void setAddress(uint8_t address);
-    void startRanging();
-    uint16_t getLaserRange();
+    int16_t startRanging();
+    int16_t getLaserRange();
 
 };
 
-;
 
-void ranging_init(VL53L0X_Dev_t MyDevice);
-void getRange(VL53L0X_Dev_t MyDevice, uint16_t range);
+
+void ranging_init(void);
+void getRange(void);
 bool isTofDataNew(void);
 bool isOutofRange(void);
 

@@ -49,6 +49,63 @@ timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
 void timerDataConfiguration()
 {
 
+
+#if defined(PRIMUSV3R)
+
+
+timerHardware_t T1 =  { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 0, Mode_IPD};          // PWM1 - RC1
+
+timerHardware_t T2 =  { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_IPD};          // PWM2 - RC2
+
+timerHardware_t T3 =  { TIM2, GPIOA, Pin_2, TIM_Channel_3, TIM2_IRQn, 0, Mode_IPD};          // PWM3 - RC3
+
+timerHardware_t T4 =  { TIM2, GPIOA, Pin_3, TIM_Channel_4, TIM2_IRQn, 0, Mode_IPD};          // PWM4 - RC4
+
+timerHardware_t T5 =  { TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 0, Mode_IPD};          // PWM5 - RC5
+
+timerHardware_t T6 =  { TIM3, GPIOA, Pin_7, TIM_Channel_2, TIM3_IRQn, 0, Mode_IPD};          // PWM6 - RC6
+
+timerHardware_t T7 =  { TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn, 0, Mode_IPD};          // PWM7 - RC7
+
+timerHardware_t T8 =  { TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 0, Mode_IPD};          // PWM8 - RC8
+
+timerHardware_t T9 =  { TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_IPD};       // PWM9 - OUT1
+
+timerHardware_t T10 = { TIM1, GPIOA, Pin_11, TIM_Channel_4, TIM1_CC_IRQn, 1, Mode_IPD};      // PWM10 - OUT2
+
+timerHardware_t T11 = { TIM4, GPIOB, Pin_6, TIM_Channel_1, TIM4_IRQn, 0, Mode_IPD};          // PWM11 - OUT3
+
+timerHardware_t T12 = { TIM4, GPIOB, Pin_7, TIM_Channel_2, TIM4_IRQn, 0, Mode_IPD};          // PWM12 - OUT4
+
+timerHardware_t T13 = { TIM4, GPIOB, Pin_8, TIM_Channel_3, TIM4_IRQn, 0, Mode_IPD};          // PWM13 - OUT5
+
+timerHardware_t T14 = { TIM4, GPIOB, Pin_9, TIM_Channel_4, TIM4_IRQn, 0, Mode_IPD};           // PWM14 - OUT6
+
+
+timerHardware[0]=T1;
+timerHardware[1]=T2;
+timerHardware[2]=T3;
+timerHardware[3]=T4;
+timerHardware[4]=T5;
+timerHardware[5]=T6;
+timerHardware[6]=T7;
+timerHardware[7]=T8;
+timerHardware[8]=T9;
+timerHardware[9]=T10;
+timerHardware[10]=T11;
+
+
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB)
+
+
+#endif
+
+
+
+#if defined(PRIMUSX) || defined(ALIENWIIF3)
 //Virtual Motor 4 Actual Motor M5
 timerHardware_t T4= {TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1}; // PWM1  - PA0  - TIM2_CH1, TIM8
 
@@ -73,12 +130,11 @@ timerHardware_t T7= {TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP
 //Virtual Motor 4 Actual Motor M1
 timerHardware_t T8= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2}; // PWM1  - PA0  - TIM2_CH1, TIM8
 
+timerHardware_t T9=	{TIM4, GPIOA, Pin_13, TIM_Channel_3, TIM4_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource13, GPIO_AF_10};
 
-timerHardware_t T9=	{TIM4, GPIOA, Pin_13, TIM_Channel_3, TIM4_IRQn, 1, Mode_AF_PP, GPIO_PinSource13, GPIO_AF_10};
+timerHardware_t T10= {TIM8, GPIOA, Pin_14, TIM_Channel_2, TIM8_CC_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource14, GPIO_AF_5}; // PWM8  - PA7  - !TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
 
-timerHardware_t T10= {TIM17, GPIOA, Pin_7, TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_1}; // PWM8  - PA7  - !TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
-
-timerHardware_t T11= {TIM3, GPIOA, Pin_4, TIM_Channel_2, TIM3_IRQn, 0, Mode_AF_PP, GPIO_PinSource4, GPIO_AF_2}; // PWM9  - PA4  - *TIM3_CH2
+timerHardware_t T11= {TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_6}; // PWM9  - PA4  - *TIM3_CH2
 
 timerHardware_t T12= {TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_6};// PWM  - PA8  - *TIM1_CH1, TIM4_ETR
 
@@ -88,19 +144,37 @@ timerHardware_t T14= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 0, Mode_AF_P
 
 timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 1, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_1}; // PWM  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
 
+//timerHardware[0]=T1;
+//timerHardware[1]=T2;
+//timerHardware[2]=T3;
+//timerHardware[3]=T4;
+//timerHardware[4]=T5;
+//timerHardware[5]=T6;
+//timerHardware[6]=T7;
+//timerHardware[7]=T8;
+//timerHardware[8]=T12;
+//timerHardware[9]=T10;
+//timerHardware[10]=T11;
 
 
-timerHardware[0]=T1;
-timerHardware[1]=T2;
-timerHardware[2]=T3;
-timerHardware[3]=T4;
-timerHardware[4]=T5;
-timerHardware[5]=T6;
-timerHardware[6]=T7;
-timerHardware[7]=T8;
-timerHardware[8]=T9;
-timerHardware[9]=T10;
-timerHardware[10]=T11;
+
+if(initInternalMotors){
+
+    timerHardware[0]=T5;
+    timerHardware[1]=T6;
+    timerHardware[2]=T7;
+    timerHardware[3]=T8;
+
+
+} else {
+
+
+    timerHardware[0]=T1;
+    timerHardware[1]=T2;
+    timerHardware[2]=T3;
+    timerHardware[3]=T4;
+
+}
 
 
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(17) |  TIM_N(4))
@@ -116,6 +190,14 @@ timerHardware[10]=T11;
 //#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2)
 //#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM17)
 //#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+#endif
+
+
+
+
+
+
+
 
 
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
