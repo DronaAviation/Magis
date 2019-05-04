@@ -22,7 +22,6 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-
 #include "drivers/system.h"
 
 #include "drivers/system.h"
@@ -49,7 +48,6 @@
 
 #include "io/display.h"
 
-
 #include "telemetry/telemetry.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -63,138 +61,116 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-
 #include "Estimate.h"
 #include "API-Utils.h"
-
 
 int16_t Angle_P::get(angle_e ANGLE)
 {
 
-
-    switch(ANGLE){
+    switch (ANGLE) {
 
     case AG_ROLL:
 
         return inclination.values.rollDeciDegrees; // unit : deciDegree
 
-
-    break;
-
+        break;
 
     case AG_PITCH:
 
         return inclination.values.pitchDeciDegrees; // unit : deciDegree
 
-    break;
-
+        break;
 
     case AG_YAW:
 
         return heading; // unit : degree
 
-      //  return STATE(SMALL_ANGLE);
-    break;
+        break;
 
     }
 
-
 }
-
 
 int16_t Rate_P::get(axis_e AXIS)
 {
-   // unit deciDegree/sec
+    // unit deciDegree/sec
 
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return currentControlRateProfile->rates[FD_ROLL];
 
-    break;
-
+        break;
 
     case Y:
 
         return currentControlRateProfile->rates[FD_PITCH];
 
-    break;
-
+        break;
 
     case Z:
 
         return currentControlRateProfile->rates[FD_YAW];
 
-    break;
+        break;
 
     }
 }
 
-
 int16_t Position_P::get(axis_e AXIS)
 {
-   // unit cm
+    // unit cm
 
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return PositionX;
 
-    break;
-
+        break;
 
     case Y:
 
         return PositionY;
 
-    break;
-
+        break;
 
     case Z:
 
         return getEstAltitude();
 
-    break;
+        break;
 
     }
 }
 
-
-
 int16_t Velocity_P::get(axis_e AXIS)
 {
-   // unit cm/sec
+    // unit cm/sec
 
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return VelocityX;
 
-    break;
-
+        break;
 
     case Y:
 
         return VelocityY;
 
-    break;
-
+        break;
 
     case Z:
 
         return getEstVelocity();
 
-    break;
+        break;
 
     }
 }
-
 
 Angle_P Angle;
 Rate_P Rate;

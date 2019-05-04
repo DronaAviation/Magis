@@ -42,35 +42,31 @@
 #include "flight/imu.h"
 #include "Sensor.h"
 
-
 int16_t Accelerometer_P::get(axis_e AXIS)
 {
 
     // unit : cm/sec2
 
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return (int16_t)(accSmooth[0] * accVelScale);
 
-    break;
-
+        break;
 
     case Y:
 
         return (int16_t)(accSmooth[1] * accVelScale);
-    break;
-
+        break;
 
     case Z:
 
         return (int16_t)(accSmooth[2] * accVelScale);
 
-    break;
+        break;
 
     }
-
 
 }
 
@@ -84,92 +80,79 @@ int16_t Gyroscope_P::get(axis_e AXIS)
 {
     //unit: Decidegrees/sec
 
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return (int16_t)(gyroADC[0] / 1.64f);
 
-    break;
-
+        break;
 
     case Y:
 
         return (int16_t)(gyroADC[1] / 1.64f);
 
-    break;
-
+        break;
 
     case Z:
 
         return (int16_t)(gyroADC[2] / 1.64f);
 
-    break;
+        break;
 
     }
 }
-
 
 int16_t Magnetometer_P::get(axis_e AXIS)
 {
     //unit: microTesla
 
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
-        return  (int16_t)(magADC[0] / 6.82f);
+        return (int16_t)(magADC[0] / 6.82f);
 
-    break;
-
+        break;
 
     case Y:
 
-        return  (int16_t)(magADC[1] / 6.82f);
+        return (int16_t)(magADC[1] / 6.82f);
 
-    break;
-
+        break;
 
     case Z:
 
-        return  (int16_t)(magADC[2] / 6.82f);
+        return (int16_t)(magADC[2] / 6.82f);
 
-    break;
+        break;
 
     }
 }
 
-
-
 int32_t Barometer_P::get(baro_state_e STATE)
 {
 
-    switch(STATE){
+    switch (STATE) {
 
-       case PRESSURE:
+    case PRESSURE:
 
-           return getBaroPressure();  //unit: 100*millibar
+        return getBaroPressure();  //unit: 100*millibar
 
-       break;
+        break;
 
+    case TEMPERATURE:
 
-       case TEMPERATURE:
+        return getBaroTemperature(); //unit" 100*degreeCelsius
 
-           return getBaroTemperature(); //unit" 100*degreeCelsius
+        break;
 
-       break;
-
-
-       }
+    }
 
 }
-
 
 Accelerometer_P Acceleration;
 Gyroscope_P Gyroscope;
 Magnetometer_P Magnetometer;
 Barometer_P Barometer;
-
 

@@ -21,19 +21,15 @@
 #include "common/axis.h"
 #include "Comman.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 typedef enum {
 
-    PRESSURE,
-    TEMPERATURE
+    PRESSURE, TEMPERATURE
 
-}baro_state_e;
-
+} baro_state_e;
 
 class Accelerometer_P {
 public:
@@ -65,7 +61,6 @@ public:
 
 class Barometer_P {
 public:
-
 
     //unit: 100*millibar for Pressure
     //unit" 100*degreeCelsius Temperature

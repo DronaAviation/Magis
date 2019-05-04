@@ -15,10 +15,9 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+/*
 #pragma once
 
-/*
 ### For use in Cygnus Project Structure
 
 #ifdef __cplusplus
@@ -29,19 +28,15 @@ typedef enum {
     X = 0,
     Y,
     Z
-} axis_e;
-
+}axis_e;
 
 typedef enum {
     AG_ROLL = 0,
     AG_PITCH,
     AG_YAW,
-} angle_e;
+}angle_e;
 
+#ifdef __cplusplus
+}
+#endif
 */
-
-
-//#ifdef __cplusplus
-//}
-//#endif
-

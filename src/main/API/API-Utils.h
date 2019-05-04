@@ -56,7 +56,6 @@ extern int32_t MOTOR_ARRAY[4];
 extern int32_t app_GPS_coord[2];
 extern int32_t RC_ARRAY[4];
 
-
 extern bool runUserCode;
 extern bool developerMode;
 extern bool useAutoRC;
@@ -80,21 +79,10 @@ extern bool motorMixer;
 extern bool isLocalisationOn;
 extern bool DONT_USE_STATUS_LED;
 
-
-//extern LaserSensor laser_sensors[4];
-//extern pwmOutputPort_t* pwm[11];
-//extern pwmOutputPort_t* userMotor[8];
-
-//extern LaserSensor laserLEFT;
-//extern LaserSensor laserRIGHT;
-//extern LaserSensor laserFRONT;
-//extern LaserSensor laserBACK;
-
 extern bool isPwmInit[11];
 extern bool isUserMotorInit[8];
 extern bool isUserFlightModeSet[6];
 extern bool isXLaserInit[4];
-
 
 extern int32_t userDesiredAngle[3];
 extern int32_t userDesiredRate[3];
@@ -115,7 +103,6 @@ void setM4GPIO(bool direction);
 void userEnabledLand();
 void resetUserRCflag(void);
 
-
 #define UB_ADC1_CHANNEL_COUNT 2
 #define UB_ADC2_CHANNEL_COUNT 2
 #define UB_ADC3_CHANNEL_COUNT 1
@@ -131,36 +118,20 @@ typedef enum {
     UB_ADC4_IN4,
     UB_ADC4_IN5,
 
-} unibus_AdcChannel;
+} Unibus_AdcChannel;
 
 #define UB_ADC_CHANNEL_COUNT 8
 
-//typedef struct unibus_adc_config_s {
-//    uint8_t dmaIndex;        // index into DMA buffer in case of sparse channels
-//    bool enabled;
-//} unibus_adc_config_t;
-
-
 extern bool isADCEnable[UB_ADC_CHANNEL_COUNT];
 extern uint8_t adcDmaIndex[UB_ADC_CHANNEL_COUNT];
-
-
-//
-//static unibus_adc_config_t adc1Config[UB_ADC1_CHANNEL_COUNT];
-//static unibus_adc_config_t adc2Config[UB_ADC2_CHANNEL_COUNT];
-//static unibus_adc_config_t adc3Config[UB_ADC3_CHANNEL_COUNT];
-//static unibus_adc_config_t adc4Config[UB_ADC4_CHANNEL_COUNT];
 
 extern volatile uint16_t adc1Values[UB_ADC1_CHANNEL_COUNT];
 extern volatile uint16_t adc2Values[UB_ADC2_CHANNEL_COUNT];
 extern volatile uint16_t adc3Values[UB_ADC3_CHANNEL_COUNT];
 extern volatile uint16_t adc4Values[UB_ADC4_CHANNEL_COUNT];
 
-
-void unibusAdcInit();
-void xRangingInit();
-//void userMotorInit();
-//void userPWMInit();
+void unibusAdcInit(void);
+void xRangingInit(void);
 
 int getGPIOport(unibus_e pin);
 GPIO_Pin getGPIOpin(unibus_e pin);
@@ -170,9 +141,8 @@ uint8_t getGPIOpinSource(unibus_e pin);
 uint16_t getTimerCh(unibus_e pin);
 uint8_t getADCCh(unibus_e pin);
 
-void reverseMotorGPIOInit();
-
-void resetUser();
+void reverseMotorGPIOInit(void);
+void resetUser(void);
 
 #ifdef __cplusplus
 }

@@ -1086,7 +1086,7 @@ void userCode(){
                 }
 
 
-                for(int i=0; i<6; i++){
+                for(int i=0; i<6; i++) {
 
                     if(isUserFlightModeSet[i])
                         FlightMode.set((flight_mode_e)i);
@@ -1102,7 +1102,7 @@ void userCode(){
         else {
 
             if (callonPilotFinish) {
-                for (int i = 0; i < 4; i++){
+                for (int i = 0; i < 4; i++) {
                     RC_ARRAY[i] = 0;
                     userRCflag[i]=false;
 
@@ -1315,6 +1315,7 @@ void loop(void)
 */
 
         failsafeOnCrash();
+
         executeCommand();
 
 

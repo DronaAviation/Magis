@@ -15,30 +15,25 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #pragma once
 
 #include <stdint.h>
 #include "common/axis.h"
 //#include "Comman.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 typedef struct {
 
-  uint8_t p;
-  uint8_t i;
-  uint8_t d;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
 
 } PID;
 
-
-
-typedef enum{
+typedef enum {
 
     PID_ROLL,
     PID_PITCH,
@@ -46,8 +41,7 @@ typedef enum{
     PID_ALT,
     PID_USER
 
-}pid_profile_e;
-
+} pid_profile_e;
 
 typedef enum {
 
@@ -58,10 +52,8 @@ typedef enum {
 
 } failsafe_e;
 
-
 class DesiredAngle_P {
 public:
-
 
     //unit: decidegree for ROLL and PITCH
     //unit: degree for YAW
@@ -70,9 +62,7 @@ public:
 
     void set(angle_e ANGLE, int32_t angle);
 
-
 };
-
 
 class DesiredRate_P {
 public:
@@ -83,13 +73,10 @@ public:
 
     void set(angle_e ANGLE, int32_t rate);
 
-
 };
-
 
 class DesiredPosition_P {
 public:
-
 
     //unit: cm
 
@@ -99,13 +86,10 @@ public:
 
     void setRelative(axis_e AXIS, int32_t position);
 
-
 };
-
 
 class DesiredVelocity_P {
 public:
-
 
     //unit: cm/s
 
@@ -113,27 +97,18 @@ public:
 
     void set(axis_e AXIS, int32_t velocity);
 
-
 };
-
-
-
-
 
 class PIDProfile_P {
 public:
 
-    void get(pid_profile_e PROFILE,PID* pid);
+    void get(pid_profile_e PROFILE, PID* pid);
 
     void set(pid_profile_e PROFILE, PID* pid);
 
-    void setDefault();
-
+    void setDefault(void);
 
 };
-
-
-
 
 class Failsafe_P {
 public:
@@ -142,9 +117,7 @@ public:
 
     void disable(failsafe_e FAILSAFE);
 
-
 };
-
 
 extern DesiredAngle_P DesiredAngle;
 extern DesiredRate_P DesiredRate;
@@ -152,9 +125,6 @@ extern DesiredPosition_P DesiredPosition;
 extern DesiredVelocity_P DesiredVelocity;
 extern PIDProfile_P PIDProfile;
 extern Failsafe_P Failsafe;
-
-
-
 
 #ifdef __cplusplus
 }

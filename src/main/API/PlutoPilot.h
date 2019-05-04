@@ -18,20 +18,12 @@
 #ifndef _PlutoPilot_H_
 #define _PlutoPilot_H_
 
+void plutoInit(void);
 
-void plutoInit();
+void onLoopStart(void);
 
-void onLoopStart();
+void plutoLoop(void);
 
-//void onPilotStart();
-
-void plutoLoop();
-
-//void plutoPilot();
-
-//void onPilotFinish();
-
-void onLoopFinish();
-
+void onLoopFinish(void);
 
 #endif

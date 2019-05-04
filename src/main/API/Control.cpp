@@ -91,21 +91,18 @@
 
 #include "mw.h"
 
-
 #include "Control.h"
 #include "API-Utils.h"
 
+int32_t DesiredAngle_P::get(angle_e ANGLE)
+{
 
-
-
-int32_t DesiredAngle_P::get(angle_e ANGLE){
-
-return desiredAngle[ANGLE];
+    return desiredAngle[ANGLE];
 
 }
 
-
-void DesiredAngle_P::set(angle_e ANGLE, int32_t angle){
+void DesiredAngle_P::set(angle_e ANGLE, int32_t angle)
+{
 
     switch (ANGLE) {
 
@@ -130,376 +127,330 @@ void DesiredAngle_P::set(angle_e ANGLE, int32_t angle){
 
 }
 
+int32_t DesiredRate_P::get(angle_e ANGLE)
+{
 
- int32_t DesiredRate_P::get(angle_e ANGLE){
+    return desiredRate[ANGLE];
 
-     return desiredRate[ANGLE];
+}
 
- }
+void DesiredRate_P::set(angle_e ANGLE, int32_t rate)
+{
 
- void DesiredRate_P::set(angle_e ANGLE, int32_t rate){
+    switch (ANGLE) {
 
-     switch (ANGLE) {
+    case AG_ROLL:
 
-     case AG_ROLL:
+        //   currentControlRateProfile->rates[FD_ROLL]=rate;
 
-         //   currentControlRateProfile->rates[FD_ROLL]=rate;
+        break;
 
-            break;
-
-        case AG_PITCH:
+    case AG_PITCH:
 
         //    currentControlRateProfile->rates[FD_PITCH]=rate;
 
-            break;
+        break;
 
-        case AG_YAW:
+    case AG_YAW:
 
-         //   currentControlRateProfile->rates[FD_YAW]=rate;
+        //   currentControlRateProfile->rates[FD_YAW]=rate;
 
-            break;
+        break;
 
-        default:
+    default:
 
-            break;
+        break;
 
-        }
+    }
 
+}
 
- }
+int32_t DesiredPosition_P::get(axis_e AXIS)
+{
 
-
-int32_t DesiredPosition_P::get(axis_e AXIS){
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return 0;
 
-    break;
-
+        break;
 
     case Y:
 
         return 0;
 
-    break;
-
+        break;
 
     case Z:
 
         return getSetAltitude();
 
-    break;
+        break;
 
     }
 
 }
 
+void DesiredPosition_P::set(axis_e AXIS, int32_t position)
+{
 
-void DesiredPosition_P::set(axis_e AXIS, int32_t position){
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
-
-
-    break;
-
+        break;
 
     case Y:
 
-
-
-    break;
-
+        break;
 
     case Z:
 
         setAltitude(position);
 
-    break;
+        break;
 
     }
 
-
-
 }
 
+void DesiredPosition_P::setRelative(axis_e AXIS, int32_t position)
+{
 
-
-void DesiredPosition_P::setRelative(axis_e AXIS, int32_t position){
-
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
-
-
-    break;
-
+        break;
 
     case Y:
 
-
-
-    break;
-
+        break;
 
     case Z:
 
         setRelativeAltitude(position);
 
-    break;
+        break;
 
     }
 
-
 }
 
+int32_t DesiredVelocity_P::get(axis_e AXIS)
+{
 
-int32_t DesiredVelocity_P::get(axis_e AXIS){
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
         return 0;
 
-    break;
-
+        break;
 
     case Y:
 
         return 0;
 
-    break;
-
+        break;
 
     case Z:
 
         return getSetVelocity();
 
-    break;
+        break;
 
     }
 
 }
 
+void DesiredVelocity_P::set(axis_e AXIS, int32_t velocity)
+{
 
-void DesiredVelocity_P::set(axis_e AXIS, int32_t velocity){
-
-
-    switch(AXIS){
+    switch (AXIS) {
 
     case X:
 
-
-
-    break;
-
+        break;
 
     case Y:
 
-
-
-    break;
-
+        break;
 
     case Z:
 
-     //   setRelativeUserAltitude(position);
+        //   setRelativeUserAltitude(position);
 
-    break;
+        break;
 
     }
 
 }
 
+/*
+ typedef enum{
 
-//
-//typedef enum{
-//
-//    ROLL_LIMIT,
-//    PITCH_LIMIT,
-//    YAW_LIMIT,
-//    ROLL_RATE_LIMIT,
-//    PITCH_RARE_LIMIT,
-//    YAW_RATE_LIMIT,
-//    POS_X_LIMIT,
-//    POS_Y_LIMIT,
-//    POS_Z_LIMIT,
-//    VEL_x_LIMIT,
-//    VEL_Y_LIMIT,
-//    VEL_Z_LIMIT,
-//    USER_LIMIT
-//
-//}limit_profile_e;
-//
+ ROLL_LIMIT,
+ PITCH_LIMIT,
+ YAW_LIMIT,
+ ROLL_RATE_LIMIT,
+ PITCH_RARE_LIMIT,
+ YAW_RATE_LIMIT,
+ POS_X_LIMIT,
+ POS_Y_LIMIT,
+ POS_Z_LIMIT,
+ VEL_x_LIMIT,
+ VEL_Y_LIMIT,
+ VEL_Z_LIMIT,
+ USER_LIMIT
+
+ }limit_profile_e;
 
 
 
-//class ControlLimit_P {
-//public:
-//
-//    int16_t get(limit_profile_e LIMIT);
-//
-//    void set(limit_profile_e LIMIT, int16_t limit);
-//
-//
-//};
+
+ class ControlLimit_P {
+ public:
+
+ int16_t get(limit_profile_e LIMIT);
+
+ void set(limit_profile_e LIMIT, int16_t limit);
+
+
+ };
 
 
 
-//int16_t ControlLimit_P::get(limit_profile_e LIMIT){
-//
-//
-//
-//}
-//
-//
-//
-//void ControlLimit_P::set(limit_profile_e LIMIT, int16_t limit){
-//
-//
-//
-//
-//
-//}
+ int16_t ControlLimit_P::get(limit_profile_e LIMIT)
+ {
 
 
 
-void PIDProfile_P::get(pid_profile_e PROFILE,PID* pid){
+ }
 
 
-    switch(PROFILE){
 
+ void ControlLimit_P::set(limit_profile_e LIMIT, int16_t limit)
+ {
+
+
+
+
+
+ }
+
+
+ */
+
+void PIDProfile_P::get(pid_profile_e PROFILE, PID* pid)
+{
+
+    switch (PROFILE) {
 
     case PID_ROLL:
 
-        pid->p= currentProfile->pidProfile.P8[ROLL];
-        pid->i= currentProfile->pidProfile.I8[ROLL];
-        pid->d= currentProfile->pidProfile.D8[ROLL];
-
+        pid->p = currentProfile->pidProfile.P8[ROLL];
+        pid->i = currentProfile->pidProfile.I8[ROLL];
+        pid->d = currentProfile->pidProfile.D8[ROLL];
 
         break;
 
     case PID_PITCH:
 
-        pid->p= currentProfile->pidProfile.P8[PITCH];
-        pid->i= currentProfile->pidProfile.I8[PITCH];
-        pid->d= currentProfile->pidProfile.D8[PITCH];
+        pid->p = currentProfile->pidProfile.P8[PITCH];
+        pid->i = currentProfile->pidProfile.I8[PITCH];
+        pid->d = currentProfile->pidProfile.D8[PITCH];
 
-
-         break;
+        break;
 
     case PID_YAW:
 
-        pid->p= currentProfile->pidProfile.P8[YAW];
-        pid->i= currentProfile->pidProfile.I8[YAW];
-        pid->d= currentProfile->pidProfile.D8[YAW];
-
-
+        pid->p = currentProfile->pidProfile.P8[YAW];
+        pid->i = currentProfile->pidProfile.I8[YAW];
+        pid->d = currentProfile->pidProfile.D8[YAW];
 
         break;
 
     case PID_ALT:
 
-        pid->p= currentProfile->pidProfile.P8[PIDALT];
-        pid->i= currentProfile->pidProfile.I8[PIDALT];
-        pid->d= currentProfile->pidProfile.D8[PIDALT];
+        pid->p = currentProfile->pidProfile.P8[PIDALT];
+        pid->i = currentProfile->pidProfile.I8[PIDALT];
+        pid->d = currentProfile->pidProfile.D8[PIDALT];
 
         break;
-
-
 
     case PID_USER:
 
-        pid->p= currentProfile->pidProfile.P8[PIDUSER];
-        pid->i= currentProfile->pidProfile.I8[PIDUSER];
-        pid->d= currentProfile->pidProfile.D8[PIDUSER];
+        pid->p = currentProfile->pidProfile.P8[PIDUSER];
+        pid->i = currentProfile->pidProfile.I8[PIDUSER];
+        pid->d = currentProfile->pidProfile.D8[PIDUSER];
 
         break;
 
-
     default:
 
-
-       break;
+        break;
 
     }
 
-
 }
 
-void PIDProfile_P::set(pid_profile_e PROFILE, PID* pid){
+void PIDProfile_P::set(pid_profile_e PROFILE, PID* pid)
+{
 
-
-
-    switch(PROFILE){
-
+    switch (PROFILE) {
 
     case PID_ROLL:
 
-        currentProfile->pidProfile.P8[ROLL]=pid->p;
-        currentProfile->pidProfile.I8[ROLL]=pid->i;
-        currentProfile->pidProfile.D8[ROLL]=pid->d;
-
+        currentProfile->pidProfile.P8[ROLL] = pid->p;
+        currentProfile->pidProfile.I8[ROLL] = pid->i;
+        currentProfile->pidProfile.D8[ROLL] = pid->d;
 
         break;
 
     case PID_PITCH:
 
-        currentProfile->pidProfile.P8[PITCH]=pid->p;
-        currentProfile->pidProfile.I8[PITCH]=pid->i;
-        currentProfile->pidProfile.D8[PITCH]=pid->d;
+        currentProfile->pidProfile.P8[PITCH] = pid->p;
+        currentProfile->pidProfile.I8[PITCH] = pid->i;
+        currentProfile->pidProfile.D8[PITCH] = pid->d;
 
-
-         break;
+        break;
 
     case PID_YAW:
 
-        currentProfile->pidProfile.P8[YAW]=pid->p;
-        currentProfile->pidProfile.I8[YAW]=pid->i;
-        currentProfile->pidProfile.D8[YAW]=pid->d;
-
+        currentProfile->pidProfile.P8[YAW] = pid->p;
+        currentProfile->pidProfile.I8[YAW] = pid->i;
+        currentProfile->pidProfile.D8[YAW] = pid->d;
 
         break;
 
     case PID_ALT:
 
-        currentProfile->pidProfile.P8[PIDALT]=pid->p;
-        currentProfile->pidProfile.I8[PIDALT]=pid->i;
-        currentProfile->pidProfile.D8[PIDALT]=pid->d;
+        currentProfile->pidProfile.P8[PIDALT] = pid->p;
+        currentProfile->pidProfile.I8[PIDALT] = pid->i;
+        currentProfile->pidProfile.D8[PIDALT] = pid->d;
 
         break;
-
 
     case PID_USER:
 
-        currentProfile->pidProfile.P8[PIDUSER]=pid->p;
-        currentProfile->pidProfile.I8[PIDUSER]=pid->i;
-        currentProfile->pidProfile.D8[PIDUSER]=pid->d;
+        currentProfile->pidProfile.P8[PIDUSER] = pid->p;
+        currentProfile->pidProfile.I8[PIDUSER] = pid->i;
+        currentProfile->pidProfile.D8[PIDUSER] = pid->d;
 
         break;
 
-
     default:
 
-
-       break;
+        break;
 
     }
 
-
 }
 
-
-
-void PIDProfile_P::setDefault(){
+void PIDProfile_P::setDefault(void)
+{
 
     currentProfile->pidProfile.P8[ROLL] = 40;
     currentProfile->pidProfile.I8[ROLL] = 10;
@@ -517,14 +468,10 @@ void PIDProfile_P::setDefault(){
     currentProfile->pidProfile.I8[PIDUSER] = 0;
     currentProfile->pidProfile.D8[PIDUSER] = 0;
 
-
 }
 
-
-
-
-void Failsafe_P::enable(failsafe_e FAILSAFE){
-
+void Failsafe_P::enable(failsafe_e FAILSAFE)
+{
 
     switch (FAILSAFE) {
 
@@ -550,12 +497,10 @@ void Failsafe_P::enable(failsafe_e FAILSAFE){
 
     }
 
-
 }
 
-
-void Failsafe_P::disable(failsafe_e FAILSAFE){
-
+void Failsafe_P::disable(failsafe_e FAILSAFE)
+{
 
     switch (FAILSAFE) {
 
@@ -582,10 +527,6 @@ void Failsafe_P::disable(failsafe_e FAILSAFE){
     }
 
 }
-
-
-
-
 
 DesiredAngle_P DesiredAngle;
 DesiredRate_P DesiredRate;

@@ -9,7 +9,6 @@
 
 #include "common/maths.h"
 
-
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
@@ -20,10 +19,7 @@
 #include "API-Utils.h"
 #include "Utils.h"
 
-
-
 uint8_t checksum;
-
 
 void serializeString(const char* msg)
 {
@@ -35,7 +31,7 @@ void serializeString(const char* msg)
 
 void debugPrint(const char* msg)
 {
-    // if(isDebugPrintEnabled){
+
     checksum = 0;
     serialize8Debug('$');
     serialize8Debug('D');
@@ -43,12 +39,12 @@ void debugPrint(const char* msg)
     checksum ^= strlen(msg);
     serializeString(msg);
     serialize8Debug(checksum);
-    // }
+
 }
 
 void debugPrint(const char* msg, double number, uint8_t digits)
 {
-    // if(isDebugPrintEnabled){
+
     checksum = 0;
     serialize8Debug('$');
     serialize8Debug('D');
@@ -67,7 +63,7 @@ void debugPrint(const char* msg, double number, uint8_t digits)
     }
     if (isinf(number)) {
         const char* err = "infinite";
-        uint8_t data_size = (uint8_t) (strlen(msg) + strlen(err));
+        uint8_t data_size = (uint8_t)(strlen(msg) + strlen(err));
         serialize8Debug(data_size);
         checksum ^= data_size;
         serializeString(msg);
@@ -114,8 +110,8 @@ void debugPrint(const char* msg, double number, uint8_t digits)
         *--str = digit < 10 ? digit + '0' : digit + 'A' - 10;
     } while (int_part);
 
-    uint8_t data_size = (uint8_t) strlen(msg) + (uint8_t) strlen(str) + (isNumNeg ? 1 : 0) + (
-            digits > 0 ? (digits + 1) : 0) + 1;
+    uint8_t data_size = (uint8_t) strlen(msg) + (uint8_t) strlen(str)
+            + (isNumNeg ? 1 : 0) + (digits > 0 ? (digits + 1) : 0) + 1;
     serialize8Debug(data_size);
     checksum ^= data_size;
     serializeString(msg);
@@ -135,14 +131,14 @@ void debugPrint(const char* msg, double number, uint8_t digits)
     }
     while (digits-- > 0) {
         remainder *= (double) 10.0;
-        uint8_t toPrint = (uint8_t) (remainder);
+        uint8_t toPrint = (uint8_t)(remainder);
         toPrint = toPrint < 10 ? toPrint + '0' : toPrint + 'A' - 10;
         serialize8Debug(toPrint);
         checksum ^= toPrint;
         remainder -= toPrint;
     }
     serialize8Debug(checksum);
-    //  }
+
 }
 
 void debugPrint(const char* msg, int number)
@@ -167,7 +163,8 @@ void debugPrint(const char* msg, int number)
         *--str = digit < 10 ? digit + '0' : digit + 'A' - 10;
     } while (number);
 
-    uint8_t data_size = (uint8_t) strlen(msg) + (uint8_t) strlen(str) + (isNumNeg ? 1 : 0) + 1;
+    uint8_t data_size = (uint8_t) strlen(msg) + (uint8_t) strlen(str)
+            + (isNumNeg ? 1 : 0) + 1;
     serialize8Debug(data_size);
     checksum ^= data_size;
 
@@ -184,229 +181,137 @@ void debugPrint(const char* msg, int number)
 
 }
 
+//###########################################//
 
-//###########################################
-
-
-void LED_P::set(led_e LED, led_state_e STATE){
+void LED_P::set(led_e LED, led_state_e STATE)
+{
 
     ledOperator(LED, STATE);
 
 }
 
-void LED_P::flightStatus(flightstatus_state_e STATE){
+void LED_P::flightStatus(flightstatus_state_e STATE)
+{
 
-    switch(STATE){
-
+    switch (STATE) {
 
     case DEACTIVATE:
-
 
         FlightStatusEnabled = false;
         ledOperator(RED, OFF);
         ledOperator(GREEN, OFF);
         ledOperator(BLUE, OFF);
 
-
-      break;
+        break;
 
     case ACTIVATE:
 
         FlightStatusEnabled = true;
 
-
         break;
     }
 
-
 }
 
+void Graph_P::red(double value, uint8_t precision)
+{
 
-
-void Graph_P::red(double value, uint8_t precision){
-
-    precision=constrain(precision, 0, 7);
+    precision = constrain(precision, 0, 7);
     debugPrint("~R", value, precision);
 
 }
 
-void Graph_P::green(double value, uint8_t precision){
+void Graph_P::green(double value, uint8_t precision)
+{
 
-    precision=constrain(precision, 0, 7);
+    precision = constrain(precision, 0, 7);
     debugPrint("~G", value, precision);
-
 
 }
 
-void Graph_P::blue(double value, uint8_t precision){
+void Graph_P::blue(double value, uint8_t precision)
+{
 
-    precision=constrain(precision, 0, 7);
+    precision = constrain(precision, 0, 7);
     debugPrint("~B", value, precision);
 
 }
 
-
-
-
-
-
-//Interval::Interval()
-//{
-//
-//time=0;
-//loopTime=0;
-//
-//}
-
-
-
 bool Interval::set(uint32_t time, bool repeat)
 {
 
+    if (this->time == 0) {
 
+        this->time = constrain(time, 1, 5000);
+        this->loopTime = millis() + this->time;
+    }
 
+    if ((int32_t)(millis() - this->loopTime) >= 0) {
+        if (repeat)
+            loopTime = millis() + this->time;
 
-if(this->time==0)
-{
+        return true;
 
-    this->time=constrain(time, 1, 5000);
-    this->loopTime=millis()+this->time;
-}
+    }
 
-
-if((int32_t)(millis()-this->loopTime)>=0)
-{
-    if(repeat)
-    loopTime=millis()+this->time;
-
-    return true;
+    return false;
 
 }
-
-return false;
-
-}
-
 
 void Interval::reset(void)
 {
 
-
-    this->time=0;
-    this->loopTime=0;
-
+    this->time = 0;
+    this->loopTime = 0;
 
 }
 
-
-
-//Timer::Timer()
-//{
-//
-//this->time=0;
-//this->loopTime=0;
-//
-//}
-
-
-
-//bool Timer::set(uint32_t time, bool repeat)
-//{
-//
-//
-//
-//
-//if(this->time==0)
-//{
-//
-//    this->time=constrain(time, 1, 5000);
-//    this->loopTime=millis()+this->time;
-//}
-//
-//
-//if((int32_t)(millis()-this->loopTime)>=0)
-//{
-//    if(repeat)
-//    loopTime=millis()+this->time;
-//
-//    return true;
-//
-//}
-//
-//return false;
-//
-//}
-//
-//
-//void Timer::reset(void)
-//{
-//
-//
-//    this->time=0;
-//    this->loopTime=0;
-//
-//
-//}
-//
-//
-//
-
-
-
-
-
-void Monitor_P::print(const char* msg){
+void Monitor_P::print(const char* msg)
+{
 
     debugPrint(msg);
 
 }
 
-void Monitor_P::print(const char* tag, int number){
+void Monitor_P::print(const char* tag, int number)
+{
 
     debugPrint(tag, number);
 
 }
 
+void Monitor_P::print(const char* tag, double number, uint8_t precision)
+{
 
-//void print(const char* tag, int number){
-//
-//    debugPrint(tag, number);
-//
-//}
-
-
-void Monitor_P::print(const char* tag, double number, uint8_t precision){
-
-    precision=constrain(precision, 0, 7);
+    precision = constrain(precision, 0, 7);
     debugPrint(tag, number, precision);
 
 }
 
-
-void Monitor_P::println(const char* msg){
+void Monitor_P::println(const char* msg)
+{
 
     debugPrint(msg);
     debugPrint("\n");
 
 }
 
-void Monitor_P::println(const char* tag, int number){
+void Monitor_P::println(const char* tag, int number)
+{
 
     debugPrint(tag, number);
     debugPrint("\n");
 
 }
 
-void Monitor_P::println(const char* tag, double number, uint8_t precision){
+void Monitor_P::println(const char* tag, double number, uint8_t precision)
+{
 
-    precision=constrain(precision, 0, 7);
+    precision = constrain(precision, 0, 7);
     debugPrint(tag, number, precision);
     debugPrint("\n");
 
-
 }
-
-
 
 LED_P LED;
 Graph_P Graph;

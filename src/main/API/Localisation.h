@@ -32,17 +32,16 @@ typedef enum {
 } localisation_type;
 
 /*
-typedef enum {
-    LC_TAKE_OFF,
-    LC_LAND,
-    LC_SLEEP,
-    LC_ARM_MOTORS,
-    LC_GO_TO_WAY_POINT,
-    LC_DISARM_MOTORS,
-    LC_LOOP_FROM_START
-} localisation_cmd_type;
-*/
-
+ typedef enum {
+ LC_TAKE_OFF,
+ LC_LAND,
+ LC_SLEEP,
+ LC_ARM_MOTORS,
+ LC_GO_TO_WAY_POINT,
+ LC_DISARM_MOTORS,
+ LC_LOOP_FROM_START
+ } localisation_cmd_type;
+ */
 
 class Localisation_P {
 
@@ -52,20 +51,19 @@ public:
 
     int16_t get(axis_e AXIS);
 
-
     /*
 
-    void setCommand(localisation_cmd_type command);
+     void setCommand(localisation_cmd_type command);
 
-    void setCommand(localisation_cmd_type command, int16_t desiredX, int16_t desiredY);
+     void setCommand(localisation_cmd_type command, int16_t desiredX, int16_t desiredY);
 
-    void setCommand(localisation_cmd_type command, int16_t desiredX, int16_t desiredY, int16_t desiredZ);
+     void setCommand(localisation_cmd_type command, int16_t desiredX, int16_t desiredY, int16_t desiredZ);
 
-    void startLocalisation();
+     void startLocalisation();
 
-    void stopLocalisation();
+     void stopLocalisation();
 
-    */
+     */
 
 };
 

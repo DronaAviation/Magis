@@ -27,18 +27,15 @@ typedef enum laser_sensors {
     LEFT = 0,
     RIGHT,
     FRONT,
-    BACK,
+    BACK
 } laser_e;
-
 
 class XRanging_P {
 
 public:
 
-    void init();
+    void init(void);
     void init(laser_e laser);
-    void start();
-    void stop();
     int16_t getRange(laser_e laser);  // returns range in mm
 
 };
