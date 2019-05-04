@@ -98,12 +98,10 @@
 #include "build_config.h"
 
 #include "command/localisationCommand.h"
-#include "API/Debug/Print.h"
 
 #include "API/PlutoPilot.h"
 #include "API/API-Utils.h"
 #include "API/Utils.h"
-#include "API/Hardware/Communication.h"
 #include "API/Peripheral.h"
 #include "API/Localisation.h"
 

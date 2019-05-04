@@ -56,12 +56,7 @@
 #include "config/config_master.h"
 #include "acrobats.h"
 
-#include "../API/Core/Angle.h"
-#include "../API/Core/Control.h"
-#include "../API/Debug/Print.h"
-#include "../API/Debug/Print.h"
-#include "../API/Flight/Flight.h"
-#include "../API/Sensor.h"
+#include "API/Sensor.h"
 
 
 uint8_t flipDirection = 0;

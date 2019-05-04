@@ -43,9 +43,7 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 
-#include "../API/API-Utils.h"
-#include "../API/Debug/Print.h"
-#include "../API/X/XGPS.h"
+#include "API/API-Utils.h"
 #include "flight/gps_conversion.h"
 
 #include "rx/rx.h"

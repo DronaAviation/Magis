@@ -24,7 +24,7 @@ extern "C" {
 #include "vl53l0x_def.h"
 #include "vl53l0x_device.h"
 #include "vl53l0x_platform.h"
-#include "../api/Hardware/Specifiers.h"
+#include "API/Specifiers.h"
 
 class LaserSensor {
 

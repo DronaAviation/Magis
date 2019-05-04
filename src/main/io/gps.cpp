@@ -41,7 +41,6 @@
 #include "io/display.h"
 #include "io/gps.h"
 
-#include "../API/Debug/Print.h"
 #include "flight/gps_conversion.h"
 #include "flight/pid.h"
 #include "flight/navigation.h"

@@ -35,9 +35,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/system.h"
 #include "ranging_vl53l0x.h"
-
-#include "../API/Debug/Print.h"
-#include "../API/Peripheral.h"
+#include "API/Peripheral.h"
 
 
 
