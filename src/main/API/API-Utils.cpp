@@ -41,8 +41,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
 #include "drivers/ranging_vl53l0x.h"
-#include "drivers/opticflow_cheerson_cxof.h"
-
+#include "drivers/opticflow_paw3903.h"
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
@@ -133,7 +132,7 @@ bool DONT_USE_STATUS_LED = false;
 bool isPwmInit[11] = { false };
 bool isUserMotorInit[8] = { false };
 bool isUserFlightModeSet[6] = { false };
-bool isXLaserInit[4] = { false };
+bool isXLaserInit[5] = { false };
 
 int32_t userDesiredAngle[3] = { 0 };
 int32_t userDesiredRate[3] = { 0 };

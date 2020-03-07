@@ -25,6 +25,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "blackbox/blackbox.h"
 
 #include "drivers/system.h"
 #include "drivers/system.h"
@@ -316,7 +317,7 @@ void Command_P::takeOff(uint16_t height)
 void Command_P::land(uint8_t landSpeed)
 {
 
-    if (current_command != LAND) {
+    if ((command_status == FINISHED || command_status==ABORT)&&ARMING_FLAG(ARMED)) {
         current_command = LAND;
         command_status = RUNNING;
 
@@ -386,6 +387,15 @@ bool App_P::isArmSwitchOn(void)
 
 }
 
+void BlackBox_P::setVar(char* varName,int32_t& reference){
+
+#ifdef BLACKBOX
+	setUserBlackBoxField(varName,reference);
+#endif
+}
+
+
+
 void setheadFreeModeHeading(int16_t heading)
 {
 
@@ -413,3 +423,7 @@ FlightMode_P FlightMode;
 Command_P Command;
 FlightStatus_P FlightStatus;
 App_P App;
+BlackBox_P BlackBox;
+
+
+

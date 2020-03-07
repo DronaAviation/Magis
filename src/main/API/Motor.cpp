@@ -44,8 +44,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
 #include "drivers/ranging_vl53l0x.h"
-#include "drivers/opticflow_cheerson_cxof.h"
-
+#include "drivers/opticflow_paw3903.h"
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"

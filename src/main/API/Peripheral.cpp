@@ -61,6 +61,10 @@
 
 #include "API-Utils.h"
 
+
+#define DISABLE_SPI       GPIO_SetBits(GPIOB,   GPIO_Pin_5)
+#define ENABLE_SPI        GPIO_ResetBits(GPIOB, GPIO_Pin_5)
+
 bool gpioReset = false;
 bool changeAdress = false;
 
@@ -760,20 +764,30 @@ bool UART_P::txBytesFree(UART_Port_e PORT)
     }
 }
 
-uint8_t* I2C_P::read(uint8_t device_add, uint8_t reg, uint32_t length)
+bool I2C_P::read(uint8_t device_add, uint8_t reg,uint8_t &value)
 {
-    uint8_t buffer[length];
 
-    i2cRead(device_add, reg, length, (uint8_t *)buffer);
+    return i2cRead(device_add, reg, 1, &value);
+}
 
-    return buffer;
+
+
+int16_t I2C_P::read(uint8_t device_add, uint8_t reg, uint32_t length,uint8_t* buffer)
+{
+
+    return i2cRead(device_add, reg, length, buffer);
+}
+
+bool I2C_P::write(uint8_t device_add, uint8_t reg, uint8_t data)
+{
+
+    return i2cWrite(device_add, reg, data);
 }
 
 bool I2C_P::write(uint8_t device_add, uint8_t reg, uint32_t length, uint8_t* data)
 {
-    bool status;
-    status=i2cWriteBuffer(device_add, reg, length, data);
-    return status;
+
+    return i2cWriteBuffer(device_add, reg, length, data);
 }
 
 void PWM_P::init(unibus_e pin_number, uint16_t pwmRate) {
@@ -1152,10 +1166,196 @@ void PWM_P::write(unibus_e pin_number, uint16_t pwmValue) {
 
 }
 
+
+uint16_t getPrescaler(uint16_t speed)
+{
+    uint16_t prescaler = 0;
+    switch (speed) {
+        case 140:
+            prescaler = SPI_BaudRatePrescaler_256;
+            break;
+
+        case 281:
+            prescaler = SPI_BaudRatePrescaler_128;
+            break;
+
+        case 562:
+            prescaler = SPI_BaudRatePrescaler_64;
+            break;
+
+        case 1125:
+            prescaler = SPI_BaudRatePrescaler_32;
+            break;
+
+        case 2250:
+            prescaler = SPI_BaudRatePrescaler_16;
+            break;
+
+        case 4500:
+            prescaler = SPI_BaudRatePrescaler_8;
+            break;
+
+        case 9000:
+            prescaler = SPI_BaudRatePrescaler_4;
+            break;
+
+        case 18000:
+            prescaler = SPI_BaudRatePrescaler_2;
+            break;
+    }
+    return prescaler;
+}
+
+
+void SPIClass::Init()
+{
+    spiInit (SPI2);
+}
+
+void SPIClass::Settings(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit)
+{
+    uint16_t prescaler = getPrescaler(speed);
+    SPI_InitTypeDef spi;
+
+    SPI_I2S_DeInit (SPI2);
+
+    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    spi.SPI_Mode = SPI_Mode_Master;
+    spi.SPI_DataSize = SPI_DataSize_8b;
+    switch (mode) {
+        case MODE0:
+            spi.SPI_CPOL = SPI_CPOL_Low;
+            spi.SPI_CPHA = SPI_CPHA_1Edge;
+            break;
+
+        case MODE1:
+            spi.SPI_CPOL = SPI_CPOL_Low;
+            spi.SPI_CPHA = SPI_CPHA_2Edge;
+            break;
+
+        case MODE2:
+            spi.SPI_CPOL = SPI_CPOL_High;
+            spi.SPI_CPHA = SPI_CPHA_1Edge;
+            break;
+
+        case MODE3:
+            spi.SPI_CPOL = SPI_CPOL_High;
+            spi.SPI_CPHA = SPI_CPHA_2Edge;
+            break;
+    }
+    spi.SPI_NSS = SPI_NSS_Soft;
+    spi.SPI_BaudRatePrescaler = prescaler;
+    if ((bit == LSBFIRST)) {
+        spi.SPI_FirstBit = SPI_FirstBit_LSB;
+    } else if ((bit == MSBFIRST)) {
+        spi.SPI_FirstBit = SPI_FirstBit_MSB;
+    }
+    spi.SPI_CRCPolynomial = 7;
+
+#ifdef STM32F303xC
+    // Configure for 8-bit reads.
+    SPI_RxFIFOThresholdConfig(SPI2, SPI_RxFIFOThreshold_QF);
+#endif
+    SPI_Init(SPI2, &spi);
+    SPI_Cmd(SPI2, ENABLE);
+
+    // Drive NSS high to disable connected SPI device.
+    DISABLE_SPI;
+}
+
+
+void SPIClass::Enable(void)
+{
+    ENABLE_SPI;
+}
+
+void SPIClass::Disable(void)
+{
+    DISABLE_SPI;
+}
+
+uint8_t SPIClass::Read(uint8_t register_address, int len)
+{
+    uint8_t variable = 0;
+
+      register_address &=  ~0x80u;
+
+	//    opticFlowAddress=spi.Read(0x4E, 1);
+
+
+
+	    ENABLE_SPI;
+
+	//    GPIO.write(Pin14, STATE_LOW);
+
+	    delayMicroseconds(50);
+
+
+	    spiTransferByte(SPI2, register_address);
+
+	    delayMicroseconds(50);
+
+	    spiTransfer(SPI2, &variable, NULL, 1);
+
+	    delayMicroseconds(50);
+
+	//    GPIO.write(Pin14, STATE_HIGH);
+
+	    DISABLE_SPI;
+
+	    delayMicroseconds(200);
+
+
+
+    return variable;
+
+}
+
+bool SPIClass::Write( uint8_t register_address, uint8_t data)
+{
+//    ENABLE_SPI;
+//    spiTransferByte(SPI2, register_address);
+//    spiTransferByte(SPI2, data);
+//    DISABLE_SPI;
+
+       register_address  |= 0x80u;
+
+	   ENABLE_SPI;
+
+//	    GPIO.write(Pin14, STATE_LOW);
+
+	    delayMicroseconds(50);
+
+	    spiTransferByte(SPI2, register_address);
+
+	    delayMicroseconds(50);
+
+
+  	   spiTransferByte(SPI2, data);
+
+	    delayMicroseconds(50);
+
+
+//s	    GPIO.write(Pin14, STATE_HIGH);
+
+	    DISABLE_SPI;
+
+	    delayMicroseconds(200);
+
+
+
+    	return true;
+}
+
+
+
+
+
 GPIO_P GPIO;
 ADC_P ADC;
 UART_P UART;
 I2C_P I2C;
 PWM_P PWM;
+SPIClass spi;
 
 #endif

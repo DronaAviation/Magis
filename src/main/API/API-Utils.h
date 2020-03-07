@@ -26,6 +26,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/utils.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -82,7 +83,7 @@ extern bool DONT_USE_STATUS_LED;
 extern bool isPwmInit[11];
 extern bool isUserMotorInit[8];
 extern bool isUserFlightModeSet[6];
-extern bool isXLaserInit[4];
+extern bool isXLaserInit[5];
 
 extern int32_t userDesiredAngle[3];
 extern int32_t userDesiredRate[3];

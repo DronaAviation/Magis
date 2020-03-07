@@ -65,11 +65,13 @@ private:
 
     uint32_t time;
     uint32_t loopTime;
+    bool repeat;
 
 public:
 
     bool set(uint32_t time, bool repeat); // time is in milliseconds
     void reset(void);
+    bool check();
 
 };
 
