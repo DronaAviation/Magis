@@ -290,11 +290,11 @@ static const uint16_t airPWM[] = {
 static const uint16_t multiPPM[] = {
    // PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
 
-    PWM1 | (MAP_TO_PPM_INPUT << 8),// TIM2
+    PWM1 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
     PWM2 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
     PWM3 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
     PWM4 | (MAP_TO_MOTOR_OUTPUT << 8),// TIM2
-    PWM5 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3		//DD
+    PWM5 | (MAP_TO_PPM_INPUT << 8), // TIM3		//DD
     PWM6 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM2
     PWM7 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
     PWM8 | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
@@ -308,7 +308,7 @@ static const uint16_t multiPWM[] = {
     PWM2 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM3 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM4 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5 | (MAP_TO_PWM_INPUT << 8),
     PWM6 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM7 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8 | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -473,6 +473,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         uint8_t type = (setup[i] & 0xFF00) >> 8;
 
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+
+        uint8_t type_value=type;
 
 #ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
         // PWM2 is connected to LED2 on the board and cannot be connected unless you cut LED2_E
@@ -639,7 +641,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 //            channelIndex++;
 
         } else if (type == MAP_TO_PWM_INPUT) {
-            pwmInConfig(timerHardwarePtr, channelIndex);
+        //    pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 

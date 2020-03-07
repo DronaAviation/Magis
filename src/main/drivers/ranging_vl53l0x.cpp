@@ -36,8 +36,11 @@
 #include "drivers/system.h"
 #include "ranging_vl53l0x.h"
 #include "API/Peripheral.h"
+#include "API/Utils.h"
 
 
+
+#define LASER_LPS 0.1
 
 
 VL53L0X_Dev_t MyDevice;
@@ -48,11 +51,14 @@ VL53L0X_RangingMeasurementData_t RangingMeasurementData;
 
 
 uint8_t Range_Status = 0;
-uint16_t NewSensorRange;
+uint16_t NewSensorRange=0;
 uint16_t debug_range = 0;
 bool isTofDataNewflag = false;
 bool out_of_range = false;
 bool startRanging = false;
+bool useRangingSensor=false;
+
+Interval rangePoll;
 
 
 
@@ -159,6 +165,8 @@ void getRange()
     static bool startNow = true;
 
 
+    if(rangePoll.set(33,true)) {
+
     if(Global_Status == VL53L0X_ERROR_NONE) {
         if(startNow) {
             Status = VL53L0X_StartMeasurement(&MyDevice);
@@ -167,37 +175,50 @@ void getRange()
         }
     }
 
+//    if(Global_Status == VL53L0X_ERROR_NONE) {
+//
+//        if(!startNow) {
+//            Status = VL53L0X_GetMeasurementDataReady(&MyDevice,&dataFlag);
+//            update_status(Status);
+//
+//        }
+//    }
+
     if(Global_Status == VL53L0X_ERROR_NONE) {
-
-        if(!startNow) {
-            Status = VL53L0X_GetMeasurementDataReady(&MyDevice,&dataFlag);
-            update_status(Status);
-
-        }
-    }
-
-    if(Global_Status == VL53L0X_ERROR_NONE) {
-        if(dataFlag) {
+//        if(dataFlag) {
 
             Status = VL53L0X_GetRangingMeasurementData(&MyDevice, &RangingMeasurementData);
             update_status(Status);
             // printInt("return status#4:",Global_Status);
 
-            if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
-                debug_range = RangingMeasurementData.RangeDMaxMilliMeter/10;
-            }
+//            if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
+//                debug_range = RangingMeasurementData.RangeDMaxMilliMeter/10;
+//            }
 
             startNow = true;
             isTofDataNewflag = true;
             Range_Status = RangingMeasurementData.RangeStatus;
             if(RangingMeasurementData.RangeStatus == 0) {
-                NewSensorRange = RangingMeasurementData.RangeMilliMeter;
+
+            	if(RangingMeasurementData.RangeMilliMeter<2000){
+
+              //  NewSensorRange = RangingMeasurementData.RangeMilliMeter;
+
+                NewSensorRange = NewSensorRange*(1-LASER_LPS)+RangingMeasurementData.RangeMilliMeter*LASER_LPS;
+
                 out_of_range = false;
+
+            	} else {
+                    out_of_range = true;
+				}
+
             } else
             out_of_range = true;
-        }
+//        }
     }
-    //}
+
+    }
+
 
 }
 
