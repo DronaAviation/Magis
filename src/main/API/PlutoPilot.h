@@ -18,6 +18,8 @@
 #ifndef _PlutoPilot_H_
 #define _PlutoPilot_H_
 
+#include<stdint.h>
+
 void plutoInit(void);
 
 void onLoopStart(void);

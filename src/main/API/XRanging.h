@@ -27,7 +27,8 @@ typedef enum laser_sensors {
     LEFT = 0,
     RIGHT,
     FRONT,
-    BACK
+    BACK,
+    EXTERNAL
 } laser_e;
 
 class XRanging_P {

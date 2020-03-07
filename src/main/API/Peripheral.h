@@ -99,7 +99,11 @@ public:
 class I2C_P {
 public:
 
-    uint8_t* read(uint8_t device_add, uint8_t reg, uint32_t length);
+	bool read(uint8_t device_add, uint8_t reg, uint8_t &value);
+
+    int16_t read(uint8_t device_add, uint8_t reg, uint32_t length,uint8_t* buffer);
+
+    bool write(uint8_t device_add, uint8_t reg, uint8_t data);
 
     bool write(uint8_t device_add, uint8_t reg, uint32_t length, uint8_t* data);
 
@@ -115,11 +119,93 @@ public:
 
 };
 
+
+
+
+/* MODE 	CPOL	CPHA			Data Captured 		Output
+ *	0		Low		0 i.e.edge1		Rising edge			Falling	edge
+ *	1		Low		1 i.e.edge2		Falling	edge		Rising edge
+ *	2		High	0				Falling	edge		Rising edge
+ *	3		High	1				Rising edge			Falling	edge
+ */
+typedef enum SPImode_s {
+    MODE0 = 0,     //!<SPI mode 1
+    MODE1,         //!<SPI mode 2
+    MODE2,         //!<SPI mode 3
+    MODE3          //!<SPI mode 4
+} SPImode_t;
+
+typedef enum SPIfirst_bit_s {
+    LSBFIRST = 0,  //!<Specifies that data transfer starts from LSB bit.
+    MSBFIRST       //!<Specifies that data transfer starts from MSB bit.
+} SPIfirst_bit_t;
+
+
+class SPIClass {
+    public:
+
+        /**
+         * @brief Initializes SPI protocol
+         * @param   none
+         * @retval None
+         */
+        void Init();
+
+        /**
+         * @brief Configure basic SPI functions
+         * @param  SPImode_t mode: This parameter can be set to MODE0,MODE1,
+         MODE2,MODE3
+         * @param  uint16_t speed:SPI allowed frequencies in MHz:
+         *         18000, 9000, 4500, 2250,
+         *         1125, 562.5, 281.25, 140.625
+         * @param  SPIfirst_bit_t bit:This parameter can be set to LSBFIRST,MSBFIRST
+         * @retval None
+         */
+        void Settings(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit);
+
+        /**
+         * @brief Enables SPI communication
+         * @param   none
+         * @retval None
+         */
+        void Enable(void);
+
+        /**
+         * @brief Disables SPI communication
+         * @param   none
+         * @retval None
+         */
+        void Disable(void);
+
+        /**
+         * @brief Reads the values from the specified register
+         * @param   const uint8_t register_address:This parameter can be set to
+         *           0x00 to 0xFF
+         * @param   int lenght:number of bytes. min value:1
+         * @retval value from the specified register
+         */
+        uint8_t Read(const uint8_t register_address, int length);
+
+        /**
+         * @brief Reads the values from the specified register
+         * @param   const uint8_t data:value to be written to the register
+         * @param   const uint8_t register_address:This parameter can be set to
+         *          0x00 to 0xFF
+         * @retval  bool : Either TRUE/FALSE
+         */
+        bool Write(const uint8_t register_address,uint8_t data);
+};
+
+
+
+
+
 extern GPIO_P GPIO;
 extern ADC_P ADC;
 extern UART_P UART;
 extern I2C_P I2C;
 extern PWM_P PWM;
+extern SPIClass spi;
 
 #ifdef __cplusplus
 }

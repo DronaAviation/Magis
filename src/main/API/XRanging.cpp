@@ -23,6 +23,7 @@ LaserSensor laserLEFT;
 LaserSensor laserRIGHT;
 LaserSensor laserFRONT;
 LaserSensor laserBACK;
+LaserSensor laserEXTERNAL;
 
 void XRanging_P::init(void)
 {
@@ -87,6 +88,18 @@ int16_t XRanging_P::getRange(laser_e laser)
 
         break;
 
+
+    case EXTERNAL:
+        if (isXLaserInit[laser])
+
+            return laserEXTERNAL.startRanging();
+//            return NewSensorRange;
+
+        else
+            return -1;
+
+        break;
+
     }
 
 }
@@ -125,6 +138,15 @@ void xRangingInit(void)
         GPIO.write(Pin9, STATE_LOW);
 
     }
+
+
+    if (isXLaserInit[EXTERNAL]){
+//        delay(10);
+//        GPIO.init(Pin8, OUTPUT);  //BACK
+//        GPIO.write(Pin8, STATE_LOW);
+
+    }
+
 
     if (isXLaserInit[LEFT]) {
 
@@ -184,6 +206,26 @@ void xRangingInit(void)
         address++;
 
     }
+
+
+    if (isXLaserInit[EXTERNAL]) {
+
+//        delay(30);
+//
+//        GPIO.write(Pin8, STATE_HIGH);
+//        delay(30);
+
+        laserEXTERNAL.init();
+     //   useRangingSensor=true;
+  //      delay(30);
+//
+//        laserEXTERNAL.setAddress(address);
+//
+//        address++;
+
+    }
+
+
 
     delay(30);
 

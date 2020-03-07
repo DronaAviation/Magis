@@ -116,6 +116,20 @@ public:
 
 };
 
+
+
+class BlackBox_P{
+
+public:
+	void setVar(char* varName, int32_t& reference);
+
+
+};
+
+
+
+
+
 void setheadFreeModeHeading(int16_t heading);
 
 void setUserLoopFrequency(float frequency);  //frequency is in milliseconds
@@ -126,7 +140,7 @@ extern FlightMode_P FlightMode;
 extern Command_P Command;
 extern FlightStatus_P FlightStatus;
 extern App_P App;
-
+extern BlackBox_P BlackBox;
 #ifdef __cplusplus
 }
 #endif
