@@ -72,7 +72,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#define BRUSHED_MOTORS_PWM_RATE 100000
+#define BRUSHED_MOTORS_PWM_RATE 18000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
 #ifdef __cplusplus
@@ -148,14 +148,25 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
+static void resetAccelerometerCalibration(flightAccelCalData_T *flightAccelCalData)
+{
+    flightAccelCalData->accel_offset[0] = 0;
+    flightAccelCalData->accel_offset[1] = 0;
+    flightAccelCalData->accel_offset[2] = 0;
+
+    flightAccelCalData->accel_scale[0] = 1;
+    flightAccelCalData->accel_scale[1] = 1;
+    flightAccelCalData->accel_scale[2] = 1;
+}
+
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = 1;
 
-    pidProfile->P8[PIDROLL] = 40; //38; //40;
+    pidProfile->P8[PIDROLL] = 40; //38; //40; //40 10 30
     pidProfile->I8[PIDROLL] = 10; //35; //30;
     pidProfile->D8[PIDROLL] = 30; //23;
-    pidProfile->P8[PIDPITCH] = 40;  //38; //40;
+    pidProfile->P8[PIDPITCH] = 40;  //38; //40; //40 10 30
     pidProfile->I8[PIDPITCH] = 10;  //35; //30;
     pidProfile->D8[PIDPITCH] = 30; //23;
     pidProfile->P8[PIDYAW] = 150; //85;
@@ -165,9 +176,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDALT] = 0;
     pidProfile->D8[PIDALT] = 30; //0;
 
-
-
-    pidProfile->P8[PIDPOS] = 100; // POSHOLD_P * 100;
+    pidProfile->P8[PIDPOS] = 80; // POSHOLD_P * 100;
     pidProfile->I8[PIDPOS] = 0; // POSHOLD_I * 100;
     pidProfile->D8[PIDPOS] = 0;
 
@@ -179,7 +188,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
 
-
     pidProfile->P8[PIDLEVEL] = 40; //90;
     pidProfile->I8[PIDLEVEL] = 10;
     pidProfile->D8[PIDLEVEL] = 100;
@@ -188,9 +196,9 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;  //45    //20
     pidProfile->D8[PIDVEL] = 1;  //1      //0
 
-    pidProfile->P8[PIDUSER] = 0;
-    pidProfile->I8[PIDUSER] = 0;
-    pidProfile->D8[PIDUSER] = 0;
+    pidProfile->P8[PIDUSER] = 80;
+    pidProfile->I8[PIDUSER] = 30;
+    pidProfile->D8[PIDUSER] = 5;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->dterm_cut_hz = 0;
@@ -341,13 +349,12 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
         controlRateConfig->rates[axis] = 0;
     }
 
-
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 0;
-    rcControlsConfig->yaw_deadband =0; //80;
+    rcControlsConfig->yaw_deadband = 0; //80;
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 0; // Drona test
 }
@@ -407,7 +414,7 @@ static void resetConf(void)
 
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
-  //    masterConfig.mixerMode = MIXER_QUADP;
+    //    masterConfig.mixerMode = MIXER_QUADP;
     featureClearAll();
 #if defined(CJMCU) ||  defined(PRIMUSV3R) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3) ||  defined(PRIMUSX)
     //featureSet(FEATURE_RX_PPM);
@@ -431,6 +438,7 @@ static void resetConf(void)
     masterConfig.gyro_lpf = 42;   // supported by all gyro drivers now. In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.accZero);
+    resetAccelerometerCalibration(&masterConfig.accCalData);
 
     resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
 
@@ -459,8 +467,7 @@ static void resetConf(void)
 
     for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode =
-                (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         channelFailsafeConfiguration->step =
                 (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
     }
@@ -492,7 +499,7 @@ static void resetConf(void)
 #else
     masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
-    masterConfig.servo_pwm_rate =50;
+    masterConfig.servo_pwm_rate = 50;
 
 #ifdef GPS
     // gps/nav stuff
@@ -606,7 +613,8 @@ static void resetConf(void)
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
 #else
-    masterConfig.blackbox_device = 0;
+    masterConfig.blackbox_device = 1;
+    featureSet(FEATURE_BLACKBOX);
 #endif
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
@@ -790,6 +798,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
     setAccelerationTrims(&masterConfig.accZero);
+    setAccelerationCalibration(&masterConfig.accCalData);
 
     mixerUseConfigs(
 #ifdef USE_MIXER_SERVOS
@@ -808,9 +817,8 @@ void activateConfig(void)
 
     configureAltitudeHold(&currentProfile->pidProfile, &currentProfile->barometerConfig, &currentProfile->rcControlsConfig, &masterConfig.escAndServoConfig);
 
-
-    configurePosHold(&currentProfile->pidProfile);//PS2
-   configurePosHold2(&currentProfile->pidProfile);//PS2
+    configurePosHold(&currentProfile->pidProfile, &currentProfile->rcControlsConfig); //PS2
+    configurePosHold2(&currentProfile->pidProfile); //PS2
 
 #ifdef BARO
     useBarometerConfig(&currentProfile->barometerConfig);
@@ -831,6 +839,8 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_SERIAL);
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_PPM);
+        //       featureSet(FEATURE_RX_PARALLEL_PWM);
+        //       featureSet(FEATURE_RX_PPM);
     }
 
     if (featureConfigured(FEATURE_RX_SERIAL)) {
