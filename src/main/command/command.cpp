@@ -57,6 +57,8 @@
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
 #include "flight/acrobats.h"
+#include "flight/posEstimate.h"
+#include "flight/posControl.h"
 
 #include "command/command.h"
 
@@ -74,6 +76,9 @@ bool setTakeOffAlt = false;
 bool setTakeOffThrottle = false;
 bool setLandTimer = true;
 bool setTakeOffTimer = true;
+bool isTookOff=false;
+bool isTakeOffHeightSet=false;
+
 
 uint32_t loopTime;
 uint32_t takeOffLoopTime;
@@ -81,40 +86,60 @@ int32_t takeOffThrottle = 950;
 int8_t checkVelocity = -8;
 
 
-uint16_t takeOffHeight=200;
+uint16_t takeOffHeight=120;
 uint16_t landThrottle=1200;
 bool isUserLandCommand=false;
+
+Interval takeoffTimer;
+Interval posSetTimer;
+
 
 
 void takeOff()
 {
 
-   // if (command_status == ABORT) {
-
-
-   // }
-
-
    if (command_status != FINISHED) {
 
-
-     //  command_status = RUNNING;
 
 
         if (ARMING_FLAG(ARMED)) {
 
-            current_command = NONE;
-            command_status = ABORT;
+
+//            if(takeoffTimer.set(1000, false)){
+
+
+
+                current_command = NONE;
+                command_status = ABORT;
+                isTookOff=true;
+
+//            }
+
+
+
+
 
         } else {
             if(IS_RC_MODE_ACTIVE(BOXARM))
             {
-               // Print.monitor("inARM\n");
 
                pidResetErrorAngle();
                pidResetErrorGyro();
                mwArm();
-               DesiredPosition.setRelative(Z, takeOffHeight);
+               takeoffTimer.reset();
+               posSetTimer.reset();
+
+              #ifdef LASER_ALT
+              if(!isTakeOffHeightSet){
+              DesiredPosition.set(Z, takeOffHeight);
+              isTakeOffHeightSet=true;
+              }
+              #else
+              if(!isTakeOffHeightSet){
+              DesiredPosition.setRelative(Z, takeOffHeight);
+              isTakeOffHeightSet=true;
+              }
+              #endif
 
             }
         }
@@ -127,10 +152,7 @@ void takeOff()
 void land()
 {
 
-  //  if (command_status == FINISHED) {
 
-
-      // }
 
     if (command_status != FINISHED) {
 
@@ -144,36 +166,17 @@ void land()
             loopTime = millis() + 30000;
             setLandTimer = false;
 
-//            if(!isUserLandCommand){
-//
-//                if(getEstAltitude()>500)
-//                landThrottle=1050;
-//                else
-//                landThrottle=1200;
-//
-//            }
         }
 
         if ((int32_t)(millis() - loopTime) >= 0) {
-           // DEACTIVATE_RC_MODE(BOXARM);
+
             mwDisarm();
-         //   current_command = NONE;
+
             command_status = FINISHED;
 
             isLanding = false;
             setLandTimer = true;
         } else {
-
-//            if (accADC[2] > 11000) {
-//
-//                //DEACTIVATE_RC_MODE(BOXARM);
-//                mwDisarm();
-//            //    current_command = NONE;
-//                command_status = FINISHED;
-//                isLanding = false;
-//                setLandTimer = true;
-//
-//            }
 
 
             if(ABS(accADC[2]) > 8500)
@@ -196,11 +199,6 @@ void land()
 
             if (ABS((int32_t)(millis()-loopTime)) <= 28000 ) {
 
-             //   DEACTIVATE_RC_MODE(BOXARM);
-             //    current_command = NONE;
-
-
-
 
                 if(getEstVelocity() > -8)
                 {
@@ -216,26 +214,6 @@ void land()
                 }
             }
         }
- }else
- {
-
-//      if(setLandTimer)
-//      {
-//
-//          loopTime=millis()+20000;
-//          setLandTimer=false;
-//      }
-//
-//
-// if((int32_t)(millis()-loopTime)>=0)
-//     {
-//                         current_command=NONE;
-//                         command_status=ABORT;
-//                     //  isLanding=false;
-//                         setLandTimer=true;
-//
-//     }
-
  }
 
 }
@@ -247,16 +225,9 @@ void executeCommand()
 
     case NONE:
 
- //       LED.set(GREEN, OFF);
         break;
 
     case TAKE_OFF:
-
-//        if (command_status == ABORT) {
-//
-//            Print.monitor("#takeoff#\n");
-//
-//        }
 
         takeOff();
 
@@ -264,7 +235,6 @@ void executeCommand()
 
     case LAND:
 
-//        LED.set(GREEN, ON);
         land();
         break;
 

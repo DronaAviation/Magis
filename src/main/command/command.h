@@ -56,6 +56,10 @@ extern uint32_t takeOffLoopTime;
 
 extern int32_t takeOffThrottle;
 
+extern bool isTookOff;
+
+extern bool isTakeOffHeightSet;
+
 
 extern uint16_t takeOffHeight;
 extern uint16_t landThrottle;
