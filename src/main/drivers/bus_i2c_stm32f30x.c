@@ -277,9 +277,10 @@ bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 
 }
 
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+uint8_t i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
     addr_ <<= 1;
+    uint8_t recived = 0;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -325,9 +326,12 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
         }
 
         /* Read data from RXDR */
-        *buf = I2C_ReceiveData(I2Cx);
+       // *buf = I2C_ReceiveData(I2Cx);
+        buf[recived] = I2C_ReceiveData(I2Cx);
+
         /* Point to the next location where the byte read will be saved */
-        buf++;
+       // buf++;
+        recived++;
 
         /* Decrement the read bytes counter */
         len--;
@@ -345,7 +349,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
 
     /* If all operations OK */
-    return true;
+    return recived;
 }
 
 #endif

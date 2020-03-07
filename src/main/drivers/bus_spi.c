@@ -176,6 +176,7 @@ void initSpi2(void)
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_MOSI_PIN_SOURCE, GPIO_AF_5);
 #ifdef SPI2_NSS_PIN_SOURCE
     GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource12, GPIO_AF_5);
 #endif
 
     GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
@@ -193,6 +194,10 @@ void initSpi2(void)
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 
     GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
 #endif
 
 #endif
@@ -227,7 +232,7 @@ void initSpi2(void)
     spi.SPI_CPOL = SPI_CPOL_High;
     spi.SPI_CPHA = SPI_CPHA_2Edge;
     spi.SPI_NSS = SPI_NSS_Soft;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
     spi.SPI_FirstBit = SPI_FirstBit_MSB;
     spi.SPI_CRCPolynomial = 7;
 
@@ -240,6 +245,7 @@ void initSpi2(void)
 
     // Drive NSS high to disable connected SPI device.
     GPIO_SetBits(SPI2_GPIO, SPI2_NSS_PIN);
+    GPIO_SetBits(GPIOB, GPIO_Pin_12);
 
 }
 #endif

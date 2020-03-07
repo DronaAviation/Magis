@@ -64,6 +64,8 @@ typedef struct master_t {
         flightDynamicsTrims_t magZero;
         flightDynamicsTrims_t magScale;
 
+        flightAccelCalData_T accCalData;
+
         batteryConfig_t batteryConfig;
 
         rxConfig_t rxConfig;

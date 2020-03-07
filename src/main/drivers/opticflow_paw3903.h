@@ -1,5 +1,5 @@
 /*
- * This file is part of Cleanflight and Magis.
+ * This file is part of Magis.
  *
  * Cleanflight and Magis are free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,25 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
-typedef enum I2CDevice {
-    I2CDEV_1,
-    I2CDEV_2,
-    I2CDEV_MAX = I2CDEV_2,
-} I2CDevice;
 
-void i2cInit(I2CDevice index);
-bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
-bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data);
-uint8_t i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
-uint16_t i2cGetErrorCounter(void);
+extern uint8_t  surface_quality;   // image quality (below TBD you can't trust the dx,dy values returned)
+extern float flowRate[2];          // optical flow angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
+extern float bodyRate[2];          // body inertial angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
+extern uint32_t last_opticflow_update_ms;
+
+extern float bodyRate1[2];
+
+
+
+void initOpticFlow();
+void updateOpticFlow();
+void updateSpiOpticFlow();
+
+extern uint8_t opticFlowAddress;
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
+

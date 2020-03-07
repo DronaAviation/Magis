@@ -58,6 +58,8 @@ extern uint16_t NewSensorRange;
 extern uint16_t debug_range;
 extern bool startRanging;
 extern bool isTofDataNewflag;
+extern bool useRangingSensor;
+
 
 #ifdef __cplusplus
 }

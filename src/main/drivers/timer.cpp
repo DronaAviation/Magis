@@ -166,6 +166,7 @@ if(initInternalMotors){
     timerHardware[3]=T8;
 
 
+
 } else {
 
 
@@ -415,6 +416,8 @@ ATOMIC_BLOCK(NVIC_PRIO_TIMER)
 // enable or disable IRQ
 TIM_ITConfig(tim, TIM_IT_Update,
 		cfg->overflowCallbackActive ? ENABLE : DISABLE);
+
+
 }
 
 // config edge and overflow callback for channel. Try to avoid overflowCallback, it is a bit expensive
@@ -700,6 +703,8 @@ if (tim_status & (int) TIM_IT_CC4) {
         timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
     } struct dummy
 
+extern "C" {
+
 #if USED_TIMERS & TIM_N(1)
 _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
 # if defined(STM32F10X)
@@ -739,6 +744,8 @@ _TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQHandler, 16); // only timer16 is used, not tim
 #if USED_TIMERS & TIM_N(17)
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
 #endif
+
+}
 
 void timerInit(void)
 {
