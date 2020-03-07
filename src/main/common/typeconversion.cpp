@@ -19,6 +19,7 @@
 #include <math.h>
 #include "build_config.h"
 #include "maths.h"
+#include "typeconversion.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
 

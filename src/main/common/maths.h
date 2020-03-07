@@ -40,6 +40,8 @@ extern "C" {
 
 // acceleration due to gravity in m/s/s
 #define GRAVITY_CSS 4096.0f
+#define GRAVITY_MSS 9.80665f
+
 
 //Single precision conversions
 #define DEG_TO_RAD 0.017453292519943295769236907684886f
@@ -47,6 +49,13 @@ extern "C" {
 
 
 #define FLT_EPSILON 1.19209290E-07F // decimal constant
+
+
+#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+#define bitSet(value, bit) ((value) |= (1UL << (bit)))
+#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
+
 
 typedef struct stdev_s {
         float m_oldM, m_newM, m_oldS, m_newS;
