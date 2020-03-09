@@ -28,12 +28,17 @@ extern float bodyRate[2];          // body inertial angular rate in rad/sec meas
 extern uint32_t last_opticflow_update_ms;
 
 extern float bodyRate1[2];
+extern float bodyRate2[2];
 
 
 
 void initOpticFlow();
 void updateOpticFlow();
 void updateSpiOpticFlow();
+
+void mode_0_init();
+void mode_1_init();
+void mode_2_init();
 
 extern uint8_t opticFlowAddress;
 

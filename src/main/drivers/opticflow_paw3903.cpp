@@ -117,6 +117,7 @@ uint8_t surface_quality;
 float flowRate[2];
 float bodyRate[2];
 float bodyRate1[2];
+float bodyRate2[2];
 
 //Interval updateTimer;
 
@@ -378,7 +379,7 @@ void mode_1_init()
     spi.Write(0x4C, 0x80);
     spi.Write(0x7F, 0x10);
     spi.Write(0x5B, 0x03);
-    spi.Write(0x74, 0x07);
+    spi.Write(0x7F, 0x07);
     spi.Write(0x40, 0x41);
 
     delay(10);
@@ -406,6 +407,122 @@ void mode_1_init()
     spi.Write(0x73, 0x00);
 
 }
+
+
+void mode_2_init()
+{
+
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x55, 0x01);
+    spi.Write(0x50, 0x07);
+    spi.Write(0x7F, 0x0E);
+    spi.Write(0x43, 0x10);
+    spi.Write(0x48, 0x04);
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x51, 0x7B);
+    spi.Write(0x50, 0x00);
+    spi.Write(0x55, 0x00);
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x61, 0xAD);
+    spi.Write(0x7F, 0x03);
+    spi.Write(0x40, 0x00);
+    spi.Write(0x7F, 0x05);
+    spi.Write(0x41, 0xB3);
+    spi.Write(0x43, 0xF1);
+    spi.Write(0x45, 0x14);
+    spi.Write(0x5F, 0x34);
+    spi.Write(0x7B, 0x08);
+    spi.Write(0x5E, 0x34);
+    spi.Write(0x5B, 0x32);
+    spi.Write(0x6D, 0x32);
+    spi.Write(0x45, 0x17);
+    spi.Write(0x70, 0xE5);
+    spi.Write(0x71, 0xE5);
+    spi.Write(0x7F, 0x06);
+    spi.Write(0x44, 0x1B);
+    spi.Write(0x40, 0xBF);
+
+
+    spi.Write(0x4E, 0x3F);
+    spi.Write(0x7F, 0x08);
+    spi.Write(0x66, 0x44);
+    spi.Write(0x65, 0x20);
+    spi.Write(0x6A, 0x3A);
+    spi.Write(0x61, 0x05);
+    spi.Write(0x62, 0x05);
+    spi.Write(0x7F, 0x09);
+    spi.Write(0x4F, 0xAF);
+    spi.Write(0x48, 0x80);
+    spi.Write(0x49, 0x80);
+    spi.Write(0x57, 0x77);
+    spi.Write(0x5F, 0x40);
+    spi.Write(0x60, 0x78);
+    spi.Write(0x61, 0x78);
+    spi.Write(0x62, 0x08);
+    spi.Write(0x63, 0x50);
+    spi.Write(0x7F, 0x0A);
+    spi.Write(0x45, 0x60);
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x4D, 0x11);
+    spi.Write(0x55, 0x80);
+    spi.Write(0x74, 0x21);
+    spi.Write(0x75, 0x1F);
+    spi.Write(0x4A, 0x78);
+    spi.Write(0x4B, 0x78);
+    spi.Write(0x44, 0x08);
+    spi.Write(0x45, 0x50);
+    spi.Write(0x64, 0xCE);
+    spi.Write(0x65, 0x0B);
+    spi.Write(0X72, 0x0A);
+    spi.Write(0x73, 0x00);
+    spi.Write(0x7F, 0x14);
+    spi.Write(0x44, 0x84);
+    spi.Write(0x65, 0x67);
+    spi.Write(0x66, 0x18);
+    spi.Write(0x63, 0x70);
+    spi.Write(0x6F, 0x2C);
+
+
+    spi.Write(0x7F, 0x15);
+    spi.Write(0x48, 0x48);
+    spi.Write(0x75, 0x07);
+    spi.Write(0x41, 0x0D);
+    spi.Write(0x43, 0x14);
+    spi.Write(0x4B, 0x0E);
+    spi.Write(0x45, 0x0F);
+    spi.Write(0x44, 0x42);
+    spi.Write(0x4C, 0x80);
+    spi.Write(0x7F, 0x10);
+    spi.Write(0x5B, 0x02);
+    spi.Write(0x7F, 0x07);
+    spi.Write(0x40, 0x41);
+
+    delay(25);
+
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x32, 0x44);
+    spi.Write(0x7F, 0x07);
+    spi.Write(0x40, 0x40);
+    spi.Write(0x7F, 0x06);
+    spi.Write(0x68, 0x40);
+    spi.Write(0x69, 0x02);
+    spi.Write(0x7F, 0x0D);
+    spi.Write(0x48, 0xC0);
+    spi.Write(0x6F, 0xD5);
+    spi.Write(0x7F, 0x00);
+    spi.Write(0x5B, 0xA0);
+    spi.Write(0x4E, 0xA8);
+    spi.Write(0x5A, 0x50);
+    spi.Write(0x40, 0x80);
+    spi.Write(0x73, 0x0B);
+
+    delay(25);
+
+    spi.Write(0x73, 0x00);
+
+}
+
+
 
 static void initRegisters()
 {
@@ -656,6 +773,8 @@ void updateSpiOpticFlow()
 
         ENABLE_SPI;
 
+      //  GPIO.write(Pin14, STATE_LOW);
+
         delayMicroseconds(50);
 
         spiTransferByte(SPI2, (0x16 & ~0x80u));
@@ -666,15 +785,23 @@ void updateSpiOpticFlow()
 
         delayMicroseconds(50);
 
+  //      GPIO.write(Pin14, STATE_HIGH);
+
 
         DISABLE_SPI;
 
         delayMicroseconds(50);
 
 
+//        flowRate[0] = (int16_t)((uint16_t) buf[3] << 8) | buf[2];
+//        flowRate[1] = (int16_t)((uint16_t) buf[5] << 8) | buf[4];
+//        bodyRate1[0] = (int16_t) buf[6];
+//        bodyRate1[1] = (int16_t)((uint16_t) buf[10] << 8) | buf[11];
+
         flowRate[0] = (int16_t)((uint16_t) buf[3] << 8) | buf[2];
         flowRate[1] = (int16_t)((uint16_t) buf[5] << 8) | buf[4];
         bodyRate1[0] = (int16_t) buf[6];
+        bodyRate2[0] = (int16_t) buf[7];
         bodyRate1[1] = (int16_t)((uint16_t) buf[10] << 8) | buf[11];
 
 

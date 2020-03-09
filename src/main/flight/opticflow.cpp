@@ -125,6 +125,17 @@ float opticflowHeight = 0;
 
 float flow_max = 0.6;
 
+float debugOpticFlowVar=0;
+float debugOpticFlowVar1=0;
+float debugOpticFlowVar2=0;
+float debugOpticFlowVar3=0;
+float debugOpticFlowVar4=0;
+float debugOpticFlow[2];
+float debugOpticFlow1[2];
+float debugOpticFlow2[3];
+
+
+
 #ifdef OPTIC_FLOW
 
 void updateHeightEstimate(uint32_t currentTime)
@@ -327,6 +338,10 @@ void calculateSensorFlow(uint32_t currentTime)
     raw_flow[0] = flowRate[0] + bodyRate[1];
     raw_flow[1] = -(flowRate[1] + bodyRate[0]);
 
+    debugOpticFlow[0]=raw_flow[0];
+    debugOpticFlow[1]=raw_flow[1];
+
+
 //    raw_flow[0]=constrainf(raw_flow[0], -flow_max, flow_max);
 //    raw_flow[1]=constrainf(raw_flow[1], -flow_max, flow_max);
 
@@ -338,6 +353,11 @@ void calculateSensorFlow(uint32_t currentTime)
 
     sensor_flow[0] = filtered_raw_flow[0] * constrainf((NewSensorRange * 0.001), height_min, height_max);
     sensor_flow[1] = filtered_raw_flow[1] * constrainf((NewSensorRange * 0.001), height_min, height_max);
+
+
+    debugOpticFlow1[0]=filtered_raw_flow[0];
+    debugOpticFlow1[1]=filtered_raw_flow[1];
+
 
 
     tempVector = dcmBodyToEarth3D(sensor_flow);              //hbf

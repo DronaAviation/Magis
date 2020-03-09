@@ -196,7 +196,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;  //45    //20
     pidProfile->D8[PIDVEL] = 1;  //1      //0
 
-    pidProfile->P8[PIDUSER] = 80;
+    pidProfile->P8[PIDUSER] = 55;
     pidProfile->I8[PIDUSER] = 30;
     pidProfile->D8[PIDUSER] = 5;
 

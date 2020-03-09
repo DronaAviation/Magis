@@ -172,10 +172,10 @@ extern "C" {
 //#define BINDPLUG_PIN   Pin_12
 
 #define DCM
-//#define OPTIC_FLOW
+#define OPTIC_FLOW
 
-//#define LASER_TOF // only to get laser height
-//#define LASER_ALT // to integrate with althold
+#define LASER_TOF // only to get laser height
+#define LASER_ALT // to integrate with althold
 
 
 
