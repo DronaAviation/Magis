@@ -51,11 +51,6 @@
 #include "command/command.h"
 #include "altitudehold.h"
 
-
-
-
-
-
 uint8_t velocityControl = 1;
 int16_t max_altitude = -1;
 int16_t althold_throttle = 0;
@@ -69,9 +64,7 @@ int32_t VelocityZ;
 int32_t baroAlt_offset_print = 0;
 int32_t PositionZ;
 uint32_t baro_last_update;
-bool AltRstRequired = 0;
-
-
+bool AltRstRequired = 1;
 
 static barometerConfig_t *barometerConfig;
 static pidProfile_t *pidProfile;
@@ -85,7 +78,7 @@ static float buff[15];
 static int16_t head = 0;
 static int16_t rear = -1;
 static int16_t itemCount = 0;
-#ifdef LASER_TOF1
+#ifdef LASER_ALT
 float _time_constant_z=1.5f;
 #else
 float _time_constant_z = 2.0f;
@@ -93,15 +86,12 @@ float _time_constant_z = 2.0f;
 float accZ_tmp;
 static float accZ_old = 0.0f;
 
-
 int16_t first_reads = 0;
 int16_t first_velocity_reads = 0;
 int16_t ctr = 0;
 static int32_t last_hist_position = 0;
 
 void setAltitude(float new_altitude);
-
-
 
 float _k1_z;                      // gain for vertical position correction
 float _k2_z;                      // gain for vertical velocity correction
@@ -116,20 +106,45 @@ float _position_error_z; // current position error in cm - is set by the check_*
 float _position_z; // sum(_position_base, _position_correction) - corrected position estimate in cm - relative to the home location (_base_lat, _base_lon, 0)
 float accel_ef_z;
 
+//temp vr
 
+float _time_constant_z1 = 2.0f;
+
+float _k1_z1;                      // gain for vertical position correction
+float _k2_z1;                      // gain for vertical velocity correction
+float _k3_z1;                // gain for vertical accelerometer offset correction
+
+int32_t VelocityZ1 = 0;
+int32_t EstAlt1 = 0;
+
+uint32_t baro_last_update1;
+
+int16_t first_reads1 = 0;
+static int32_t last_hist_position1 = 0;
+
+float _position_base_z1; // (uncorrected) position estimate in cm - relative to the home location (_base_lat, _base_lon, 0)
+float _position_correction_z1; // sum of corrections to _position_base from delayed 1st order samples in cm
+float _accel_correction_hbf_z1;
+float _velocity_z1; // latest velocity estimate (integrated from accelerometer values) in cm/s
+float _position_error_z1; // current position error in cm - is set by the check_* methods and used by update method to calculate the correction terms
+float _position_z1; // sum(_position_base, _position_correction) - corrected position estimate in cm - relative to the home location (_base_lat, _base_lon, 0)
 
 float ToF_Height = 0.0f;
 float Baro_Height = 0.0f;
 float fused = 0.0f;
 float filtered = 0.0f;
 
-
-int32_t altholdDebug=0;
-int32_t altholdDebug1=0;
-int32_t altholdDebug2=0;
-int32_t altholdDebug3=0;
-
-
+int32_t altholdDebug = 0;
+int32_t altholdDebug1 = 0;
+int32_t altholdDebug2 = 0;
+int32_t altholdDebug3 = 0;
+int32_t altholdDebug4 = 0;
+int32_t altholdDebug5 = 0;
+int32_t altholdDebug6 = 0;
+int32_t altholdDebug7 = 0;
+int32_t altholdDebug8 = 0;
+int32_t altholdDebug9 = 0;
+int32_t velControlDebug[3] = { 0 };
 
 void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *intialBarometerConfig, rcControlsConfig_t *initialRcControlsConfig, escAndServoConfig_t *initialEscAndServoConfig)
 {
@@ -140,7 +155,7 @@ void configureAltitudeHold(pidProfile_t *initialPidProfile, barometerConfig_t *i
     escAndServoConfig = initialEscAndServoConfig;
 }
 
-#if defined(BARO) || defined(SONAR) || defined(LASER_TOF1)
+#if defined(BARO) || defined(SONAR) || defined(LASER_ALT)
 
 int16_t initialThrottleHold_test;
 int16_t debug_e1;
@@ -174,13 +189,14 @@ static void applyMultirotorAltHold(void)
         } else {
             if (isAltHoldChanged) {
                 AltHold = EstAlt;
+//                AltHold = 120;
                 isAltHoldChanged = 0;
                 if (ARMING_FLAG(ARMED)) {
                     //altHoldThrottleAdjustment = throttle_history;
                 }
             }
 
-            rcCommand[THROTTLE] = constrain( initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
             throttle_history = rcCommand[THROTTLE]; //Magis
 
         }
@@ -193,19 +209,15 @@ static void applyMultirotorAltHold(void)
             setVelocity = (rcData[THROTTLE] - 1500) / 4;
             setVelocity = constrain(setVelocity, -100, 120); //to descend smoothly
 
-
-
             /* if (isAltHoldChanged)
              velocityControl = 0;
              else
              velocityControl = 1;*/
 
-
             velocityControl = 1; //Switch on velocity hold
             isAltHoldChanged = 1;
 
         } else {
-
 
             velocityControl = 0; //Switch on altitude hold
             setVelocity = 0;
@@ -215,34 +227,40 @@ static void applyMultirotorAltHold(void)
             }
         }
 
+        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
 
+        altholdDebug1=altHoldThrottleAdjustment;
 
-        rcCommand[THROTTLE] = constrain( initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
-
-   //     altholdDebug1=altHoldThrottleAdjustment;
+        altholdDebug2=initialThrottleHold;
 
 //#ifdef LASER_TOF
 //        if(rcData[THROTTLE]<1150 && isOutofRange())
 //#else
-    //    if (rcData[THROTTLE] < 1150)
+        //    if (rcData[THROTTLE] < 1150)
 //#endif
 //        if (rcData[THROTTLE] < 1150)
 //        {
 //            rcCommand[THROTTLE] = 1350;
 //        }
 
+//        if(!isTakeOffHeightSet){
+//
+//        	  rcCommand[THROTTLE] = 1000;
+//        }
 
+        if (isThrottleStickArmed && rcData[THROTTLE] <= 1500) {
+            // rcData[THROTTLE] = 1000;
+            rcCommand[THROTTLE] = 1000;
+        } else {
+            isThrottleStickArmed = false;
+        }
 
-        if (isThrottleStickArmed &&  rcData[THROTTLE] <=1500) {
-               // rcData[THROTTLE] = 1000;
-              rcCommand[THROTTLE] = 1000;
-            }
-           else {
-               isThrottleStickArmed=false;
-           }
+        althold_throttle = rcCommand[THROTTLE];
 
-
-        althold_throttle =  rcCommand[THROTTLE];
+        altholdDebug = AltHold;
+       // altholdDebug2 = velocityControl;
+        altholdDebug3 = isAltHoldChanged;
+        altholdDebug4 = rcCommand[THROTTLE];
 
     }
 }
@@ -278,7 +296,7 @@ void updateAltHoldState(void)
         ENABLE_FLIGHT_MODE(BARO_MODE);
         AltHold = EstAlt;       //+100;
         //initialThrottleHold = rcData[THROTTLE];
-        initialThrottleHold = 1600;
+        initialThrottleHold = 1500;
         errorVelocityI = 0;
         altHoldThrottleAdjustment = 0;
     }
@@ -337,14 +355,14 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t velocity_z, float accZ_tmp, f
     }
 
     if (!velocityControl) {
-       // error = constrain(AltHold - EstAlt, -100, 100);
+        // error = constrain(AltHold - EstAlt, -100, 100);
         error = constrain(AltHold - EstAlt, -500, 500);
         error = applyDeadband(error, 5); // remove small P parameter to reduce noise near zero position
 
         calculatedError = error;
+        altholdDebug8 = error;
 
-
-       // setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -80, +150); // limit velocity to +/- 3 m/s
+        // setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -80, +150); // limit velocity to +/- 3 m/s
         setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
 
     } else {
@@ -352,32 +370,39 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t velocity_z, float accZ_tmp, f
         setVel = setVelocity;
     }
 
+    //  altholdDebug=setVel;
 
-
-  //  altholdDebug=setVel;
+  //  altholdDebug1 = setVel;
 
     // Velocity PID-Controller
     // P
     error = setVel - velocity_z;
-   // result = constrain((pidProfile->P8[PIDVEL] * error / 32), -100, +100);
+
+    altholdDebug9 = error;
+
+    // result = constrain((pidProfile->P8[PIDVEL] * error / 32), -100, +100);
     result = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
+    velControlDebug[0] = result;
+
     // I
-    if (ARMING_FLAG(ARMED))
-    {
+    if (ARMING_FLAG(ARMED)) {
         errorVelocityI += (pidProfile->I8[PIDVEL] * error);
     } else {
         errorVelocityI = 0;
     }
 
-  //  errorVelocityI = constrain(errorVelocityI, -(8192 * 150), (8192 * 150));
+    //  errorVelocityI = constrain(errorVelocityI, -(8192 * 150), (8192 * 150));
     errorVelocityI = constrain(errorVelocityI, -(8192 * 300), (8192 * 300));
 
     result += errorVelocityI / 8192;     // I in range +/-200
 
+    velControlDebug[1] = errorVelocityI / 8192;
+
     // D
-    result -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512,
-            -150, 150);
+    result -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
+
+    velControlDebug[2] = constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
 
     return result;
 }
@@ -438,8 +463,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
         BaroAlt -= baroAlt_offset;
         if (sonarAlt > 0 && sonarAlt <= 300) {
             sonarTransition = (300 - sonarAlt) / 100.0f;
-            BaroAlt = sonarAlt * sonarTransition
-                    + BaroAlt * (1.0f - sonarTransition);
+            BaroAlt = sonarAlt * sonarTransition + BaroAlt * (1.0f - sonarTransition);
         }
     }
 
@@ -456,8 +480,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;
     accalttemp = lrintf(100 * accAlt); //Checking how acc measures height                                                                // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * barometerConfig->baro_cf_alt
-            + (float) BaroAlt * (1.0f - barometerConfig->baro_cf_alt); // complementary filter for altitude estimation (baro & acc)
+    accAlt = accAlt * barometerConfig->baro_cf_alt + (float) BaroAlt * (1.0f - barometerConfig->baro_cf_alt); // complementary filter for altitude estimation (baro & acc)
     vel += vel_acc;
 
 #ifdef DEBUG_ALT_HOLD
@@ -496,14 +519,12 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     vario = applyDeadband(vel_tmp, 5);
     if (1) //!(ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband))
     {
-        altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp,
-                accZ_tmp, accZ_old);
+        altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     }        //dronadrona_1200am
     Temp = pidProfile->I8[PIDALT];
     barometerConfig->baro_cf_alt = 1 - Temp / 1000;
     accZ_old = accZ_tmp;
 }
-
 
 /* queue implementation */
 
@@ -602,7 +623,7 @@ void apmCalculateEstimatedAltitude(uint32_t currentTime)
     if (AltRstRequired && !ARMING_FLAG(ARMED)) //Velocity out of bounds reset variables
         AltRst();
 
-#if defined(BARO) && !(defined(LASER_TOF1))
+#if defined(BARO) && !(defined(LASER_ALT))
     checkBaro(); // check if new baro readings have arrived and use them to correct vertical accelerometer offsets.
 #else
     checkReading();
@@ -618,7 +639,7 @@ void apmCalculateEstimatedAltitude(uint32_t currentTime)
     accel_ef_z = accel_ef_z * accVelScale;
     accel_ef_z = constrainf(accel_ef_z, -800, 800);
 
-    altholdDebug1=accel_ef_z;
+    altholdDebug6 = accZ_tmp;
 
     imuResetAccelerationSum(1); //Check position of this
 
@@ -650,13 +671,37 @@ void apmCalculateEstimatedAltitude(uint32_t currentTime)
 
     EstAlt = lrintf(_position_z);
 
-
+//    _accel_correction_hbf_z1 += _position_error_z1 * _k3_z1 * dt;
+//    _velocity_z1 += _position_error_z1 * _k2_z1 * dt;
+//
+//    _position_correction_z1 += _position_error_z1 * _k1_z1 * dt;
+//
+//    // calculate velocity increase adding new acceleration from accelerometers
+//    float velocity_increase_z1;
+//    velocity_increase_z1 = (accel_ef_z + _accel_correction_hbf_z1) * dt;
+//
+//    // calculate new estimate of position
+//    _position_base_z1 += (_velocity_z1 + velocity_increase_z1 * 0.5) * dt;
+//
+//    // update the corrected position estimate
+//    _position_z1 = _position_base_z1+ _position_correction_z1;
+//
+//
+//    _velocity_z1 += velocity_increase_z1;
+//
+//    VelocityZ1 = lrintf(_velocity_z1);
+//
+//    EstAlt1 = lrintf(_position_z1);
 
     // store 3rd order estimate (i.e. estimated vertical position) for future use
 
     addHistPositionBaseEstZ(_position_base_z);
 
-    altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(VelocityZ,accZ_tmp, accZ_old);
+    //   addHistPositionBaseEstZ(_position_base_z1);
+
+    altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(VelocityZ, accZ_tmp, accZ_old);
+
+    altholdDebug7 = altHoldThrottleAdjustment;
 
     accZ_old = accZ_tmp;
     // set vario
@@ -666,7 +711,7 @@ void apmCalculateEstimatedAltitude(uint32_t currentTime)
 
 }
 
-#ifdef LASER_TOF1
+#ifdef LASER_ALT
 void checkReading()
 {
     uint32_t baro_update_time;
@@ -698,7 +743,8 @@ void checkReading()
     }
 
     //Fusion
-    if ((ToF_Height > 0 && ToF_Height < 120) && (!isOutofRange())) {
+    if ((ToF_Height > 0 && ToF_Height < 200) && (!isOutofRange())) {
+        //   	baro_offset = ToF_Height-filtered;
         baro_offset = filtered-ToF_Height;
         //baroAlt_offset_print = baro_offset;
         correctedWithTof(ToF_Height);
@@ -726,32 +772,36 @@ void checkBaro()
 
     baro_update_time = getBaroLastUpdate();
 
-
     if (baro_update_time != baro_last_update) {
-
 
         const float dt = (float) (baro_update_time - baro_last_update) * 0.001f; // in seconds
         // call correction method
         correctedWithBaro(apmBaroCalculateAltitude(), dt);
 
-
         baro_last_update = baro_update_time;
     }
+
+//    if (baro_update_time != baro_last_update1) {
+//
+//
+//        const float dt = (float) (baro_update_time - baro_last_update1) * 0.001f; // in seconds
+//        // call correction method
+//        correctedWithBaro(apmBaroCalculateAltitude(), dt);
+//
+//
+//        baro_last_update1 = baro_update_time;
+//    }
 
 }
 
 void correctedWithBaro(float baroAlt, float dt)
 {
 
-
-    altholdDebug=baroAlt;
-
+    altholdDebug5 = baroAlt;
 
     if (dt > 0.5f) {
         return;
     }
-
-
 
     float hist_position_base_z = 0;
 
@@ -761,6 +811,25 @@ void correctedWithBaro(float baroAlt, float dt)
 
     }
 
+//    if (first_reads1 <= 10) {
+//
+//        _position_base_z1 = baroAlt;
+//        _position_correction_z1 = 0;
+//        _position_z1 = baroAlt; // _position = _position_base + _position_correction
+//        last_hist_position1 = 0; // reset z history to avoid fake z velocity at next baro calibration (next rearm)
+//        imuResetAccelerationSum(1);
+//
+//        first_reads1++;
+//
+//    }
+
+//    if (isPositionBaseQueueIsFull()) {
+//        hist_position_base_z = getFrontHistPositionBaseEstZ();
+//
+//    } else {
+//        hist_position_base_z = _position_base_z1;
+//    }
+
     if (isPositionBaseQueueIsFull()) {
         hist_position_base_z = getFrontHistPositionBaseEstZ();
 
@@ -769,39 +838,38 @@ void correctedWithBaro(float baroAlt, float dt)
     }
 
     // calculate error in position from baro with our estimate
-    _position_error_z = baroAlt
-            - (hist_position_base_z + _position_correction_z);
+    _position_error_z = baroAlt - (hist_position_base_z + _position_correction_z);
 
+//    _position_error_z1 = baroAlt
+//            - (hist_position_base_z + _position_correction_z1);
 
-     #ifdef LASER_TOF1
-     if(_time_constant_z != 5.0f)
-     {
-     _time_constant_z = 5;
-     updateGains();
-     }
-     #endif
+//    updateGains1();
 
+//     #ifdef LASER_TOF1
+//     if(_time_constant_z != 5.0f)
+//     {
+//     _time_constant_z = 5;
+//     updateGains();
+//     }
+//     #endif
 
-      if(ABS(inclination_generalised.values.rollDeciDegrees) > 30 || ABS(inclination_generalised.values.pitchDeciDegrees) > 30)
-      {
+    if (ABS(inclination_generalised.values.rollDeciDegrees) > 30 || ABS(inclination_generalised.values.pitchDeciDegrees) > 30) {
 
-              _time_constant_z = 5;
-              updateGains();
+        _time_constant_z = 5;
+        updateGains();
 
+    }
 
-      }
+    else {
 
-      else
-      {
+        _time_constant_z = 2;
+        updateGains();
 
-              _time_constant_z = 2;
-              updateGains();
-
-      }
+    }
 
 }
 
-#ifdef LASER_TOF1
+#ifdef LASER_ALT
 void correctedWithTof(float ToF_Height) {
     if( first_reads == 0 )
     {
@@ -828,6 +896,18 @@ void updateGains()
 
 }
 
+void updateGains1()
+{
+    if (_time_constant_z1 == 0.0f) {
+        _k1_z1 = _k2_z1 = _k3_z1 = 0.0f;
+    } else {
+        _k1_z1 = 3.0f / _time_constant_z1;
+        _k2_z1 = 3.0f / (_time_constant_z1 * _time_constant_z1);
+        _k3_z1 = 1.0f / (_time_constant_z1 * _time_constant_z1 * _time_constant_z1);
+    }
+
+}
+
 void setAltitude(float new_altitude)
 
 {
@@ -838,7 +918,6 @@ void setAltitude(float new_altitude)
     imuResetAccelerationSum(1);
 }
 
-
 int32_t altitudeHoldGetEstimatedAltitude(void)
 {
 
@@ -846,13 +925,13 @@ int32_t altitudeHoldGetEstimatedAltitude(void)
 
 }
 
-
 int32_t getSetVelocity(void)
 {
     return setVelocity;
 }
 
-int32_t getSetAltitude(void){
+int32_t getSetAltitude(void)
+{
 
     return AltHold;
 }
@@ -903,6 +982,19 @@ int32_t getEstVelocity()
 
 }
 
+int32_t getEstAltitude1()
+{
+
+    return EstAlt1;
+
+}
+
+int32_t getEstVelocity1()
+{
+
+    return VelocityZ1;
+
+}
 
 bool limitAltitude()
 {

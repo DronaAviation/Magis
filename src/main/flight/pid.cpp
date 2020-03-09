@@ -26,8 +26,6 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-
-
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
@@ -47,7 +45,6 @@
 #include "flight/navigation.h"
 #include "flight/gtune.h"
 #include "flight/filter.h"
-
 
 #include "config/runtime_config.h"
 
@@ -69,28 +66,12 @@ static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
 static float errorAngleIf[2] = { 0.0f, 0.0f };
 
-
-int32_t desiredAngle[3]={0,0,0};
-int32_t desiredRate[3]={0,0,0};
-float derivatives[3]={0,0,0};
-float dt=0;
-uint32_t lastTimedDT=0;
-int16_t lastGyroReadings[3]={0,0,0};
-
-
-/* debug variables */
-
-float debugDterm=0;
-//float desiredRate=0;
-float currentRate=0;
-
-
-int32_t debugPID=-1;
-int32_t debugPID1=-1;
-
-
-
-
+int32_t desiredAngle[3] = { 0, 0, 0 };
+int32_t desiredRate[3] = { 0, 0, 0 };
+float derivatives[3] = { 0, 0, 0 };
+float dt = 0;
+uint32_t lastTimedDT = 0;
+int16_t lastGyroReadings[3] = { 0, 0, 0 };
 
 
 static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -325,14 +306,13 @@ static void pidMultiWii(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
         DTerm = (deltaSum * dynD8[axis]) / 32;
 
-        if(!reverseReferenceFrame)
-        	 axisPID[axis] = PTerm + ITerm - DTerm;
-        else
-        {
-        	if(axis== FD_ROLL  || axis == FD_PITCH )
-        	axisPID[axis] = PTerm + ITerm + DTerm;
-        	else
+        if (!reverseReferenceFrame)
             axisPID[axis] = PTerm + ITerm - DTerm;
+        else {
+            if (axis == FD_ROLL || axis == FD_PITCH)
+                axisPID[axis] = PTerm + ITerm + DTerm;
+            else
+                axisPID[axis] = PTerm + ITerm - DTerm;
 
         }
 
@@ -403,7 +383,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
             PTerm = PTermACC + ((PTerm - PTermACC) * prop >> 9);
         }
 
-        PTerm -= ((int32_t) (gyroADC[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
+        PTerm -= ((int32_t)(gyroADC[axis] / 4) * dynP8[axis]) >> 6;   // 32 bits is needed for calculation
 
         // Pterm low pass
         if (pidProfile->pterm_cut_hz) {
@@ -457,7 +437,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
-    ITerm = constrain((int16_t) (errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+    ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] = PTerm + ITerm;
 
@@ -583,7 +563,7 @@ static void pidMultiWiiHybrid(pidProfile_t *pidProfile, controlRateConfig_t *con
         PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
     }
 
-    ITerm = constrain((int16_t) (errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
+    ITerm = constrain((int16_t)(errorGyroI[FD_YAW] >> 13), -GYRO_I_MAX, +GYRO_I_MAX);
 
     axisPID[FD_YAW] = PTerm + ITerm;
 
@@ -624,7 +604,7 @@ static void pidHarakiri(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     }
 
     for (axis = 0; axis < 2; axis++) {
-        int32_t tmp = (int32_t) ((float) gyroADC[axis] * 0.3125f); // Multiwii masks out the last 2 bits, this has the same idea
+        int32_t tmp = (int32_t)((float) gyroADC[axis] * 0.3125f); // Multiwii masks out the last 2 bits, this has the same idea
         gyroADCQuant = (float) tmp * 3.2f;                 // but delivers more accuracy and also reduces jittery flight
         rcCommandAxis = (float) rcCommand[axis];                          // Calculate common values for pid controllers
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
@@ -702,7 +682,7 @@ static void pidHarakiri(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             errorGyroI[FD_YAW] = 0;
         } else {
             error = ((int32_t) rcCommand[FD_YAW] * 80 / (int32_t) pidProfile->P8[FD_YAW]) - tmp;
-            errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t) (error * Mwii3msTimescale), -16000, +16000); // WindUp
+            errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t)(error * Mwii3msTimescale), -16000, +16000); // WindUp
             ITerm = (errorGyroI[FD_YAW] / 125 * pidProfile->I8[FD_YAW]) >> 6;
         }
     } else {
@@ -712,7 +692,7 @@ static void pidHarakiri(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         if (ABS(tmp) > 50) {
             errorGyroI[FD_YAW] = 0;
         } else {
-            errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t) (error * (float) pidProfile->I8[FD_YAW] * Mwii3msTimescale), -268435454, +268435454);
+            errorGyroI[FD_YAW] = constrain(errorGyroI[FD_YAW] + (int32_t)(error * (float) pidProfile->I8[FD_YAW] * Mwii3msTimescale), -268435454, +268435454);
         }
 
         ITerm = constrain(errorGyroI[FD_YAW] >> 13, -GYRO_I_MAX, +GYRO_I_MAX);
@@ -744,18 +724,13 @@ static void pidHarakiri(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 #endif
 }
 
-
-
 float get_filt_alpha(uint16_t dt)
 {
 
     // calculate alpha
-    float rc = 1/(M_2PI*20);
+    float rc = 1 / (M_2PI * 20);
     return dt / (dt + rc);
 }
-
-
-
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
@@ -772,12 +747,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int8_t horizonLevelStrength = 100;
     int32_t stickPosAil, stickPosEle, mostDeflectedPos;
 
-
     float derivative;
-
-
-
-
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
 
@@ -799,12 +769,9 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
     }
 
+    dt = (millis() - lastTimedDT) * 0.001;
 
-
-    dt=(millis()-lastTimedDT)*0.001;
-
-
-    lastTimedDT=millis();
+    lastTimedDT = millis();
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
@@ -812,28 +779,28 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
         // -----Get the desired angle rate depending on flight mode
         if (axis == FD_YAW) {
-        	// YAW is always gyro-controlled (MAG correction is applied to rcCommand)
-            desiredRate[axis] = (((int32_t) (rate + 27) * rcCommand[YAW]) >> 5);
+            // YAW is always gyro-controlled (MAG correction is applied to rcCommand)
+            desiredRate[axis] = (((int32_t)(rate + 20) * rcCommand[YAW]) >> 5);
         } else {
             // calculate error and limit the angle to max configured inclination
 #ifdef GPS
-            desiredAngle[axis]= 2 * rcCommand[axis] + GPS_angle[axis];
+            desiredAngle[axis] = 2 * rcCommand[axis] + GPS_angle[axis];
             errorAngle = constrain(desiredAngle[axis], -((int) max_angle_inclination), +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
 #else
-            // 0. 4 * rcCommand[axis] for linear mapping ;  2 for non linear
-            desiredAngle[axis]= 2 * rcCommand[axis];
-            errorAngle = constrain( desiredAngle[axis], -((int) max_angle_inclination),
-                            +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis]; // 16 bits is ok here
+                    // 0.4 * rcCommand[axis] for linear mapping ;  2 for non linear
+                    desiredAngle[axis]= 2 * rcCommand[axis];
+                    errorAngle = constrain( desiredAngle[axis], -((int) max_angle_inclination),
+                            +max_angle_inclination) - inclination_generalised.raw[axis] + angleTrim->raw[axis];// 16 bits is ok here
 #endif
 
             if (!FLIGHT_MODE(ANGLE_MODE)) { //control is GYRO based (ACRO and HORIZON - direct sticks control is applied to rate PID
-                desiredRate[axis] = ((int32_t) (rate + 27) * rcCommand[axis]) >> 4;
+                desiredRate[axis] = ((int32_t)(rate + 20) * rcCommand[axis]) >> 4;
                 if (FLIGHT_MODE(HORIZON_MODE)) {
                     // mix up angle error to desired AngleRateTmp to add a little auto-level feel. horizonLevelStrength is scaled to the stick input
-                    desiredRate[axis]  += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
+                    desiredRate[axis] += (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4;
                 }
             } else { // it's the ANGLE mode - control is angle based, so control loop is needed
-                desiredRate[axis]  = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
+                desiredRate[axis] = (errorAngle * pidProfile->P8[PIDLEVEL]) >> 4;
             }
         }
 
@@ -846,22 +813,15 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 //        RateError = -(AngleRateTmp - (gyroADC[axis] / 4));
 //
 //        else
-        RateError = desiredRate[axis]  - (gyroADC[axis] / 4);
-
-
-
-
+        RateError = desiredRate[axis] - (gyroADC[axis] / 4);
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
-
 
         // Pterm low pass
         if (pidProfile->pterm_cut_hz) {
             PTerm = filterApplyPt1(PTerm, &PTermState[axis], pidProfile->pterm_cut_hz);
         }
-
-
 
         // -----calculate I component
         // there should be no division before accumulating the error to integrator, because the precision would be reduced.
@@ -875,68 +835,48 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
         ITerm = errorGyroI[axis] >> 13;
 
-/*
+        /*
 
          //CleanFlight DTerm calculation
 
+         //-----calculate D-term
+         delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+         lastError[axis] = RateError;
+
+         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+         // would be scaled by different dt each time. Division by dT fixes that.
+         delta = (delta * ((uint16_t) 0xFFFF / (cycleTime >> 4))) >> 6;
+         // add moving average here to reduce noise
+         deltaSum = delta1[axis] + delta2[axis] + delta;
+         delta2[axis] = delta1[axis];
+         delta1[axis] = delta;
+
+         // Dterm delta low pass
+         if (pidProfile->dterm_cut_hz) {
+         deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz);
+         }
+
+         DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
+
+
+         if(axis==FD_PITCH)
+         debugDterm=deltaSum;
+
+
+         */
+
+        /* DTerm calculation adopted from Ardupilot */
+
         //-----calculate D-term
-        delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-        lastError[axis] = RateError;
-
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / (cycleTime >> 4))) >> 6;
-        // add moving average here to reduce noise
-        deltaSum = delta1[axis] + delta2[axis] + delta;
-        delta2[axis] = delta1[axis];
-        delta1[axis] = delta;
-
-        // Dterm delta low pass
-        if (pidProfile->dterm_cut_hz) {
-            deltaSum = filterApplyPt1(deltaSum, &DTermState[axis], pidProfile->dterm_cut_hz);
-        }
-
-        DTerm = (deltaSum * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
-
-
-        if(axis==FD_PITCH)
-        debugDterm=deltaSum;
-
-
-*/
-
- /* DTerm calculation adopted from Ardupilot */
-
-       //-----calculate D-term
-
-
-
-
-        if(dt>0.0f){
-             derivative = (gyroADC[axis] - lastGyroReadings[axis]);
-             derivatives[axis]= derivatives[axis] + (6*(derivative- derivatives[axis])/10);
+        if (dt > 0.0f) {
+            derivative = (gyroADC[axis] - lastGyroReadings[axis]);
+            derivatives[axis] = derivatives[axis] + (6 * (derivative - derivatives[axis]) / 10);
 
         }
 
-        lastGyroReadings[axis]=gyroADC[axis];
+        lastGyroReadings[axis] = gyroADC[axis];
 
-
-        DTerm = ((int)( derivatives[axis] * pidProfile->D8[axis] * PIDweight[axis] / 100)) >> 6;
-
-
-//        if(axis==FD_PITCH){
-//               debugDterm=  derivatives[axis];
-//              // desiredRate=desiredRate[axis];
-//               currentRate= (gyroADC[axis] / 4);
-//        }
-
-        if (axis == FD_YAW) {
-
-                 debugPID=PTerm;
-                 debugPID1=DTerm;
-
-             }
-
+        DTerm = ((int) (derivatives[axis] * pidProfile->D8[axis] * PIDweight[axis] / 100)) >> 6;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm - DTerm;
@@ -958,24 +898,24 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 void pidSetController(pidControllerType_e type)
 {
     switch (type) {
-        case PID_CONTROLLER_MULTI_WII:
-        default:
-            pid_controller = pidMultiWii;
-            break;
-        case PID_CONTROLLER_REWRITE:
-            pid_controller = pidRewrite;
-            break;
-        case PID_CONTROLLER_LUX_FLOAT:
-            pid_controller = pidLuxFloat;
-            break;
-        case PID_CONTROLLER_MULTI_WII_23:
-            pid_controller = pidMultiWii23;
-            break;
-        case PID_CONTROLLER_MULTI_WII_HYBRID:
-            pid_controller = pidMultiWiiHybrid;
-            break;
-        case PID_CONTROLLER_HARAKIRI:
-            pid_controller = pidHarakiri;
+    case PID_CONTROLLER_MULTI_WII:
+    default:
+        pid_controller = pidMultiWii;
+        break;
+    case PID_CONTROLLER_REWRITE:
+        pid_controller = pidRewrite;
+        break;
+    case PID_CONTROLLER_LUX_FLOAT:
+        pid_controller = pidLuxFloat;
+        break;
+    case PID_CONTROLLER_MULTI_WII_23:
+        pid_controller = pidMultiWii23;
+        break;
+    case PID_CONTROLLER_MULTI_WII_HYBRID:
+        pid_controller = pidMultiWiiHybrid;
+        break;
+    case PID_CONTROLLER_HARAKIRI:
+        pid_controller = pidHarakiri;
     }
 }
 

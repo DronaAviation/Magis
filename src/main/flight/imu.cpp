@@ -138,6 +138,7 @@ float gyro_drift_limit= radians(0.5/60);    // 0.5 degrees/second/minute
 float temp_mul_transpose[3];
 float temp_mul_xy[2];
 float temp_mul_xyz[3];
+float temp_mul[2];
 
 
 #endif
@@ -549,8 +550,7 @@ float * dcmBodyToEarth3D(float* vector)
 
     float roll= anglerad[AI_ROLL];
     float pitch= anglerad[AI_PITCH];
-    float yaw=0;
-
+    float yaw= 0;
 
 
     float cp = cosf(pitch);
@@ -580,49 +580,22 @@ float * dcmBodyToEarth3D(float* vector)
     temp_mul_xyz[2]= tempRotation[2][0]*vector[0] + tempRotation[2][1]*vector[1] + tempRotation[2][2]*vector[2];
 
 
-    for(int i=0;i<3;i++){
-
-                       for(int j=0;j<3;j++){
-
-                      tempMat[i][j]=tempRotation[i][j];
-                  }
-
-    }
-
-//     roll= radians(0);
-//     pitch= radians(-30);
-//     yaw=0;
-//
-//
-//
-//
-//       cp = cosf(pitch);
-//       sp = sinf(pitch);
-//       sr = sinf(roll);
-//       cr = cosf(roll);
-//       sy = sinf(yaw);
-//       cy = cosf(yaw);
-//
-//       tempRotation[0][0] = cp * cy;
-//       tempRotation[0][1] = (sr * sp * cy) - (cr * sy);
-//       tempRotation[0][2] = (cr * sp * cy) + (sr * sy);
-//       tempRotation[1][0] = cp * sy;
-//       tempRotation[1][1] = (sr * sp * sy) + (cr * cy);
-//       tempRotation[1][2] = (cr * sp * sy) - (sr * cy);
-//       tempRotation[2][0] = -sp;
-//       tempRotation[2][1] = sr * cp;
-//       tempRotation[2][2] = cr * cp;
-//
-//       for(int i=0;i<3;i++){
-//
-//                            for(int j=0;j<3;j++){
-//
-//                           tempMat1[i][j]=tempRotation[i][j];
-//                       }
-//       }
-
-
     return temp_mul_xyz;
+}
+
+
+float * earthToBody2D(float* vector){
+
+
+
+    float sy = sinf(anglerad[AI_YAW]);
+    float cy = cosf(anglerad[AI_YAW]);
+
+    temp_mul[0] = vector[0]*cy+vector[1]*sy;
+
+    temp_mul[1] = -vector[0]*sy+vector[1]*cy;
+
+    return temp_mul;
 }
 
 

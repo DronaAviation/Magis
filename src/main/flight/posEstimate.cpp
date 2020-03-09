@@ -99,10 +99,10 @@ float k1;
 float k2;
 float k3;
 
-int16_t PositionX = 0;
-int16_t PositionY = 0;
-int16_t PrevPositionX = 0;
-int16_t PrevPositionY = 0;
+float PositionX = 0;
+float PositionY = 0;
+float PrevPositionX = 0;
+float PrevPositionY = 0;
 int16_t VelocityX = 0;
 int16_t VelocityY = 0;
 int16_t inputVx = 0;
