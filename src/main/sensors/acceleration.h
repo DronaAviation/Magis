@@ -42,6 +42,9 @@ extern acc_t acc;
 extern uint16_t acc_1G;
 
 extern int16_t accADC[XYZ_AXIS_COUNT];
+extern float accel_offset[XYZ_AXIS_COUNT];
+extern float accel_scale[XYZ_AXIS_COUNT];
+extern float debug_beta[6];
 
 typedef struct rollAndPitchTrims_s {
         int16_t roll;
@@ -58,6 +61,9 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);
+void setAccelerationCalibration(flightAccelCalData_T *accelerationCalDataToUse);
+flightAccelCalData_T* getAccelerationCalibration();
+void calibrate_accel(float trim_roll, float trim_pitch);
 
 #ifdef __cplusplus
 }
