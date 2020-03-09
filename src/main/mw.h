@@ -32,6 +32,7 @@ extern uint32_t mode_checker;
 extern bool isCalibrated;
 extern bool tookOff;
 
+extern uint32_t arm_time;
 
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta);

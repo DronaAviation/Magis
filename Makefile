@@ -17,11 +17,11 @@
 # The target to build, see VALID_TARGETS below
 TARGET		?= PRIMUSX
 
-BUILD_TYPE  ?=LIB
+BUILD_TYPE  ?= BIN
 
-LIB_MAJOR_VERSION?=0
+LIB_MAJOR_VERSION?= 0
 
-LIB_MINOR_VERSION?=3
+LIB_MINOR_VERSION?= 3
 
 
 
@@ -49,10 +49,10 @@ VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 PRIMUSX CC3D CHEBUZZF3 CJMCU PRIMUSV3R CO
 ifeq ($(FLASH_SIZE),)
 ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
 FLASH_SIZE = 64
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1 PRIMUSX PRIMUSV3R  CC3D NAZE OLIMEXINO RMDO))
-FLASH_SIZE = 256
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1  PRIMUSV3R  CC3D NAZE OLIMEXINO RMDO))
 FLASH_SIZE = 128
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+FLASH_SIZE = 256
 else
 $(error FLASH_SIZE not configured for target)
 endif
@@ -284,6 +284,8 @@ COMMON_SRC = build_config.cpp \
 		   sensors/compass.cpp \
 		   sensors/gyro.cpp \
 		   sensors/initialisation.cpp \
+		   blackbox/blackbox.cpp \
+		   blackbox/blackbox_io.cpp \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
 
@@ -429,16 +431,16 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 
 
 DRONA_SRC = flight/acrobats.cpp \
-            drivers/opticflow_cheerson_cxof.cpp \
+            drivers/opticflow_paw3903.cpp \
             drivers/ranging_vl53l0x.cpp \
             flight/posControl.cpp\
             flight/posEstimate.cpp\
             flight/opticflow.cpp\
             command/command.cpp\
             command/localisationCommand.cpp\
-			API/Specifiers.cpp \
-			API/Peripheral.cpp \
-			API/XRanging.cpp\
+            API/Specifiers.cpp \
+		    API/Peripheral.cpp \
+		    API/XRanging.cpp \
 			API/Sensor.cpp \
 			API/Control.cpp \
 			API/Estimate.cpp \
@@ -560,7 +562,7 @@ ALIENWIIF3_SRC = \
 		   drivers/timer_stm32f30x.c \
 		   drivers/barometer_ms5611.cpp \
 		   sensors/barometer.cpp \
-		    $(COMMON_SRC) \
+		   $(COMMON_SRC) \
            $(DRONA_SRC)
 
 
@@ -728,10 +730,9 @@ MOTOLAB_SRC = \
 
 ifeq ($(BUILD_TYPE),BIN)
 $(TARGET)_SRC:=$($(TARGET)_SRC)\
-			API/PlutoPilot.cpp\
+			API/PlutoPilot.cpp
+endif               
 
-               
-endif
 
 
 # Search path and source files for the ST stdperiph library
@@ -857,17 +858,9 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 
 # Compile
 
-#libs/libpluto_0.3.a: $(TARGET_OBJS)
-#	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin-0.dll $@ $^
-
 
 libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a: $(TARGET_OBJS)
 	$(AR) rcs $@ $^
-
-
-#for mac and linux	
-#libpluto_0.1.a: $(TARGET_OBJS)
-#	$(AR) rcs --plugin=$(TOOLCHAINBASEDIR)/lib/gcc/arm-none-eabi/6.3.1/liblto_plugin.so $@ $^	
 
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
@@ -897,10 +890,10 @@ libcreate: libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a
 
 ## all         : default task; compile C code, build firmware
 
-ifeq ($(BUILD_TYPE),LIB)
-all: libcreate
-else ifeq ($(BUILD_TYPE),BIN)
+ifeq ($(BUILD_TYPE),BIN)
 all: binary
+else 
+all: libcreate
 endif
 
 ## clean       : clean up all temporary / machine-generated files

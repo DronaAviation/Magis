@@ -47,6 +47,16 @@ extern "C" {
 
 #define USABLE_TIMER_CHANNEL_COUNT 4
 
+
+#define M25P16_CS_GPIO        GPIOB
+#define M25P16_CS_PIN         GPIO_Pin_12
+#define M25P16_SPI_INSTANCE   SPI2
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+
+
+
 #define ACC
 #define USE_ACC_MPU6500
 //#define ACC_MPU6500_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
@@ -58,7 +68,7 @@ extern "C" {
 #define MAG
 #define USE_MAG_AK8963
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP //For plutoX-new remove comment  else for old comment
-#define MAG_ENFORCE
+//#define MAG_ENFORCE
 
 #define BARO
 #define USE_BARO_MS5611
@@ -111,13 +121,13 @@ extern "C" {
 #define I2C1_SDA_PIN_SOURCE  GPIO_PinSource9
 #define I2C1_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOB
 //
-//#define USE_SPI
+#define USE_SPI
 //
 #define USE_SPI_DEVICE_2
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            GPIO_Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_NSS_PIN            GPIO_Pin_5
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource5
 #define SPI2_SCK_PIN            GPIO_Pin_13
 #define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 #define SPI2_MISO_PIN           GPIO_Pin_14
@@ -137,12 +147,12 @@ extern "C" {
 #define VBAT_ADC_GPIO_PIN    GPIO_Pin_0
 #define VBAT_ADC_CHANNEL     ADC_Channel_12
 
-//#define BLACKBOX
+#define BLACKBOX
 #define SERIAL_RX
 //#define GPS
 //#define GTUNE
 //#define DISPLAY
-#define USE_SERVOS
+//#define USE_SERVOS
 //#define USE_MIXER_SERVOS
 //#define USE_CLI
 
@@ -162,10 +172,12 @@ extern "C" {
 //#define BINDPLUG_PIN   Pin_12
 
 #define DCM
+//#define OPTIC_FLOW
+
+//#define LASER_TOF // only to get laser height
+//#define LASER_ALT // to integrate with althold
 
 
-
-//#define LASER_TOF
 
 #define FLIGHT_STATUS_INDICATOR
 #define ENABLE_ACROBAT
