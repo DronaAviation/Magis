@@ -502,23 +502,23 @@ bool blackboxDeviceOpen(void)
         case BLACKBOX_DEVICE_SERIAL: {
             serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
             baudRate_e baudRateIndex;
-            portOptions_t portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+            portOptions_t portOptions = (portOptions_t) (SERIAL_PARITY_NO | SERIAL_NOT_INVERTED);
 
             if (!portConfig) {
                 return false;
             }
 
             blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
-            baudRateIndex = portConfig->blackbox_baudrateIndex;
+            baudRateIndex = (baudRate_e) portConfig->blackbox_baudrateIndex;
 
             if (baudRates[baudRateIndex] == 230400) {
                 /*
                  * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
                  * order to maintain synchronization.
                  */
-                portOptions |= SERIAL_STOPBITS_2;
+                portOptions = (portOptions_t)(portOptions |SERIAL_STOPBITS_2);
             } else {
-                portOptions |= SERIAL_STOPBITS_1;
+                portOptions = (portOptions_t)(portOptions |SERIAL_STOPBITS_1);
             }
 
             blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, baudRates[baudRateIndex],
