@@ -95,7 +95,7 @@
 
 #include "command/command.h"
 
-#include "../API/API-Utils.h"
+#include "API/API-Utils.h"
 
 static serialPort_t *mspSerialPort;
 
