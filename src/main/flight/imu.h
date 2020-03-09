@@ -66,6 +66,7 @@ float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
 float * dcmBodyToEarth3D(float* vector);
+float * earthToBody2D(float* vector);
 
 
 

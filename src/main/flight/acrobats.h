@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif

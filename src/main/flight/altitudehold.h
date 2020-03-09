@@ -15,6 +15,8 @@
  * along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif 
@@ -57,6 +59,7 @@ void checkReading();
 void checkBaro();
 
 void updateGains();
+void updateGains1();
 void updateTimeConstantandGains(uint8_t timeConstant);
 float getTimeConstant();
 void apmCalculateEstimatedAltitude(uint32_t currtime);
@@ -64,6 +67,8 @@ void setAltitude(int32_t altitude);
 void setRelativeAltitude(int32_t altitude);
 int32_t getEstAltitude();
 int32_t getEstVelocity(void);
+int32_t getEstAltitude1();
+int32_t getEstVelocity1(void);
 
 
 bool limitAltitude();
@@ -72,6 +77,13 @@ extern int32_t altholdDebug;
 extern int32_t altholdDebug1;
 extern int32_t altholdDebug2;
 extern int32_t altholdDebug3;
+extern int32_t altholdDebug4;
+extern int32_t altholdDebug5;
+extern int32_t altholdDebug6;
+extern int32_t altholdDebug7;
+extern int32_t altholdDebug8;
+extern int32_t altholdDebug9;
+extern int32_t velControlDebug[3];
 
 
 #ifdef __cplusplus

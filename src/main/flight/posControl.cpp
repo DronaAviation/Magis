@@ -25,6 +25,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "command/command.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/gpio.h"
@@ -38,6 +39,7 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/opticflow.h"
 
 #include "config/runtime_config.h"
 
@@ -45,15 +47,32 @@
 
 #include "posControl.h"
 
-#include "../API/API-Utils.h"
+#include "API/API-Utils.h"
 #include "io/rc_controls.h"
-
 
 #define corr_scale 512/100
 #define corr_scale2 1096/100
 
 #define TOLERANCE_XY 10
-#define CONTROL_ENDPOINT 200
+#define CONTROL_ENDPOINT 100
+
+static rcControlsConfig_t *rcControlsConfig;
+int32_t setVelocityX = 0;
+int32_t setVelocityY = 0;
+uint8_t velocityControlX = 1;
+uint8_t velocityControlY = 1;
+int32_t Poshold;
+int32_t error;
+int32_t initialPitchHold;
+int32_t PitchAdjustment;
+int32_t estPosition = 0;
+int32_t desiredPositionX = 0;
+int32_t desiredPositionY = 0;
+int32_t desiredVelo = 0;
+int32_t errorAlt;
+static uint8_t isPositionXChanged = 1;
+static uint8_t isPositionYChanged = 1;
+static uint8_t isAltHoldChanged = 0;
 
 uint8_t kp_posx;
 uint8_t kp_posy;
@@ -83,20 +102,96 @@ int16_t VdesiredY = 0;
 uint8_t HeightAchieved = 0;
 static pidProfile_t *pidProfile; //PS2
 
-int32_t debugPosCtr = 0;
-int32_t debugPosCtr_1 = 0;
-int32_t debugPosCtr_2 = 0;
-
-void configurePosHold(pidProfile_t *initialPidProfile) //PS2
+void configurePosHold(pidProfile_t *initialPidProfile, rcControlsConfig_t *rcControlsConfigPointer) //PS2
 {
     pidProfile = initialPidProfile;
+    rcControlsConfig = rcControlsConfigPointer;
 }
+
+#ifdef OPTIC_FLOW
+void selectVelOrPosmode(void)
+{
+    int16_t positionXError = 0;
+    int16_t positionYError = 0;
+
+    if (ABS(rcData[PITCH] - 1500) > rcControlsConfig->alt_hold_deadband) {
+
+        setVelocityX = (rcData[PITCH] - 1500) / 2;
+        setVelocityX = constrain(setVelocityX, -100, 100);
+        velocityControlX = 1;
+        isPositionXChanged = 1;
+
+    } else {
+
+        velocityControlX = 0;
+
+        if (isPositionXChanged) {
+
+            if (ABS(VelocityX) <= 10 && isTookOff) { //After velocity is zero, then set pos
+                desiredPositionX = PositionX;
+                isPositionXChanged = 0;
+            } else { //try to make velocity 0
+
+                setVelocityX = 0;
+            }
+
+        }
+
+        if (!isPositionXChanged) {
+
+            positionXError = constrain(desiredPositionX - PositionX, -200, 200);
+            setVelocityX = (int32_t)((float) positionXError * ((float) pidProfile->P8[PIDPOS] / (float) 100));
+            setVelocityX = constrain(setVelocityX, -100, 100);
+        }
+
+    }
+
+    //ROLL
+    if (ABS(rcData[ROLL] - 1500) > rcControlsConfig->alt_hold_deadband)//velocity mode
+    {
+        setVelocityY = (rcData[ROLL] - 1500) / 2;
+        setVelocityY = -constrain(setVelocityY, -100, 100);
+        velocityControlY = 1;
+        isPositionYChanged = 1;
+
+    } else {
+
+        velocityControlY = 0;
+
+        if (isPositionYChanged) {
+
+            if (ABS(VelocityY) <= 10 && isTookOff) {  //After velocity is zero, then set pos
+                desiredPositionY = PositionY;
+                isPositionYChanged = 0;
+            } else {  //try to make velocity 0
+
+                setVelocityY = 0;
+            }
+
+        }
+
+        if (!isPositionYChanged) {
+
+            positionYError = constrain(desiredPositionY - PositionY, -200, 200);
+
+            setVelocityY = (int32_t)((float) positionYError * ((float) pidProfile->P8[PIDPOS] / (float) 100));
+
+            setVelocityY = constrain(setVelocityY, -100, 100);
+
+        }
+
+    }
+
+    VelocityController(setVelocityX, setVelocityY);
+
+}
+#endif
 
 void VelocityController(int16_t VdesiredX, int16_t VdesiredY)
 {
-    kp_velx = kp_vely = pidProfile->P8[PIDPOSR];
-    ki_velx = ki_vely = pidProfile->I8[PIDPOSR];
-    kd_velx = kd_vely = pidProfile->D8[PIDPOSR];
+    kp_velx = kp_vely = pidProfile->P8[PIDVEL];
+    ki_velx = ki_vely = pidProfile->I8[PIDVEL];
+    kd_velx = kd_vely = pidProfile->D8[PIDVEL];
 
     int16_t errorVelX, errorVelY;
     int16_t PoutX, PoutY, DoutX, DoutY;
@@ -104,27 +199,25 @@ void VelocityController(int16_t VdesiredX, int16_t VdesiredY)
     errorVelX = VdesiredX - VelocityX;
     errorVelY = VdesiredY - VelocityY;
 
-    PoutX = (kp_velx * errorVelX) / 10;
-    PoutY = (kp_vely * errorVelY) / 10;
+    PoutX = (kp_velx * errorVelX) / 100;
+    PoutY = (kp_vely * errorVelY) / 100;
 
-    debugPosCtr = PoutX;
+    PoutX = constrain(PoutX, -200, 200);
+    PoutY = constrain(PoutY, -200, 200);
 
     if (ki_velx && ARMING_FLAG(ARMED) && isLocalisationOn) {
-        IoutX += (ki_velx * errorVelX) / 10;
-        IoutY += (ki_vely * errorVelY) / 10;
+        IoutX += (ki_velx * errorVelX) / 100;
+        IoutY += (ki_vely * errorVelY) / 100;
         IoutX = constrain(IoutX, -20000, 20000);
         IoutY = constrain(IoutY, -20000, 20000);
+
     } else { //Take out effects of integral if ki is zero
         IoutX = 0;
         IoutY = 0;
     }
 
-    debugPosCtr_1 = IoutX;
-
-    DoutX = (kd_velx * (accel_EF[0] + accel_EF_prev[0])) / 10;
-    DoutY = (kd_vely * (accel_EF[1] + accel_EF_prev[1])) / 10;
-
-    debugPosCtr_2 = DoutX;
+    DoutX = (kd_velx * (accel_hf[0] + accel_hf_prev[0])) / 100;
+    DoutY = (kd_vely * (accel_hf[1] + accel_hf_prev[1])) / 100;
 
     switch (localisationType) {
 
@@ -148,21 +241,19 @@ void VelocityController(int16_t VdesiredX, int16_t VdesiredY)
 
     default:
 
+        PID_x = constrain(PoutX + IoutX / 500 - DoutX, -CONTROL_ENDPOINT, CONTROL_ENDPOINT);
+        PID_y = -constrain(PoutY + IoutY / 500 - DoutY, -CONTROL_ENDPOINT, CONTROL_ENDPOINT);
+
         break;
 
     }
 
-    //Debug PS2
-    //PS2 Debug variables
-    /* if(pidProfile->P8[PIDNAVR]==9) //Desired States
-     {
-     print_posvariable3 = PoutY*corr_scale; //10*VdesiredX*corr_scale;//ax
-     print_posvariable4 = IoutY*corr_scale;//10*VelocityX*corr_scale;//ay
-     print_posvariable6 = DoutY*corr_scale;
-     print_posvariable1 = VdesiredY*corr_scale2;//mx
-     print_posvariable2 = VelocityY*corr_scale2;//my
-     print_posvariable5 = rcCommand[ROLL]*corr_scale2;
-     } */
+}
+
+void resetPosController(void)
+{
+    isPositionYChanged = 1;
+    isPositionXChanged = 1;
 
 }
 
@@ -190,25 +281,13 @@ bool PositionController(int16_t desiredX, int16_t desiredY, int16_t desiredZ)
 
     PosVelController(desiredX, desiredY, 50);
     //SimpleController(desiredX, desiredY, 50);
-    if ((abs(desiredX - PositionX) < TOLERANCE_XY)
-            && (abs(desiredY - PositionY) < TOLERANCE_XY)
-            && (HeightAchieved == 1)) {
+    if ((abs(desiredX - PositionX) < TOLERANCE_XY) && (abs(desiredY - PositionY) < TOLERANCE_XY) && (HeightAchieved == 1)) {
         if (isLocalisationOn) {	//&&ARMING_FLAG(ARMED))
             Status = true;
         } else {
             Status = false;
         }
     }
-
-    /* if(pidProfile->P8[PIDNAVR]==8) //Desired States
-     {
-     print_posvariable3 = desiredX*corr_scale;//ax
-     print_posvariable4 = desiredY*corr_scale;//ay
-     print_posvariable6 = 100*HeightAchieved*corr_scale;//az
-     print_posvariable1 = (IoutX*corr_scale2)/500;//mx
-     print_posvariable2 = (IoutY*corr_scale2)/500;//my
-     print_posvariable5 = 100*corr_scale2;
-     } */
 
     return Status;
 }
@@ -294,44 +373,6 @@ bool SimpleController(int16_t desiredX, int16_t desiredY, int16_t desiredZ)
             Status = false;
         }
     }
-
-    //Debug
-    /* if(pidProfile->P8[PIDNAVR]==10)
-     {
-     print_posvariable3 = 12*corr_scale;
-     print_posvariable4 = 13*corr_scale;
-     print_posvariable1 = 10*corr_scale2;//sin_approx((float)(pidProfile->D8[PIDNAVR]*10)*RAD)*corr_scale2;
-     print_posvariable2 = 15*corr_scale2;
-     }else if(pidProfile->P8[PIDNAVR]==0) //State variables
-     {
-     print_posvariable3 = PositionX*corr_scale;//ax
-     print_posvariable4 = PositionY*corr_scale;//ay
-     print_posvariable1 = VelocityX*corr_scale2;//mx
-     print_posvariable2 = VelocityY*corr_scale2;//my
-     }else if(pidProfile->P8[PIDNAVR]==3) //Desired States
-     {
-     uint8_t scale = (acc_1G > 1024) ? 8 : 1;
-     print_posvariable3 = accSmooth[0]/scale;//*corr_scale;//ax
-     print_posvariable4 = accSmooth[1]/scale;//ay
-     print_posvariable6 = (_new_IoutY*corr_scale)/500;//aZ
-     print_posvariable1 = (accel[0]*100)/980*corr_scale2;//mx
-     print_posvariable2 = (accel[1]*100)/980*corr_scale2;//my
-     print_posvariable5 = 0*corr_scale2;//my
-     }else if(pidProfile->P8[PIDNAVR]==4) //Desired States
-     {
-     print_posvariable3 = VelocityX*corr_scale;//ax
-     print_posvariable4 = VelocityY*corr_scale;//ay
-     print_posvariable1 = WhyconVx*corr_scale2;//mx
-     print_posvariable2 = WhyconVy*corr_scale2;//my
-     }
-     else if(pidProfile->P8[PIDNAVR]==5) //Desired States
-     {
-     print_posvariable3 = (_new_kpy*errorY)*corr_scale;//ax
-     print_posvariable4 = (_new_kdy*VelocityY)*corr_scale;//ay
-     print_posvariable6 = (_new_IoutY/500)*corr_scale;//az
-     print_posvariable1 = _new_IoutX*corr_scale2/500;//mx
-     print_posvariable2 = _new_IoutY*corr_scale2/500;//my
-     } */
 
     return Status;
 }

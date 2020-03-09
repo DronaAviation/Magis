@@ -48,6 +48,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/navigation.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
 #include "config/runtime_config.h"

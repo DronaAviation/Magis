@@ -45,8 +45,8 @@ extern int8_t Quality;
 extern bool new_position;
 extern int8_t localisationType;
 
-extern int16_t PositionX, PositionY;
-extern int16_t PrevPositionX, PrevPositionY;
+extern float PositionX, PositionY;
+extern float PrevPositionX, PrevPositionY;
 extern int16_t VelocityX, VelocityY;
 extern int16_t inputVx, inputVy;
 extern float whyconZ;

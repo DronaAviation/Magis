@@ -86,7 +86,7 @@ typedef struct pidProfile_s {
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
 #define DECIDEGREES_TO_DEGREES(angle) (angle / 10.0f)
 
-//#define M_PI      (3.141592653589793f)
+#define M_PI      (3.141592653589793f)
 
 #define M_2PI         (M_PI * 2)
 
@@ -108,19 +108,6 @@ void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
 
-
-
-
-
-
-
-/* debug variables */
-
-extern float debugDterm;
-extern float currentRate;
-
-extern int32_t debugPID;
-extern int32_t debugPID1;
 
 
 #ifdef __cplusplus
