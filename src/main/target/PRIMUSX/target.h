@@ -45,7 +45,7 @@ extern "C" {
 #define LED_M
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 
-#define USABLE_TIMER_CHANNEL_COUNT 4
+#define USABLE_TIMER_CHANNEL_COUNT 5
 
 
 #define M25P16_CS_GPIO        GPIOB
