@@ -622,7 +622,7 @@ static void cliRxFail(char *cmdline)
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
-            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
+            rxFailsafeChannelMode_e mode =(rxFailsafeChannelMode_e) channelFailsafeConfiguration->mode;
             bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
 
             ptr = strchr(ptr, ' ');
@@ -715,7 +715,7 @@ static void cliAux(char *cmdline)
             if (ptr) {
                 val = atoi(++ptr);
                 if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
-                    mac->modeId = val;
+                    mac->modeId =(boxId_e) val;
                     validArgumentCount++;
                 }
             }
@@ -770,9 +770,9 @@ static void cliSerial(char *cmdline)
     ptr = cmdline;
 
     val = atoi(ptr++);
-    currentConfig = serialFindPortConfiguration(val);
+    currentConfig = serialFindPortConfiguration((serialPortIdentifier_e)val);
     if (currentConfig) {
-        portConfig.identifier = val;
+        portConfig.identifier = (serialPortIdentifier_e)val;
         validArgumentCount++;
     }
 

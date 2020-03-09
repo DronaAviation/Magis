@@ -24,6 +24,7 @@ extern "C" {
 
 extern uint8_t cliMode;
 
+void cliInit(serialConfig_t *serialConfig);
 void cliProcess(void);
 bool cliIsActiveOnPort(serialPort_t *serialPort);
 
