@@ -860,6 +860,7 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 
 
 libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a: $(TARGET_OBJS)
+	mkdir -p $(dir $@)
 	$(AR) rcs $@ $^
 
 
