@@ -25,6 +25,8 @@ extern "C" {
 
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
+void setUserBlackBoxField(char* varName, int32_t& reference);
+
 void initBlackbox(void);
 void handleBlackbox(void);
 void startBlackbox(void);

@@ -38,6 +38,8 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
+#include "drivers/ranging_vl53l0x.h"
+#include "drivers/opticflow_paw3903.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -70,11 +72,20 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
+#include "flight/opticflow.h"
+#include "flight/posControl.h"
+#include "flight/posEstimate.h"
 
 #include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#include "API/Peripheral.h"
+#include "API/Specifiers.h"
+#include "API/Estimate.h"
+#include "API/API-Utils.h"
+#include "API/PlutoPilot.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"
@@ -89,12 +100,6 @@
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
 
 // Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
-
-#define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
-#define ENCODING(x) CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x)
-#define CONDITION(x) CONCAT(FLIGHT_LOG_FIELD_CONDITION_, x)
-#define UNSIGNED FLIGHT_LOG_FIELD_UNSIGNED
-#define SIGNED FLIGHT_LOG_FIELD_SIGNED
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
@@ -124,36 +129,7 @@ typedef struct blackboxFieldDefinition_s {
 #define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 #define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 
-typedef struct blackboxSimpleFieldDefinition_s {
-    const char *name;
-    int8_t fieldNameIndex;
 
-    uint8_t isSigned;
-    uint8_t predict;
-    uint8_t encode;
-} blackboxSimpleFieldDefinition_t;
-
-typedef struct blackboxConditionalFieldDefinition_s {
-    const char *name;
-    int8_t fieldNameIndex;
-
-    uint8_t isSigned;
-    uint8_t predict;
-    uint8_t encode;
-    uint8_t condition; // Decide whether this field should appear in the log
-} blackboxConditionalFieldDefinition_t;
-
-typedef struct blackboxDeltaFieldDefinition_s {
-    const char *name;
-    int8_t fieldNameIndex;
-
-    uint8_t isSigned;
-    uint8_t Ipredict;
-    uint8_t Iencode;
-    uint8_t Ppredict;
-    uint8_t Pencode;
-    uint8_t condition; // Decide whether this field should appear in the log
-} blackboxDeltaFieldDefinition_t;
 
 /**
  * Description of the blackbox fields we are writing in our main intra (I) and inter (P) frames. This description is
@@ -161,6 +137,7 @@ typedef struct blackboxDeltaFieldDefinition_s {
  * the encoding to happen, we have to encode the flight log ourselves in write{Inter|Intra}frame() in a way that matches
  * the encoding we've promised here).
  */
+
 static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     /* loopIteration doesn't appear in P frames since it always increments */
     {"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
@@ -250,6 +227,18 @@ static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
     {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)}
 };
 
+
+
+static  blackboxDeltaFieldDefinition_t userBlackboxMainFields[12]={
+
+	{"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
+	/* Time advances pretty steadily so the P-frame prediction is a straight line */
+	{"time",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(STRAIGHT_LINE), .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+
+};
+
+
+
 typedef enum BlackboxState {
     BLACKBOX_STATE_DISABLED = 0,
     BLACKBOX_STATE_STOPPED,
@@ -291,6 +280,9 @@ typedef struct blackboxMainState_s {
     int32_t sonarRaw;
 #endif
     uint16_t rssi;
+
+	int32_t logVar[10];
+
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
@@ -307,11 +299,21 @@ typedef struct blackboxSlowState_s {
     bool rxFlightChannelsValid;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
+
+typedef struct userBlackboxMainState_s {
+
+	uint32_t time;
+	int32_t logVar[10];
+
+}userBlackboxMainState_t;
+
+
 //From mixer.c:
 extern uint8_t motorCount;
 
 //From mw.c:
 extern uint32_t currentTime;
+
 
 //From rx.c:
 extern uint16_t rssi;
@@ -353,9 +355,19 @@ static blackboxSlowState_t slowHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
 static blackboxMainState_t blackboxHistoryRing[3];
+static userBlackboxMainState_t userBlackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackboxMainState_t* blackboxHistory[3];
+static userBlackboxMainState_t* userBlackboxHistory[3];
+
+
+uint8_t userBlackboxFieldCount=0;
+
+int32_t* userBlackboxField[10];
+
+
+
 
 static bool blackboxModeActivationConditionPresent = false;
 
@@ -433,12 +445,14 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
 static void blackboxBuildConditionCache()
 {
-    FlightLogFieldCondition cond;
+ //   FlightLogFieldCondition cond;
+
+    int8_t cond;
 
     blackboxConditionCache = 0;
 
     for (cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
-        if (testBlackboxConditionUncached(cond)) {
+        if (testBlackboxConditionUncached((FlightLogFieldCondition)cond)) {
             blackboxConditionCache |= 1 << cond;
         }
     }
@@ -496,7 +510,7 @@ static void writeIntraframe(void)
 
     // Don't bother writing the current D term if the corresponding PID setting is zero
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
+        if (testBlackboxCondition((FlightLogFieldCondition)(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x]);
         }
     }
@@ -573,6 +587,48 @@ static void writeIntraframe(void)
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
 }
 
+
+static void writeUserIntraframe(void)
+{
+
+	userBlackboxMainState_t *userBlackboxCurrent = userBlackboxHistory[0];
+
+//	blackboxMainState_t *userBlackboxCurrent = blackboxHistory[0];
+
+    blackboxWrite('I');
+
+    blackboxWriteUnsignedVB(blackboxIteration);
+
+    blackboxWriteUnsignedVB(userBlackboxCurrent->time);
+
+
+	for(int i=0;i<userBlackboxFieldCount;i++)
+    blackboxWriteSignedVB((userBlackboxCurrent->logVar[i]));
+
+
+
+  //  blackboxWriteSignedVB((userBlackboxCurrent->logVar[2]));
+
+ //   blackboxWriteSignedVBArray(userBlackboxCurrent->logVar, XYZ_AXIS_COUNT);
+
+
+
+    //Rotate our history buffers
+    userBlackboxHistory[1] = userBlackboxHistory[0];
+    userBlackboxHistory[2] = userBlackboxHistory[0];
+    userBlackboxHistory[0] = ((userBlackboxHistory[0] - userBlackboxHistoryRing + 1) % 3) + userBlackboxHistoryRing;
+
+//    //The current state becomes the new "before" state
+//    blackboxHistory[1] = blackboxHistory[0];
+//    //And since we have no other history, we also use it for the "before, before" state
+//    blackboxHistory[2] = blackboxHistory[0];
+//    //And advance the current state over to a blank space ready to be filled
+//    blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
+
+
+}
+
+
 static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHistory, int count)
 {
     int16_t *curr  = (int16_t*) ((char*) (blackboxHistory[0]) + arrOffsetInHistory);
@@ -608,19 +664,19 @@ static void writeInterframe(void)
     arraySubInt32(deltas, blackboxCurrent->axisPID_P, blackboxLast->axisPID_P, XYZ_AXIS_COUNT);
     blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
-    /* 
+    /*
      * The PID I field changes very slowly, most of the time +-2, so use an encoding
      * that can pack all three fields into one byte in that situation.
      */
     arraySubInt32(deltas, blackboxCurrent->axisPID_I, blackboxLast->axisPID_I, XYZ_AXIS_COUNT);
     blackboxWriteTag2_3S32(deltas);
-    
+
     /*
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
      */
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
+        if (testBlackboxCondition((FlightLogFieldCondition)(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
         }
     }
@@ -686,6 +742,51 @@ static void writeInterframe(void)
     blackboxHistory[1] = blackboxHistory[0];
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
 }
+
+static void writeUserInterframe(void)
+{
+//	int32_t deltas[8];
+    userBlackboxMainState_t *userBlackboxCurrent = userBlackboxHistory[0];
+    userBlackboxMainState_t *userBlackboxLast = userBlackboxHistory[1];
+
+//    blackboxMainState_t *userBlackboxCurrent = blackboxHistory[0];
+//    blackboxMainState_t *userBlackboxLast = blackboxHistory[1];
+
+    blackboxWrite('P');
+
+    //No need to store iteration count since its delta is always 1
+
+    /*
+     * Since the difference between the difference between successive times will be nearly zero (due to consistent
+     * looptime spacing), use second-order differences.
+     */
+
+
+    blackboxWriteSignedVB((int32_t) (userBlackboxHistory[0]->time - 2 * userBlackboxHistory[1]->time + userBlackboxHistory[2]->time));
+
+
+//    arraySubInt32(deltas, userBlackboxCurrent->logVar,userBlackboxLast->logVar, XYZ_AXIS_COUNT);
+//    blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+
+
+	for(int i=0;i<userBlackboxFieldCount;i++)
+
+    blackboxWriteSignedVB(userBlackboxCurrent->logVar[i] - userBlackboxLast->logVar[i]);
+
+//
+//    blackboxWriteSignedVB(userBlackboxCurrent->logVar[2] - userBlackboxLast->logVar[2]);
+
+
+
+//    Rotate our history buffers
+    userBlackboxHistory[2] = userBlackboxHistory[1];
+    userBlackboxHistory[1] = userBlackboxHistory[0];
+    userBlackboxHistory[0] = ((userBlackboxHistory[0] - userBlackboxHistoryRing + 1) % 3) + userBlackboxHistoryRing;
+
+
+}
+
+
 
 /* Write the contents of the global "slowHistory" to the log as an "S" frame. Because this data is logged so
  * infrequently, delta updates are not reasonable, so we log independent frames. */
@@ -803,6 +904,11 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
+
+        userBlackboxHistory[0] = &userBlackboxHistoryRing[0];
+        userBlackboxHistory[1] = &userBlackboxHistoryRing[1];
+        userBlackboxHistory[2] = &userBlackboxHistoryRing[2];
+
         vbatReference = vbatLatestADC;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
@@ -894,6 +1000,8 @@ static void writeGPSFrame()
 /**
  * Fill the current state of the blackbox using values read from the flight controller
  */
+
+
 static void loadMainState(void)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
@@ -952,6 +1060,7 @@ static void loadMainState(void)
     blackboxCurrent->servo[5] = servo[5];
 #endif
 }
+
 
 /**
  * Transmit the header information for the given field definitions. Transmitted header lines look like:
@@ -1016,7 +1125,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
     for (; xmitState.u.fieldIndex < fieldCount; xmitState.u.fieldIndex++) {
         def = (const blackboxFieldDefinition_t*) ((const char*)fieldDefinitions + definitionStride * xmitState.u.fieldIndex);
 
-        if (!conditions || testBlackboxCondition(conditions[conditionsStride * xmitState.u.fieldIndex])) {
+        if (!conditions || testBlackboxCondition((FlightLogFieldCondition)(conditions[conditionsStride * xmitState.u.fieldIndex]))) {
             // First (over)estimate the length of the string we want to print
 
             int32_t bytesToWrite = 1; // Leading comma
@@ -1194,7 +1303,7 @@ static void blackboxCheckAndLogArmingBeep()
     }
 }
 
-/* 
+/*
  * Use the user's num/denom settings to decide if the P-frame of the given index should be logged, allowing the user to control
  * the portion of logged loop iterations.
  */
@@ -1235,10 +1344,13 @@ static void blackboxLogIteration()
         writeSlowFrameIfNeeded(blackboxIsOnlyLoggingIntraframes());
 
         loadMainState();
+      //  loadUserBlackBoxState();
         writeIntraframe();
+      // writeUserIntraframe();
+
     } else {
         blackboxCheckAndLogArmingBeep();
-        
+
         if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
             /*
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
@@ -1247,7 +1359,10 @@ static void blackboxLogIteration()
             writeSlowFrameIfNeeded(true);
 
             loadMainState();
+          //  loadUserBlackBoxState();
+
             writeInterframe();
+           // writeUserInterframe();
         }
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
@@ -1283,6 +1398,8 @@ void handleBlackbox(void)
 {
     int i;
 
+   // LED_R_ON;
+
     if (blackboxState >= BLACKBOX_FIRST_HEADER_SENDING_STATE && blackboxState <= BLACKBOX_LAST_HEADER_SENDING_STATE) {
         blackboxReplenishHeaderBudget();
     }
@@ -1295,7 +1412,9 @@ void handleBlackbox(void)
              * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
              * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
              */
-            if (millis() > xmitState.u.startTime + 100) {
+        //	blackboxPrint("BB-Header\n");
+
+        	if (millis() > xmitState.u.startTime + 100) {
                 if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
                     for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
                         blackboxWrite(blackboxHeader[xmitState.headerIndex]);
@@ -1310,7 +1429,10 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
+        //	blackboxPrint("BB-Main Field Header\n");
+
+
+        	if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
                     &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
                 if (feature(FEATURE_GPS)) {
@@ -1319,6 +1441,18 @@ void handleBlackbox(void)
 #endif
                     blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
             }
+
+//        	if (!sendFieldDefinition('I', 'P', userBlackboxMainFields, userBlackboxMainFields + 1, userBlackboxFieldCount+2,
+//                    &userBlackboxMainFields[0].condition, &userBlackboxMainFields[1].condition)) {
+//#ifdef GPS
+//                if (feature(FEATURE_GPS)) {
+//                    blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
+//                } else
+//#endif
+//                    blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
+//            }
+
+
         break;
 #ifdef GPS
         case BLACKBOX_STATE_SEND_GPS_H_HEADER:
@@ -1338,13 +1472,19 @@ void handleBlackbox(void)
 #endif
         case BLACKBOX_STATE_SEND_SLOW_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
+
+        //	blackboxPrint("BB-Slow Header\n");
+
+        	if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
                     NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
         break;
         case BLACKBOX_STATE_SEND_SYSINFO:
             //On entry of this state, xmitState.headerIndex is 0
+
+
+        //	blackboxPrint("BB-Sys Info\n");
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
             if (blackboxWriteSysinfo()) {
@@ -1361,7 +1501,11 @@ void handleBlackbox(void)
         break;
         case BLACKBOX_STATE_PAUSED:
             // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
+
+
+       // 	blackboxPrint("BB-Paused\n");
+
+        	if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
                 // Write a log entry so the decoder is aware that our large time/iteration skip is intended
                 flightLogEvent_loggingResume_t resume;
 
@@ -1370,7 +1514,7 @@ void handleBlackbox(void)
 
                 blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
                 blackboxSetState(BLACKBOX_STATE_RUNNING);
-                
+
                 blackboxLogIteration();
             }
 
@@ -1378,12 +1522,26 @@ void handleBlackbox(void)
             blackboxAdvanceIterationTimers();
         break;
         case BLACKBOX_STATE_RUNNING:
-            // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
+
+
+       // 	blackboxPrint("BB-Running\n");
+
+        	// On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
             if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
                 blackboxSetState(BLACKBOX_STATE_PAUSED);
             } else {
                 blackboxLogIteration();
+//            	blackboxPrintf("%lu",millis());
+//            	blackboxPrintf(" %d",altitudeHoldGetEstimatedAltitude());
+//            	blackboxPrintf(" %d\n",accADC[0]);
+//            	GPIO.write(Pin3, STATE_HIGH);
+//            	blackboxPrint("ABCDEF");
+//            	GPIO.write(Pin3, STATE_LOW);
+
             }
+
+            //Flush every iteration so that our runtime variance is minimized
+//            blackboxDeviceFlush();
 
             blackboxAdvanceIterationTimers();
         break;
@@ -1396,7 +1554,10 @@ void handleBlackbox(void)
              *
              * Don't wait longer than it could possibly take if something funky happens.
              */
-            if (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlush()) {
+
+       // 	blackboxPrint("BB-Shut Down\n");
+
+        	if (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlush()) {
                 blackboxDeviceClose();
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
@@ -1421,11 +1582,25 @@ static bool canUseBlackboxWithCurrentConfiguration(void)
  */
 void initBlackbox(void)
 {
+
     if (canUseBlackboxWithCurrentConfiguration()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
     }
+
+
+}
+
+
+
+void setUserBlackBoxField(char* varName, int32_t& reference){
+
+	userBlackboxMainFields[2+userBlackboxFieldCount]={varName,-1, SIGNED, PREDICT(0), ENCODING(SIGNED_VB),  PREDICT(PREVIOUS), ENCODING(SIGNED_VB), CONDITION(ALWAYS)};
+
+	userBlackboxField[userBlackboxFieldCount]=&reference;
+
+	userBlackboxFieldCount++;
 }
 
 #endif

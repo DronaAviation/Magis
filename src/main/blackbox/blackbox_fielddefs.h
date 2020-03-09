@@ -17,11 +17,14 @@
 
 #pragma once
 
+
+
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif 
+
 
 typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0,
@@ -148,6 +151,48 @@ typedef struct flightLogEvent_s {
         FlightLogEvent event;
         flightLogEventData_t data;
 } flightLogEvent_t;
+
+
+typedef struct blackboxSimpleFieldDefinition_s {
+    const char *name;
+    int8_t fieldNameIndex;
+
+    uint8_t isSigned;
+    uint8_t predict;
+    uint8_t encode;
+} blackboxSimpleFieldDefinition_t;
+
+typedef struct blackboxConditionalFieldDefinition_s {
+    const char *name;
+    int8_t fieldNameIndex;
+
+    uint8_t isSigned;
+    uint8_t predict;
+    uint8_t encode;
+    uint8_t condition; // Decide whether this field should appear in the log
+} blackboxConditionalFieldDefinition_t;
+
+typedef struct blackboxDeltaFieldDefinition_s {
+    const char *name;
+    int8_t fieldNameIndex;
+
+    uint8_t isSigned;
+    uint8_t Ipredict;
+    uint8_t Iencode;
+    uint8_t Ppredict;
+    uint8_t Pencode;
+    uint8_t condition; // Decide whether this field should appear in the log
+} blackboxDeltaFieldDefinition_t;
+
+
+
+
+#define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
+#define ENCODING(x) CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x)
+#define CONDITION(x) CONCAT(FLIGHT_LOG_FIELD_CONDITION_, x)
+#define UNSIGNED FLIGHT_LOG_FIELD_UNSIGNED
+#define SIGNED FLIGHT_LOG_FIELD_SIGNED
+
 
 #ifdef __cplusplus
 }
