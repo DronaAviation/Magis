@@ -21,6 +21,18 @@
 extern "C" {
 #endif
 
+
+extern float debugOpticFlowVar;
+extern float debugOpticFlowVar1;
+extern float debugOpticFlowVar2;
+extern float debugOpticFlowVar3;
+extern float debugOpticFlowVar4;
+extern float debugOpticFlow[2];
+extern float debugOpticFlow1[2];
+extern float debugOpticFlow2[3];
+
+
+
 extern float sensor_flow_hf[2];
 extern float accel_hf[3];
 extern float accel_hf_prev[3];

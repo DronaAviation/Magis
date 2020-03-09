@@ -189,9 +189,9 @@ void selectVelOrPosmode(void)
 
 void VelocityController(int16_t VdesiredX, int16_t VdesiredY)
 {
-    kp_velx = kp_vely = pidProfile->P8[PIDVEL];
-    ki_velx = ki_vely = pidProfile->I8[PIDVEL];
-    kd_velx = kd_vely = pidProfile->D8[PIDVEL];
+    kp_velx = kp_vely = pidProfile->P8[PIDUSER];
+    ki_velx = ki_vely = pidProfile->I8[PIDUSER];
+    kd_velx = kd_vely = pidProfile->D8[PIDUSER];
 
     int16_t errorVelX, errorVelY;
     int16_t PoutX, PoutY, DoutX, DoutY;
