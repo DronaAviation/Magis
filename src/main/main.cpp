@@ -50,8 +50,6 @@
 #include "drivers/flash.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/ranging_vl53l0x.h"
-#include "drivers/opticflow_cheerson_cxof.h"
-
 #include "rx/rx.h"
 
 #include "io/serial.h"
@@ -90,6 +88,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "drivers/opticflow_paw3903.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -104,6 +103,8 @@
 #include "API/Utils.h"
 #include "API/Peripheral.h"
 #include "API/Localisation.h"
+#include "API/Motor.h"
+
 
 extern uint32_t previousTime;
 extern uint8_t motorControlEnable;
@@ -537,6 +538,7 @@ DISABLE_ARMING_FLAG(PREVENT_ARMING);
 #ifdef SOFTSERIAL_LOOPBACK
 // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
 loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+
 if (!loopbackPort->vTable) {
     loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
 }
@@ -575,6 +577,11 @@ ranging_init();
 
 #endif
 
+
+//spi.Init();
+//spi.Settings(MODE0, 562, LSBFIRST);
+
+initOpticFlow();
 
 
 updatePosGains();
@@ -661,6 +668,9 @@ if(localisationType==UWB){
 UART.init(UART2, BAUD_RATE_115200);
 GPIO.init(Pin8,INPUT_PD);
 }
+//if(useRangingSensor)
+//    ranging_init();
+
 #endif
 
 
@@ -687,12 +697,21 @@ int main(void)
 
 init();
 
+//accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+//GPIO.init(Pin3, INPUT_PD);
+
+//GPIO.write(Pin3, STATE_LOW);
+
+//PWM.init(Pin13, 50);
 
 while (1) {
 
     loop();
+
     processLoopback();
+
 }
+
 
 }
 

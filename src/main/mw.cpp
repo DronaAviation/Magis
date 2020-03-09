@@ -41,8 +41,6 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
 #include "drivers/ranging_vl53l0x.h"
-#include "drivers/opticflow_cheerson_cxof.h"
-
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
@@ -64,6 +62,7 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/flashfs.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -97,20 +96,18 @@
 #include "API/Estimate.h"
 #include "API/Specifiers.h"
 #include "API/Peripheral.h"
+#include "API/Motor.h"
 #include "API/PlutoPilot.h"
 #include "API/XRanging.h"
 #include "API/Localisation.h"
 #include "command/command.h"
 #include "command/localisationCommand.h"
-
-
-
+#include "drivers/opticflow_paw3903.h"
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
-
 
 int8_t returnValue = 100;
 uint8_t motorControlEnable = false;
@@ -118,7 +115,6 @@ extern uint8_t dynP8[3];
 extern uint8_t dynI8[3];
 extern uint8_t dynD8[3];
 extern uint8_t PIDweight[3];
-
 
 int16_t magHold;
 int16_t headFreeModeHold = 83;
@@ -143,16 +139,17 @@ static uint32_t disarmAt; // Time of automatic disarm when "Don't spin the motor
 uint32_t userCurrentTime = 0;
 uint32_t userLoopTime = 0;
 
-
-
 bool receivingRxData;
 bool isHeadSet = false;
 bool isCalibrated = false;
 bool shouldStart = false;
 bool tookOff = false;
-bool crashRecoveryCheck=false;
+bool crashRecoveryCheck = false;
 static bool isRXDataNew;
 static bool isBatteryLow = false;
+uint32_t arm_time = 0;
+
+bool isBlackboxOn = false;
 
 //bool isFlipDone=false;
 //bool startStable=false;
@@ -163,73 +160,59 @@ enum {
     ALIGN_MAG = 2
 };
 
-
 //Interval crashTimer;
-
 
 Interval dataLog; // Timer for controlling logging interval
 
-
-int16_t myRC[8]={1500,1500,1500,1500,1500,1500,1500,1500};
+int16_t myRC[8] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig); // pid controller function prototype
 
 extern pidControllerFuncPtr pid_controller;
 
-
-
-uint8_t getPos[2]={0x02, 0x00};
+uint8_t getPos[2] = { 0x02, 0x00 };
 uint8_t ch;
-
 
 Interval UartTimer;
 uint32_t loopTime3;
 
 uint32_t Uwbtime;
 
-
-
 // UWB Data Read
 
-void uwbUpdate(){
+void uwbUpdate()
+{
 
+    if (GPIO.read(Pin8)) { //When UWB TAG gets new data GPIO 8 on UNIBUS gets HIGH: works as a ready flag
 
+        LED_M_TOGGLE; // Toggling green LED for data received indication
 
-	if(GPIO.read(Pin8)){ //When UWB TAG gets new data GPIO 8 on UNIBUS gets HIGH: works as a ready flag
+        UART.write(UART2, getPos, 2);
 
-		    LED_M_TOGGLE; // Toggling green LED for data received indication
+        while (UART.rxBytesWaiting(UART2)) {
+            ch = UART.read8(UART2);
+            if (ch == 0x40) {
+                ch = UART.read8(UART2);
+                if (ch == 0x01) {
+                    ch = UART.read8(UART2);
+                    if (ch == 0x00) {
+                        ch = UART.read8(UART2);
+                        if (ch == 0x41) {
+                            ch = UART.read8(UART2);
+                            posX = (int16_t)(((int32_t) UART.read32(UART2)) / 10);
+                            posY = (int16_t)(((int32_t) UART.read32(UART2)) / 10);
+                            posZ = (int16_t)(((int32_t) UART.read32(UART2)) / 10);
+                            Quality = (int8_t)((int32_t) UART.read8(UART2));
 
-	    	 UART.write(UART2,getPos,2);
-
-	    	 while(UART.rxBytesWaiting(UART2)){
-				 ch=UART.read8(UART2);
-				 if(ch==0x40){
-					 ch=UART.read8(UART2);
-					 if(ch==0x01){
-						 ch=UART.read8(UART2);
-						 if(ch==0x00){
-							 ch=UART.read8(UART2);
-							 if(ch==0x41){
-								 ch=UART.read8(UART2);
-								 posX=(int16_t)(((int32_t)UART.read32(UART2))/10);
-								 posY=(int16_t)(((int32_t)UART.read32(UART2))/10);
-								 posZ=(int16_t)(((int32_t)UART.read32(UART2))/10);
-								 Quality=(int8_t)((int32_t)UART.read8(UART2));
-
-								 if (Quality>51)  // only if quality is greater than 50% take as a new position
-									 new_position=true;
-								 }
-							 }
-						 }
-				 }
-	    	 }
-	}
+                            if (Quality > 51)  // only if quality is greater than 50% take as a new position
+                                new_position = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
-
-
-
-
-
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -305,22 +288,15 @@ void annexCode(void)
     static uint32_t vbatLastServiced = 0;
     static uint32_t ibatLastServiced = 0;
 
-
-
-
-
-
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop2 = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t) currentControlRateProfile->dynThrPID  * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+            prop2 = 100 - (uint16_t) currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
             prop2 = 100 - currentControlRateProfile->dynThrPID;
         }
     }
-
-
 
     for (axis = 0; axis < 3; axis++) {
         tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
@@ -337,6 +313,7 @@ void annexCode(void)
             rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
             prop1 = 100 - (uint16_t) currentControlRateProfile->rates[axis] * tmp / 500;
             prop1 = (uint16_t) prop1 * prop2 / 100;
+
         } else if (axis == YAW) {
             if (currentProfile->rcControlsConfig.yaw_deadband) {
                 if (tmp > currentProfile->rcControlsConfig.yaw_deadband) {
@@ -365,9 +342,8 @@ void annexCode(void)
             rcCommand[axis] = -rcCommand[axis];
     }
 
-
     if (limitAltitude() && rcData[THROTTLE] > 1500) {
-            rcData[THROTTLE] = 1500;
+        rcData[THROTTLE] = 1500;
 
     }
 
@@ -376,26 +352,20 @@ void annexCode(void)
 
     }
 
-
-
-
-
     tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
     tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck); // [MINCHECK;2000] -> [0;1000]
     tmp2 = tmp / 100;
     rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100; // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
 
+    if (isLocalisationOn && ARMING_FLAG(ARMED)) {	// for localisation
+        rcCommand[ROLL] = getrcDataRoll();
+        rcCommand[PITCH] = getrcDataPitch();
 
-   /*
-    if(isLocalisationOn) {	// for localisation
-    		rcCommand[ROLL] = (getrcDataRoll());
-    		rcCommand[PITCH] = (getrcDataPitch());
-    	}else{
-    		resetPosIntegral();
-    		command_jump(-1);
-    	}
+    } else {
 
-   */
+        resetPosIntegral();
+        command_jump(-1);
+    }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         float radDiff = degreesToRadians(heading - headFreeModeHold);
@@ -414,8 +384,7 @@ void annexCode(void)
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-        int32_t ibatTimeSinceLastServiced = cmp32(currentTime,
-                ibatLastServiced);
+        int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
@@ -447,31 +416,31 @@ void annexCode(void)
 
         }
 
-        if(status_FSI(Crash)&&!crashRecoveryCheck){
+        if (status_FSI(Crash) && !crashRecoveryCheck) {
 
-            if(crashTimer.set(300,false)){
+            if (crashTimer.set(300, false)) {
 
-             crashRecoveryCheck=true;
-             crashTimer.reset();
-
-            }
-         }
-
-         if(crashRecoveryCheck&&STATE(SMALL_ANGLE))
-         { reset_FSI(Crash);
-           crashRecoveryCheck=false;
-         }
-
-            if (vbat > 34) {
-                isBatteryLow = false;
-                //ENABLE_ARMING_FLAG(OK_TO_ARM);???
-                reset_FSI(Low_battery);
-            } else if (fsLowBattery) {
-                isBatteryLow = true;
-                set_FSI(Low_battery);
+                crashRecoveryCheck = true;
+                crashTimer.reset();
 
             }
-     //   }
+        }
+
+        if (crashRecoveryCheck && STATE(SMALL_ANGLE)) {
+            reset_FSI(Crash);
+            crashRecoveryCheck = false;
+        }
+
+        if (vbat > 34) {
+            isBatteryLow = false;
+            //ENABLE_ARMING_FLAG(OK_TO_ARM);???
+            reset_FSI(Low_battery);
+        } else if (fsLowBattery) {
+            isBatteryLow = true;
+            set_FSI(Low_battery);
+
+        }
+        //   }
 
         if (isCalibrating()) {
             warningLedFlash();
@@ -515,8 +484,6 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
         DISABLE_ARMING_FLAG(OK_TO_ARM);
 
-
-
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
             finishBlackbox();
@@ -526,32 +493,32 @@ void mwDisarm(void)
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 
-    if(current_command!=NONE)
-       command_status=FINISHED;
+    if (current_command != NONE)
+        command_status = FINISHED;
 
     isLanding = false;
     setLandTimer = true;
     setTakeOffAlt = false;
     setTakeOffThrottle = false;
     setTakeOffTimer = true;
+    isTookOff = false;
+    isTakeOffHeightSet = false;
     takeOffThrottle = 950;
-    takeOffHeight=200;
-    landThrottle=1200;
+    takeOffHeight = 120;
+    landThrottle = 1200;
     flipState = 0;
+    arm_time = 0;
     reset_FSI(LowBattery_inFlight);
     reset_FSI(Signal_loss);
-
-
 
     isPitchStabelised = false;
     isRollStabelised = false;
     isHeadSet = false;
     isChukedArmed = false;
-    isThrottleStickArmed=false;
-   // Control.setFailsafeState(CRASH, true);
+    isThrottleStickArmed = false;
+    // Control.setFailsafeState(CRASH, true);
 
-
-
+    resetPosController();
 
 }
 
@@ -569,9 +536,7 @@ void releaseSharedTelemetryPorts(void)
 void mwArm(void)
 {
 
-
-
-    if ((ARMING_FLAG(OK_TO_ARM) || netAccMagnitude < 2) && isCalibrated&&!isBatteryLow) {
+    if ((ARMING_FLAG(OK_TO_ARM) || netAccMagnitude < 2) && isCalibrated && !isBatteryLow) {
         if (ARMING_FLAG(ARMED)) {
             return;
         }
@@ -581,15 +546,16 @@ void mwArm(void)
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
 
-            if(isUserHeadFreeHoldSet){
+            if (isUserHeadFreeHoldSet) {
 
-            headFreeModeHold = userHeadFreeHoldHeading;
+                headFreeModeHold = userHeadFreeHoldHeading;
 
-            }else
-            headFreeModeHold = heading;
-
+            } else
+                headFreeModeHold = heading;
 
             // headFreeModeHold=83;
+
+            arm_time = millis();
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -597,7 +563,7 @@ void mwArm(void)
                 if (sharedBlackboxAndMspPort) {
                     mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
-                startBlackbox();
+                  startBlackbox();
             }
 #endif
             disarmAt = millis() + masterConfig.auto_disarm_delay * 1000; // start disarm timeout, will be extended when throttle is nonzero
@@ -619,7 +585,6 @@ void mwArm(void)
     if (!ARMING_FLAG(ARMED)) {
         beeperConfirmationBeeps(1);
     }
-
 
 }
 
@@ -648,13 +613,13 @@ void handleInflightCalibrationStickPosition(void)
 
 void updateInflightCalibrationState(void)
 {
-    if (AccInflightCalibrationArmed && ARMING_FLAG( ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) { // Copter is airborne and you are turning it off via boxarm : start measurement
+    if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) { // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = false;
     }
     if (IS_RC_MODE_ACTIVE(BOXCALIB)) { // Use the Calib Option to activate : Calib = TRUE Meausrement started, Land and Calib = 0 measurement stored
         if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone)
-        InflightcalibratingA = 50;
+            InflightcalibratingA = 50;
         AccInflightCalibrationActive = true;
     } else if (AccInflightCalibrationMeasurementDone && !ARMING_FLAG(ARMED)) {
         AccInflightCalibrationMeasurementDone = false;
@@ -664,40 +629,37 @@ void updateInflightCalibrationState(void)
 
 void updateMagHold(void)
 {
-static bool isMagHoldChanged=false;
-int16_t headingError;
+    static bool isMagHoldChanged = false;
+    int16_t headingError;
 
-    if (ABS(rcData[YAW]-1500) < 200 && (FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(HEADFREE_MODE))) {
+    if (ABS(rcData[YAW]-1500) < 300 && (FLIGHT_MODE(MAG_MODE) || FLIGHT_MODE(HEADFREE_MODE))) {
 
-        if(isMagHoldChanged && ABS(gyroADC[YAW]/4) < 70)
-        {
+        if (isMagHoldChanged && ABS(gyroADC[YAW]/4) < 70) {
             isMagHoldChanged = false;
             magHold = heading;
 
         }
 
-        if(!isMagHoldChanged){
-        headingError = heading - magHold;
-        if (headingError <= -180)
-            headingError += 360;
-        if (headingError >= +180)
-            headingError -= 360;
+        if (!isMagHoldChanged) {
+            headingError = heading - magHold;
+            if (headingError <= -180)
+                headingError += 360;
+            if (headingError >= +180)
+                headingError -= 360;
 
-
-         headingError = constrain(headingError, -30, 30);
+            headingError = constrain(headingError, -30, 30);
 
             rcCommand[YAW] = headingError * currentProfile->pidProfile.P8[PIDMAG];
             rcCommand[YAW] = constrain(rcCommand[YAW], -400, 400);
 
-
-            }
+        }
 
     } else {
-        isMagHoldChanged=true;
+
+        isMagHoldChanged = true;
         magHold = heading;
-
-
     }
+
 }
 
 typedef enum {
@@ -717,7 +679,9 @@ typedef enum {
     UPDATE_DISPLAY_TASK,
 #endif
 
-	UPDATE_LASER_TOF_TASK,
+    UPDATE_OPTICFLOW,
+
+    UPDATE_LASER_TOF_TASK,
 
 } periodicTasks;
 
@@ -763,8 +727,8 @@ void executePeriodicTasks(void)
 
                 apmCalculateEstimatedAltitude(currentTime);
 
-                if(localisationType==UWB)
-                PosXYEstimate(currentTime);
+                if (localisationType == UWB)
+                    PosXYEstimate(currentTime);
 
                 isCalibrated = true;
 
@@ -794,18 +758,26 @@ void executePeriodicTasks(void)
         break;
 #endif
 
+    case UPDATE_OPTICFLOW:
+
+#ifdef OPTIC_FLOW
+        updateSpiOpticFlow();
+        runFlowHold(currentTime);
+#endif
+        break;
 
     case UPDATE_LASER_TOF_TASK:
 
-     #ifdef LASER_TOF
+#ifdef LASER_TOF
 
-            getRange();
+        getRange();
 
-     #endif
-            break;
+#endif
+//        if(useRangingSensor)
+//            getRange();
 
 
-
+        break;
 
     }
 
@@ -823,6 +795,7 @@ void processRx(void)
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
     // in 3D mode, we need to be able to disarm by switch at any time
+
     if (feature(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
             mwDisarm();
@@ -891,9 +864,7 @@ void processRx(void)
         updateInflightCalibrationState();
     }
 
-
     updateActivatedModes(currentProfile->modeActivationConditions);
-
 
     if (!cliMode) {
         updateAdjustmentStates(currentProfile->adjustmentRanges);
@@ -950,7 +921,6 @@ void processRx(void)
             headFreeModeHold = heading; // acquire new heading
         }
 
-
         // Used while inFligght Mode change
         if (IS_RC_MODE_ACTIVE(BOXBARO) && !isHeadSet) {
             headFreeModeHold = heading; // acquire new heading
@@ -978,14 +948,13 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING
-            || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED))|| (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+        if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) || (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
 
             releaseSharedTelemetryPorts();
 
@@ -1035,91 +1004,82 @@ void filterRc(void)
     }
 }
 
-
-void userCode(){
+void userCode()
+{
 
     if ((rcData[AUX2] == 1500 && rxIsReceivingSignal())) {
-           runUserCode = true;
+        runUserCode = true;
 
+    } else {
+        runUserCode = false;
 
-       } else {
-           runUserCode = false;
-
-       }
+    }
 
     if (runUserCode) {
 
-            userCurrentTime = micros();
-            if ((int32_t)(userCurrentTime - userLoopTime) >= 0) {
-                {
-                    userLoopTime = userCurrentTime + userLoopFrequency;    //100ms default
-                    if (callOnPilotStart) {
-                        onLoopStart();
-                        callOnPilotStart = false;
-                        callonPilotFinish = true;
-                    }
-
-
-                    plutoLoop();
-
-                }
-            }else {
-
-                for (int i = 0; i < 4; i++){
-
-                      if(userRCflag[i]){
-
-                          if(i<3)
-                              rcCommand[i]=RC_ARRAY[i];
-                          else if(i==3)
-                              rcData[i]=RC_ARRAY[i];
-
-
-                      }
+        userCurrentTime = micros();
+        if ((int32_t)(userCurrentTime - userLoopTime) >= 0) {
+            {
+                userLoopTime = userCurrentTime + userLoopFrequency;    //100ms default
+                if (callOnPilotStart) {
+                    onLoopStart();
+                    callOnPilotStart = false;
+                    callonPilotFinish = true;
                 }
 
-                if (isUserHeadingSet) {
+                plutoLoop();
 
-                    magHold = userHeading;
+            }
+        } else {
 
+            for (int i = 0; i < 4; i++) {
+
+                if (userRCflag[i]) {
+
+                    if (i < 3)
+                        rcCommand[i] = RC_ARRAY[i];
+                    else if (i == 3)
+                        rcData[i] = RC_ARRAY[i];
 
                 }
+            }
 
+            if (isUserHeadingSet) {
 
-                for(int i=0; i<6; i++) {
-
-                    if(isUserFlightModeSet[i])
-                        FlightMode.set((flight_mode_e)i);
-
-
-                }
+                magHold = userHeading;
 
             }
 
+            for (int i = 0; i < 6; i++) {
 
-        }
-
-        else {
-
-            if (callonPilotFinish) {
-                for (int i = 0; i < 4; i++) {
-                    RC_ARRAY[i] = 0;
-                    userRCflag[i]=false;
-
-                }
-
-                isUserHeadingSet = false;
-                onLoopFinish();
-                callOnPilotStart = true;
-                callonPilotFinish = false;
+                if (isUserFlightModeSet[i])
+                    FlightMode.set((flight_mode_e) i);
 
             }
 
         }
+
+    }
+
+    else {
+
+        if (callonPilotFinish) {
+            for (int i = 0; i < 4; i++) {
+                RC_ARRAY[i] = 0;
+                userRCflag[i] = false;
+
+            }
+
+            isUserHeadingSet = false;
+            onLoopFinish();
+            callOnPilotStart = true;
+            callonPilotFinish = false;
+
+        }
+
+    }
 
 }
-
-
 
 void loop(void)
 {
@@ -1131,9 +1091,8 @@ void loop(void)
 
     updateRx(currentTime);
 
-
 #ifdef FLIGHT_STATUS_INDICATOR
-   flightStatusIndicator();
+    flightStatusIndicator();
 #endif
 
     if (shouldProcessRx(currentTime)) {
@@ -1206,10 +1165,8 @@ void loop(void)
             }
         }
 
-
-        if(localisationType==UWB)
-          uwbUpdate();
-
+        if (localisationType == UWB)
+            uwbUpdate();
 
         annexCode();
 
@@ -1217,20 +1174,17 @@ void loop(void)
             filterRc();
         }
 
-
         userCode();
 
+        /* used in localisation
+         if (command_verify()){
 
-/* used in localisation
-        if (command_verify()){
+         command_next();
 
-               command_next();
+         }
 
-               }
-
-               command_run(currentTime);
-*/
-
+         command_run(currentTime);
+         */
 
 #if defined(BARO) || defined(SONAR)
         haveProcessedAnnexCodeOnce = true;
@@ -1241,6 +1195,11 @@ void loop(void)
             updateMagHold();
         }
 #endif
+
+#ifdef OPTIC_FLOW
+        selectVelOrPosmode();
+#endif
+
 
 #ifdef GTUNE
         updateGtuneState();
@@ -1260,19 +1219,14 @@ void loop(void)
         // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
-                && !((masterConfig.mixerMode == MIXER_TRI
-                        || masterConfig.mixerMode == MIXER_CUSTOM_TRI)
-                        && masterConfig.mixerConfig.tri_unarmed_servo)
-                && masterConfig.mixerMode != MIXER_AIRPLANE
-                && masterConfig.mixerMode != MIXER_FLYING_WING
+                && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo) && masterConfig.mixerMode != MIXER_AIRPLANE && masterConfig.mixerMode != MIXER_FLYING_WING
 #endif
                         ) {
             rcCommand[YAW] = 0;
         }
 
         if (currentProfile->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(
-            currentProfile->throttle_correction_value);
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(currentProfile->throttle_correction_value);
         }
 
 #ifdef GPS
@@ -1303,21 +1257,20 @@ void loop(void)
         }
 #endif
 
-/*
-#ifdef BAROO
-        // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-        if (haveProcessedAnnexCodeOnce) {
-            if (sensors(SENSOR_BARO)) {
-                updateAltHoldState();
-            }
-        }
-#endif
-*/
+        /*
+         #ifdef BAROO
+         // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
+         if (haveProcessedAnnexCodeOnce) {
+         if (sensors(SENSOR_BARO)) {
+         updateAltHoldState();
+         }
+         }
+         #endif
+         */
 
         failsafeOnCrash();
 
         executeCommand();
-
 
     }
 
@@ -1332,6 +1285,19 @@ void loop(void)
         updateLedStrip();
     }
 #endif
+
+#ifdef OPTIC_FLOW
+    if (runUserCode) {
+
+        isLocalisationOn = true;
+
+    } else {
+
+        isLocalisationOn = false;
+
+    }
+#endif
+
 
 
 
