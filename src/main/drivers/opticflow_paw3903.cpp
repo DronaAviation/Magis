@@ -41,6 +41,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
+#include "drivers/sc18is602b.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -107,7 +108,7 @@ int16_t flowScalerX = 0;
 int16_t flowScalerY = 0;
 
 uint32_t last_frame_us;             // system time of last message from flow sensor
-uint8_t buf[12];                    // buff of characters received from flow sensor
+uint8_t buf[13];                    // buff of characters received from flow sensor
 uint8_t buf_len;                    // number of characters in buffer
 float gyro_sum[2];                  // sum of gyro sensor values since last frame from flow sensor
 uint16_t gyro_sum_count;            // number of gyro sensor values in sum
@@ -119,7 +120,7 @@ float bodyRate[2];
 float bodyRate1[2];
 float bodyRate2[2];
 
-//Interval updateTimer;
+Interval updateTimer;
 
 float hist_gyroX;
 float hist_gyroY;
@@ -128,6 +129,18 @@ uint8_t motion = 0;
 
 Interval opticInterval;
 
+SC18IS602B spiBridge;
+
+uint8_t Testbuf[12];
+
+uint8_t spiData[] = {(0x00 & ~0x80u),0xFF};
+uint8_t spiReadBuf[sizeof(spiData)];
+
+
+uint8_t spiOpticFlowData[] = {(0x16 & ~0x80u),0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+
+bool ok=false;
+
 #define MAXIMUM_QUEUE_SIZE 3
 
 static float bufferX[MAXIMUM_QUEUE_SIZE], bufferY[MAXIMUM_QUEUE_SIZE];
@@ -135,7 +148,12 @@ static int16_t head = 0;
 static int16_t rear = -1;
 static int16_t itemCount = 0;
 
-uint8_t opticFlowAddress = 0;
+uint8_t opticFlowAddress = 12;
+uint8_t debugOf=13;
+
+
+
+
 
 void addGyroXY(float gyroX, float gyroY)
 {
@@ -611,6 +629,14 @@ static void initRegisters()
 void initOpticFlow()
 {
 
+#ifndef SPI_MODE
+
+    spiBridge.init(0, 1, 1, 1);
+
+    spiBridge.configureSPI(false, SC18IS601B_SPIMODE_3, SC18IS601B_SPICLK_1843_kHz);
+
+#endif
+
     GPIO.init(Pin14, OUTPUT);
     GPIO.write(Pin14, STATE_HIGH);
 
@@ -623,23 +649,78 @@ void initOpticFlow()
     GPIO.write(Pin14, STATE_HIGH);
     delay(2);
 
-    opticFlowAddress = SPI.read(0x00);
+//   opticFlowAddress = spi.Read(0x00);
+//
+//    spiBridge.spiTransfer(0, spiData, sizeof(spiData), spiReadBuf);
+//
+//    opticFlowAddress=spiReadBuf[1];
 
-    SPI.write(0x3A, 0x5A);
 
+#ifdef SPI_MODE
+
+    opticFlowAddress = spi.Read(0x00, 1);
+    spi.Write(0x3A, 0x5A);
     delay(5);
-
-    SPI.read(0x02);
-    SPI.read(0x03);
-    SPI.read(0x04);
-    SPI.read(0x05);
-    SPI.read(0x06);
-
+    spi.Read(0x02);
+    spi.Read(0x03);
+    spi.Read(0x04);
+    spi.Read(0x05);
+    spi.Read(0x06);
     delay(1);
-
     mode_0_init();
 
+   // spi.Write(0x4E,0xA8);
     delay(100);
+
+    debugOf= spi.Read(0x4E,1);
+
+#else
+    opticFlowAddress= spiBridge.Read(0x00);
+    spiBridge.Write(0x3A, 0x5A);
+    delay(5);
+    spiBridge.Read(0x02);
+    spiBridge.Read(0x03);
+    spiBridge.Read(0x04);
+    spiBridge.Read(0x05);
+    spiBridge.Read(0x06);
+    delay(1);
+    mode_0_init_();
+
+   // spiBridge.Write(0x5B, 0xC0);
+
+    delay(100);
+
+    debugOf= spiBridge.Read(0x4E);
+
+#endif
+
+
+
+
+
+   // spi.Write(0x3A, 0x5A);
+
+
+
+
+
+
+
+
+
+
+
+  //  mode_0_init_();
+   // spi.Write(0x4E, 0xA7);
+   // mode_0_init();
+
+
+
+
+
+
+
+  //  debugOf= spi.Read(0x4E,1);
 
 
 }
@@ -768,12 +849,10 @@ void updateOpticFlow()
 void updateSpiOpticFlow()
 {
 
-    if (opticInterval.set(40, true)) {
+    if (opticInterval.set(8, true)) {
 
-
+#ifdef SPI_MODE
         ENABLE_SPI;
-
-      //  GPIO.write(Pin14, STATE_LOW);
 
         delayMicroseconds(50);
 
@@ -785,24 +864,46 @@ void updateSpiOpticFlow()
 
         delayMicroseconds(50);
 
-  //      GPIO.write(Pin14, STATE_HIGH);
-
 
         DISABLE_SPI;
 
         delayMicroseconds(50);
 
 
-//        flowRate[0] = (int16_t)((uint16_t) buf[3] << 8) | buf[2];
-//        flowRate[1] = (int16_t)((uint16_t) buf[5] << 8) | buf[4];
-//        bodyRate1[0] = (int16_t) buf[6];
-//        bodyRate1[1] = (int16_t)((uint16_t) buf[10] << 8) | buf[11];
-
         flowRate[0] = (int16_t)((uint16_t) buf[3] << 8) | buf[2];
         flowRate[1] = (int16_t)((uint16_t) buf[5] << 8) | buf[4];
         bodyRate1[0] = (int16_t) buf[6];
-        bodyRate2[0] = (int16_t) buf[7];
         bodyRate1[1] = (int16_t)((uint16_t) buf[10] << 8) | buf[11];
+
+
+        bodyRate2[0] = (int16_t) buf[7];
+
+
+#else
+        ok=spiBridge.spiTransfer(0, spiOpticFlowData, sizeof(spiOpticFlowData), buf);
+
+        if(ok)
+           bodyRate2[1]=444;
+       else
+           bodyRate2[1]=111;
+
+
+
+        flowRate[0] = (int16_t)((uint16_t) buf[4] << 8) | buf[3];
+        flowRate[1] = (int16_t)((uint16_t) buf[6] << 8) | buf[5];
+        bodyRate1[0] = (int16_t) buf[7];
+        bodyRate1[1] = (int16_t)((uint16_t) buf[11] << 8) | buf[12];
+
+
+        bodyRate2[0] = (int16_t) buf[8];
+
+#endif
+
+
+
+
+
+
 
 
         uint32_t this_frame_us = micros();

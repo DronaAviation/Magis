@@ -36,11 +36,9 @@ void initOpticFlow();
 void updateOpticFlow();
 void updateSpiOpticFlow();
 
-void mode_0_init();
-void mode_1_init();
-void mode_2_init();
-
 extern uint8_t opticFlowAddress;
+
+extern uint8_t debugOf;
 
 #ifdef __cplusplus
 }
