@@ -17,7 +17,7 @@
 # The target to build, see VALID_TARGETS below
 TARGET		?= PRIMUSX
 
-BUILD_TYPE  ?= BIN
+BUILD_TYPE  ?= LIB
 
 LIB_MAJOR_VERSION?= 0
 
@@ -433,6 +433,7 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 DRONA_SRC = flight/acrobats.cpp \
             drivers/opticflow_paw3903.cpp \
             drivers/ranging_vl53l0x.cpp \
+            drivers/sc18is602b.cpp\
             flight/posControl.cpp\
             flight/posEstimate.cpp\
             flight/opticflow.cpp\

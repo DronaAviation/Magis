@@ -121,13 +121,14 @@ public:
 
 
 
+/*
+ MODE 	CPOL	CPHA			Data Captured 		Output
+  0		Low		0 i.e.edge1		Rising edge			Falling	edge
+  1		Low		1 i.e.edge2		Falling	edge		Rising edge
+  2		High	0				Falling	edge		Rising edge
+  3		High	1				Rising edge			Falling	edge
+*/
 
-/* MODE 	CPOL	CPHA			Data Captured 		Output
- *	0		Low		0 i.e.edge1		Rising edge			Falling	edge
- *	1		Low		1 i.e.edge2		Falling	edge		Rising edge
- *	2		High	0				Falling	edge		Rising edge
- *	3		High	1				Rising edge			Falling	edge
- */
 typedef enum SPImode_s {
     MODE0 = 0,     //!<SPI mode 1
     MODE1,         //!<SPI mode 2
