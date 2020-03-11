@@ -141,59 +141,29 @@ typedef enum SPIfirst_bit_s {
 } SPIfirst_bit_t;
 
 
-class SPIClass {
+class SPI_P {
     public:
 
-        /**
-         * @brief Initializes SPI protocol
-         * @param   none
-         * @retval None
-         */
-        void Init();
 
-        /**
-         * @brief Configure basic SPI functions
-         * @param  SPImode_t mode: This parameter can be set to MODE0,MODE1,
-         MODE2,MODE3
-         * @param  uint16_t speed:SPI allowed frequencies in MHz:
-         *         18000, 9000, 4500, 2250,
-         *         1125, 562.5, 281.25, 140.625
-         * @param  SPIfirst_bit_t bit:This parameter can be set to LSBFIRST,MSBFIRST
-         * @retval None
-         */
-        void Settings(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit);
+        void init();
 
-        /**
-         * @brief Enables SPI communication
-         * @param   none
-         * @retval None
-         */
-        void Enable(void);
 
-        /**
-         * @brief Disables SPI communication
-         * @param   none
-         * @retval None
-         */
-        void Disable(void);
+        void init(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit);
 
-        /**
-         * @brief Reads the values from the specified register
-         * @param   const uint8_t register_address:This parameter can be set to
-         *           0x00 to 0xFF
-         * @param   int lenght:number of bytes. min value:1
-         * @retval value from the specified register
-         */
-        uint8_t Read(const uint8_t register_address, int length);
 
-        /**
-         * @brief Reads the values from the specified register
-         * @param   const uint8_t data:value to be written to the register
-         * @param   const uint8_t register_address:This parameter can be set to
-         *          0x00 to 0xFF
-         * @retval  bool : Either TRUE/FALSE
-         */
-        bool Write(const uint8_t register_address,uint8_t data);
+        void enable(void);
+
+
+        void disable(void);
+
+
+        uint8_t read(uint8_t register_address);
+
+
+        void read(uint8_t register_address, int16_t length,uint8_t* buffer);
+
+
+        void write(uint8_t register_address,uint8_t data);
 };
 
 
@@ -205,7 +175,7 @@ extern ADC_P ADC;
 extern UART_P UART;
 extern I2C_P I2C;
 extern PWM_P PWM;
-extern SPIClass spi;
+extern SPI_P SPI;
 
 #ifdef __cplusplus
 }

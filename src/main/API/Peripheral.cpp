@@ -1207,12 +1207,12 @@ uint16_t getPrescaler(uint16_t speed)
 }
 
 
-void SPIClass::Init()
+void SPI_P::init()
 {
     spiInit (SPI2);
 }
 
-void SPIClass::Settings(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit)
+void SPI_P::init(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit)
 {
     uint16_t prescaler = getPrescaler(speed);
     SPI_InitTypeDef spi;
@@ -1264,19 +1264,21 @@ void SPIClass::Settings(SPImode_t mode, uint16_t speed, SPIfirst_bit_t bit)
 }
 
 
-void SPIClass::Enable(void)
+void SPI_P::enable(void)
 {
     ENABLE_SPI;
 }
 
-void SPIClass::Disable(void)
+void SPI_P::disable(void)
 {
     DISABLE_SPI;
 }
 
-uint8_t SPIClass::Read(uint8_t register_address, int len)
+uint8_t SPI_P::read(uint8_t register_address)
 {
-    uint8_t variable = 0;
+
+       uint8_t value=0;
+
 
       register_address &=  ~0x80u;
 
@@ -1295,7 +1297,7 @@ uint8_t SPIClass::Read(uint8_t register_address, int len)
 
 	    delayMicroseconds(50);
 
-	    spiTransfer(SPI2, &variable, NULL, 1);
+	    spiTransfer(SPI2, &value, NULL, 1);
 
 	    delayMicroseconds(50);
 
@@ -1306,12 +1308,48 @@ uint8_t SPIClass::Read(uint8_t register_address, int len)
 	    delayMicroseconds(200);
 
 
-
-    return variable;
+        return value;
 
 }
 
-bool SPIClass::Write( uint8_t register_address, uint8_t data)
+void SPI_P::read(uint8_t register_address, int16_t length,uint8_t* buffer)
+{
+
+
+      register_address &=  ~0x80u;
+
+    //    opticFlowAddress=spi.Read(0x4E, 1);
+
+
+
+        ENABLE_SPI;
+
+    //    GPIO.write(Pin14, STATE_LOW);
+
+        delayMicroseconds(50);
+
+
+        spiTransferByte(SPI2, register_address);
+
+        delayMicroseconds(50);
+
+        spiTransfer(SPI2, buffer, NULL, length);
+
+        delayMicroseconds(50);
+
+    //    GPIO.write(Pin14, STATE_HIGH);
+
+        DISABLE_SPI;
+
+        delayMicroseconds(200);
+
+
+
+
+}
+
+
+void SPI_P::write( uint8_t register_address, uint8_t data)
 {
 //    ENABLE_SPI;
 //    spiTransferByte(SPI2, register_address);
@@ -1336,15 +1374,13 @@ bool SPIClass::Write( uint8_t register_address, uint8_t data)
 	    delayMicroseconds(50);
 
 
-//s	    GPIO.write(Pin14, STATE_HIGH);
+//	    GPIO.write(Pin14, STATE_HIGH);
 
 	    DISABLE_SPI;
 
 	    delayMicroseconds(200);
 
 
-
-    	return true;
 }
 
 
@@ -1356,6 +1392,6 @@ ADC_P ADC;
 UART_P UART;
 I2C_P I2C;
 PWM_P PWM;
-SPIClass spi;
+SPI_P SPI;
 
 #endif
