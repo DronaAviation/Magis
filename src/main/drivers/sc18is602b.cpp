@@ -21,7 +21,22 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "platform.h"
+
 #include "common/maths.h"
+#include "common/axis.h"
+#include "common/color.h"
+#include "common/utils.h"
+
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/compass.h"
+#include "drivers/light_led.h"
+
+#include "drivers/gpio.h"
+#include "drivers/system.h"
+
+
 #include "API/Peripheral.h"
 #include "API/Utils.h"
 
@@ -198,7 +213,7 @@ bool SC18IS602B::spiTransfer(int slaveNum, uint8_t* txData, uint8_t txLen,
 }
 
 
-bool SC18IS602B::Write(uint8_t register_address,uint8_t data){
+bool SC18IS602B::write(uint8_t register_address,uint8_t data){
 
     bool success=false;
 
@@ -219,7 +234,7 @@ bool SC18IS602B::Write(uint8_t register_address,uint8_t data){
 }
 
 
-uint8_t SC18IS602B::Read(uint8_t register_address){
+uint8_t SC18IS602B::read(uint8_t register_address){
 
     uint8_t dataBuffer[2];
 
