@@ -17,7 +17,7 @@
 # The target to build, see VALID_TARGETS below
 TARGET		?= PRIMUSX
 
-BUILD_TYPE  ?= LIB
+BUILD_TYPE  ?= BIN
 
 LIB_MAJOR_VERSION?= 0
 

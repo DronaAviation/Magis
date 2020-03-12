@@ -65,7 +65,7 @@ public:
 
 
     /* if resetPin = -1 it will be ignored */
- void init(int slaveNum, bool a0, bool a1, bool a2);
+    void init(int slaveNum, bool a0, bool a1, bool a2);
 
     /* calls into Wire.begin() */
     void begin();
@@ -117,9 +117,9 @@ public:
     uint8_t spiTransfer(int slaveNum, uint8_t txByte);
 
 
-    bool Write(uint8_t register_address,uint8_t data);
+    bool write(uint8_t register_address,uint8_t data);
 
-    uint8_t Read(uint8_t register_address);
+    uint8_t read(uint8_t register_address);
 
 
 private:
