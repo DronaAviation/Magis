@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif 
-#define TARGET_BOARD_IDENTIFIER "PRIMUSX"
+#define TARGET_BOARD_IDENTIFIER "PRIMUSX2"
 
 /* #define LED0_GPIO   GPIOB
  #define LED0_PIN    Pin_4 // Blue LEDs - PB4
@@ -45,7 +45,7 @@ extern "C" {
 #define LED_M
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 
-#define USABLE_TIMER_CHANNEL_COUNT 5
+#define USABLE_TIMER_CHANNEL_COUNT 4
 
 
 #define M25P16_CS_GPIO        GPIOB
@@ -58,20 +58,20 @@ extern "C" {
 
 
 #define ACC
-#define USE_ACC_MPU6500
-//#define ACC_MPU6500_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
+#define USE_ACC_ICM20948
+//#define ACC_ICM20948_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
 
 #define GYRO
-#define USE_GYRO_MPU6500
-//#define GYRO_MPU6500_ALIGN CW90_DEG_FLIP //For plutoX-new comment  else for old uncomment
+#define USE_GYRO_ICM20948
+//#define GYRO_ICM20948_ALIGN CW90_DEG_FLIP //For plutoX-new comment  else for old uncomment
 
 #define MAG
-#define USE_MAG_AK8963
-#define MAG_AK8963_ALIGN CW90_DEG_FLIP //For plutoX-new remove comment  else for old comment
+#define USE_MAG_AK09916
+#define MAG_AK09916_ALIGN CW180_DEG_FLIP //For plutoX-new remove comment  else for old comment
 //#define MAG_ENFORCE
 
 #define BARO
-#define USE_BARO_MS5611
+#define USE_BARO_ICP10111
 
 #define BRUSHED_MOTORS
 
@@ -137,15 +137,16 @@ extern "C" {
 
 #define USE_ADC
 
-#define ADC_INSTANCE         ADC3
-#define ADC_DMA_CHANNEL      DMA2_Channel5
+#define ADC_INSTANCE         ADC2
+#define ADC_DMA_CHANNEL      DMA2_Channel1
 #define ADC_AHB_PERIPHERAL   RCC_AHBPeriph_DMA2
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define VBAT_ADC_GPIO        GPIOB	//TODO: check Vbat working, connected to internal ADC
-#define VBAT_ADC_GPIO_PIN    GPIO_Pin_0
+#define VBAT_ADC_GPIO_PIN    GPIO_Pin_2
 #define VBAT_ADC_CHANNEL     ADC_Channel_12
+
 
 //#define BLACKBOX
 #define SERIAL_RX
@@ -173,7 +174,7 @@ extern "C" {
 
 #define DCM
 //#define OPTIC_FLOW
-//
+
 //#define LASER_TOF // only to get laser height
 //#define LASER_ALT // to integrate with althold
 

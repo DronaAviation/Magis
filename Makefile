@@ -15,7 +15,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= PRIMUSX
+TARGET		?= PRIMUSX2
 
 BUILD_TYPE  ?= BIN
 
@@ -43,7 +43,7 @@ FLASH_SIZE ?=
 
 FORKNAME			 = Magis
 
-VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 PRIMUSX CC3D CHEBUZZF3 CJMCU PRIMUSV3R COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY 
+VALID_TARGETS	 = ALIENWIIF1 ALIENWIIF3 PRIMUSX PRIMUSX2 CC3D CHEBUZZF3 CJMCU PRIMUSV3R COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE NAZE32PRO OLIMEXINO PORT103R RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY 
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -51,7 +51,7 @@ ifeq ($(TARGET),$(filter $(TARGET),CJMCU))
 FLASH_SIZE = 64
 else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF1  PRIMUSV3R  CC3D NAZE OLIMEXINO RMDO))
 FLASH_SIZE = 128
-else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
+else ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX PRIMUSX2 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC MOTOLAB NAZE32PRO PORT103R SPARKY SPRACINGF3 STM32F3DISCOVERY))
 FLASH_SIZE = 256
 else
 $(error FLASH_SIZE not configured for target)
@@ -91,7 +91,7 @@ VPATH		:= $(VPATH):$(RANGING_DIR)/core/src:$(RANGING_DIR)/platform/src
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
+ifeq ($(TARGET),$(filter $(TARGET),ALIENWIIF3 PRIMUSX PRIMUSX2 CHEBUZZF3 COLIBRI_RACE MOTOLAB NAZE32PRO RMDO SPARKY SPRACINGF3 STM32F3DISCOVERY))
 
 STDPERIPH_DIR	= $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 
@@ -488,9 +488,11 @@ PRIMUSX_SRC = \
 		   drivers/adc_stm32f30x.c \
 		   drivers/accgyro_mpu.cpp \
 		   drivers/accgyro_mpu6500.cpp \
+		   drivers/accgyro_icm20948.cpp \
 		   drivers/bus_i2c_stm32f30x.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_ak8963.cpp \
+		   drivers/compass_ak09916.cpp \
 		   drivers/gpio_stm32f30x.c \
 		   drivers/light_led_stm32f30x.c \
 		   drivers/flash_m25p16.cpp \
@@ -504,6 +506,35 @@ PRIMUSX_SRC = \
 		   drivers/timer.cpp \
 		   drivers/timer_stm32f30x.c \
 		   drivers/barometer_ms5611.cpp \
+		   drivers/barometer_icp10111.cpp \
+		   sensors/barometer.cpp \
+		   $(COMMON_SRC) \
+           $(DRONA_SRC)
+
+
+PRIMUSX2_SRC = \
+		   startup_stm32f30x_md_gcc.S \
+		   $(RANGING_SRC) \
+		   drivers/adc.cpp \
+		   drivers/adc_stm32f30x.c \
+		   drivers/accgyro_mpu.cpp \
+		   drivers/accgyro_icm20948.cpp \
+		   drivers/bus_i2c_stm32f30x.c \
+		   drivers/bus_spi.c \
+		   drivers/compass_ak09916.cpp \
+		   drivers/gpio_stm32f30x.c \
+		   drivers/light_led_stm32f30x.c \
+		   drivers/flash_m25p16.cpp \
+		   drivers/pwm_mapping.cpp \
+		   drivers/pwm_output.cpp \
+		   drivers/pwm_rx.cpp \
+		   drivers/serial_uart.c \
+		   drivers/serial_uart_stm32f30x.c \
+		   drivers/sound_beeper_stm32f30x.c \
+		   drivers/system_stm32f30x.c \
+		   drivers/timer.cpp \
+		   drivers/timer_stm32f30x.c \
+		   drivers/barometer_icp10111.cpp \
 		   sensors/barometer.cpp \
 		   $(COMMON_SRC) \
            $(DRONA_SRC)

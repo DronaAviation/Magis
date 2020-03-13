@@ -16,6 +16,9 @@
  */
 
 
+
+
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -152,7 +155,7 @@ uint8_t opticFlowAddress = 12;
 uint8_t debugOf=13;
 
 
-
+#define SPI_MODE
 
 
 void addGyroXY(float gyroX, float gyroY)
@@ -771,21 +774,21 @@ void initOpticFlow()
 
 #ifdef SPI_MODE
 
-    opticFlowAddress = spi.Read(0x00, 1);
-    spi.Write(0x3A, 0x5A);
+    opticFlowAddress = SPI.read(0x00);
+    SPI.write(0x3A, 0x5A);
     delay(5);
-    spi.Read(0x02);
-    spi.Read(0x03);
-    spi.Read(0x04);
-    spi.Read(0x05);
-    spi.Read(0x06);
+    SPI.read(0x02);
+    SPI.read(0x03);
+    SPI.read(0x04);
+    SPI.read(0x05);
+    SPI.read(0x06);
     delay(1);
     mode_0_init();
 
    // spi.Write(0x4E,0xA8);
     delay(100);
 
-    debugOf= spi.Read(0x4E,1);
+    debugOf= SPI.read(0x4E);
 
 #else
     opticFlowAddress= spiBridge.read(0x00);
@@ -962,7 +965,7 @@ void updateOpticFlow()
 void updateSpiOpticFlow()
 {
 
-    if (opticInterval.set(8, true)) {
+    if (opticInterval.set(40, true)) {
 
 #ifdef SPI_MODE
         ENABLE_SPI;
@@ -1050,4 +1053,5 @@ void updateSpiOpticFlow()
     }
 
 }
+
 

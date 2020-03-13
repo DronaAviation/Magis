@@ -196,7 +196,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;  //45    //20
     pidProfile->D8[PIDVEL] = 1;  //1      //0
 
-    pidProfile->P8[PIDUSER] = 55;
+    pidProfile->P8[PIDUSER] = 60;
     pidProfile->I8[PIDUSER] = 30;
     pidProfile->D8[PIDUSER] = 5;
 
@@ -416,7 +416,7 @@ static void resetConf(void)
     masterConfig.mixerMode = MIXER_QUADX;
     //    masterConfig.mixerMode = MIXER_QUADP;
     featureClearAll();
-#if defined(CJMCU) ||  defined(PRIMUSV3R) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3) ||  defined(PRIMUSX)
+#if defined(CJMCU) ||  defined(PRIMUSV3R) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3) ||  defined(PRIMUSX) || defined(PRIMUSX2)
     //featureSet(FEATURE_RX_PPM);
     featureSet(FEATURE_RX_MSP);
     featureSet(FEATURE_CURRENT_METER);//testing virtual adc current measurement

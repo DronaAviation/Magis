@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif 
@@ -23,7 +25,7 @@ extern "C" {
 
 #define MPU6500_BIT_RESET                   (0x80)
 
-#pragma once
+
 
 bool mpu6500AccDetect(acc_t *acc);
 bool mpu6500GyroDetect(gyro_t *gyro);

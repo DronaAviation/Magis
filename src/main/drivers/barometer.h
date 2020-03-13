@@ -21,9 +21,13 @@
 extern "C" {
 #endif 
 
+enum mmode { FAST, NORMAL, ACCURATE, VERY_ACCURATE };
+
 typedef void (*baroOpStartFuncPtr)(void);                       // baro start operation
-typedef uint32_t (*baroOpGetFuncPtr)(void);                       // baro start operation
-typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature, uint32_t P, uint32_t T); // baro calculation (filled params are pressure and temperature)
+typedef uint32_t (*baroOpGetFuncPtr)(void);                     // baro start operation
+typedef uint32_t (*baroMeaStartFuncPtr)(mmode mode);           // baro meaasurement start operation
+typedef bool (*baroReadFuncPtr)(uint32_t currentTime,float *pressure, float *temperature);                          // baro read operation
+typedef void (*baroCalculateFuncPtr)(float *pressure, float *temperature, uint32_t P, uint32_t T); // baro calculation (filled params are pressure and temperature)
 
 typedef struct baro_s {
         uint16_t ut_delay;
@@ -32,8 +36,13 @@ typedef struct baro_s {
         baroOpGetFuncPtr get_ut;
         baroOpStartFuncPtr start_up;
         baroOpGetFuncPtr get_up;
+        baroMeaStartFuncPtr measurment_start;
         baroCalculateFuncPtr calculate;
+        baroReadFuncPtr read;
 } baro_t;
+
+
+extern uint32_t baroRead;
 
 #ifdef __cplusplus
 }

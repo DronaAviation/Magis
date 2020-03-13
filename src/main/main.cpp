@@ -445,6 +445,8 @@ LED_M_OFF;
 LED_R_OFF;
 LED_L_OFF;
 
+
+
 #ifdef MAG
 if (sensors(SENSOR_MAG))
     compassInit();
@@ -518,12 +520,14 @@ if (masterConfig.mixerMode == MIXER_GIMBAL){
 
 }
 
+
+
 updateGains();
 gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
 baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
-apmBaroCallibrate();
-
+baroCalibrate();
+baroInit();
 #endif
 
 
@@ -581,8 +585,11 @@ ranging_init();
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);
 
+#ifdef OPTIC_FLOW
+
 initOpticFlow();
 
+#endif
 
 updatePosGains();
 
@@ -596,11 +603,13 @@ plutoInit();
 
 timerDataConfiguration();
 
+
 delay(300);
 
 
 
 timerInit();  // timer must be initialized before any channel is allocated
+
 
 
 
@@ -660,6 +669,7 @@ mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
 
 
+
 #if defined(PRIMUSX)
 unibusAdcInit();
 reverseMotorGPIOInit();
@@ -704,9 +714,13 @@ init();
 
 //PWM.init(Pin13, 50);
 
+
 while (1) {
 
     loop();
+
+
+
 
     processLoopback();
 

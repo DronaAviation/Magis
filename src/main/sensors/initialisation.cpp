@@ -40,6 +40,7 @@
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_icm20948.h"
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 
@@ -51,11 +52,13 @@
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_bmp280.h"
 #include "drivers/barometer_ms5611.h"
+#include "drivers/barometer_icp10111.h"
 
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
+#include "drivers/compass_ak09916.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -283,6 +286,25 @@ bool detectGyro(void)
 #endif
             ; // fallthrough
 
+        case GYRO_ICM20948:
+
+#ifdef USE_GYRO_ICM20948
+//#ifdef USE_GYRO_SPI_MPU6500            //DD
+//            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro))
+//#else
+            if (icm20948GyroDetect(&gyro))
+//#endif
+            {
+                gyroHardware = GYRO_ICM20948;
+#ifdef GYRO_ICM20948_ALIGN
+                gyroAlign = GYRO_ICM20948_ALIGN;
+#endif
+
+                break;
+            }
+#endif
+            ; // fallthrough
+
         case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
             if (fakeGyroDetect(&gyro)) {
@@ -395,6 +417,25 @@ static void detectAcc(accelerationSensor_e accHardwareToUse)
             }
 #endif
             ; // fallthrough
+        case ACC_ICM20948:
+#ifdef USE_ACC_ICM20948
+//changes made by DD
+//#ifdef USE_ACC_SPI_MPU6500
+//            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc))
+//#else
+            if (icm20948AccDetect(&acc))
+//#endif
+            {
+#ifdef ACC_ICM20948_ALIGN
+                accAlign = ACC_ICM20948_ALIGN;
+#endif
+                accHardware = ACC_ICM20948;
+                break;
+            }
+#endif
+            ; // fallthrough
+
+
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
 //changes made by DD
@@ -481,6 +522,16 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 #ifdef USE_BARO_MS5611
             if (ms5611Detect(&baro)) {
                 baroHardware = BARO_MS5611;
+                break;
+            }
+#endif
+            ; // fallthough
+
+        case BARO_ICP10111:
+
+#ifdef USE_BARO_ICP10111
+            if (icp10111Detect(&baro)) {
+                baroHardware = BARO_ICP10111;
                 break;
             }
 #endif
@@ -610,6 +661,19 @@ static void detectMag(magSensor_e magHardwareToUse)
             }
 #endif
             ; // fallthrough	
+
+
+        case MAG_AK09916:
+#ifdef USE_MAG_AK09916
+            if (ak09916Detect(&mag)) {
+#ifdef MAG_AK09916_ALIGN
+                magAlign = MAG_AK09916_ALIGN;
+#endif
+                magHardware = MAG_AK09916;
+                break;
+            }
+#endif
+            ; // fallthrough
         case MAG_NONE:
             magHardware = MAG_NONE;
             break;
@@ -648,7 +712,7 @@ bool sensorsAutodetectmpu(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_ICM20948) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 
