@@ -124,6 +124,7 @@ typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
 
 typedef struct mpuConfiguration_s {
         uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
+        uint8_t accReadXRegister; // Y and Z must registers follow this, 2 words each
         mpuReadRegisterFunc read;
         mpuWriteRegisterFunc write;
 } mpuConfiguration_t;
@@ -167,7 +168,8 @@ typedef enum {
     MPU_60x0,
     MPU_60x0_SPI,
     MPU_65xx_I2C,
-    MPU_65xx_SPI
+    MPU_65xx_SPI,
+    MPU_ICM_20948
 } detectedMPUSensor_e;
 
 typedef enum {

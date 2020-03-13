@@ -725,7 +725,7 @@ void checkReading()
     if( baro_update_time != baro_last_update )
     {
         dt = (float)(baro_update_time - baro_last_update) * 0.001f; // in seconds
-        Baro_Height = apmBaroCalculateAltitude();
+        Baro_Height = baroCalculateAltitude();
         filtered = (0.75f * filtered) + ((1-0.75f)* Baro_Height);
 
         baro_last_update = baro_update_time;
@@ -776,7 +776,7 @@ void checkBaro()
 
         const float dt = (float) (baro_update_time - baro_last_update) * 0.001f; // in seconds
         // call correction method
-        correctedWithBaro(apmBaroCalculateAltitude(), dt);
+        correctedWithBaro(baroCalculateAltitude(), dt);
 
         baro_last_update = baro_update_time;
     }

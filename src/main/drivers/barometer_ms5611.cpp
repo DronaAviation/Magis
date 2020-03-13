@@ -57,7 +57,7 @@ static void ms5611_start_ut(void);
 static uint32_t ms5611_get_ut(void);
 static void ms5611_start_up(void);
 static uint32_t ms5611_get_up(void);
-STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature, uint32_t P, uint32_t T);
+STATIC_UNIT_TESTED void ms5611_calculate(float *pressure, float *temperature, uint32_t P, uint32_t T);
 
 STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
@@ -176,7 +176,7 @@ static uint32_t ms5611_get_up(void)
 
 }
 
-STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature, uint32_t P, uint32_t T)
+STATIC_UNIT_TESTED void ms5611_calculate(float *pressure, float *temperature, uint32_t P, uint32_t T)
 {
     uint32_t press;
     int64_t temp;

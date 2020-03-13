@@ -180,6 +180,7 @@ uint32_t Uwbtime;
 
 // UWB Data Read
 
+#ifdef UWB
 void uwbUpdate()
 {
 
@@ -213,6 +214,8 @@ void uwbUpdate()
         }
     }
 }
+
+#endif
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -705,8 +708,8 @@ void executePeriodicTasks(void)
     case UPDATE_BARO_TASK:
         if (sensors(SENSOR_BARO)) {
 
-            apmBaroUpdate(currentTime);
-            apmBaroRead(currentTime);
+            baroUpdate(currentTime);
+
 
         }
         break;
@@ -1165,8 +1168,10 @@ void loop(void)
             }
         }
 
+#ifdef UWB
         if (localisationType == UWB)
             uwbUpdate();
+#endif
 
         annexCode();
 

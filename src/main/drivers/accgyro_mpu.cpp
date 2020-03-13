@@ -40,6 +40,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
+#include "accgyro_icm20948.h"
 #include "accgyro_mpu.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
@@ -60,9 +61,10 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_ADDRESS             0x68
 
-// WHO_AM_I register contents for MPU3050, 6050 and 6500
+// WHO_AM_I register contents for MPU3050, 6050, 6500 and ICM 20948
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPUx0x0_WHO_AM_I_CONST              (0x68)
+#define MPU_ICM_20948_WHO_AM_I_CONST        (0xEA)
 
 #define MPU_INQUIRY_MASK   0x7E
 
@@ -94,9 +96,48 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     }
 
     mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+    mpuConfiguration.accReadXRegister = MPU_RA_ACCEL_XOUT_H;
 
     // If an MPU3050 is connected sig will contain 0.
     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
+
+
+    // icm20948 detection
+    if (ack && inquiryResult == MPU_ICM_20948_WHO_AM_I_CONST) {
+        mpuDetectionResult.sensor = MPU_ICM_20948;
+        mpuConfiguration.gyroReadXRegister = ICM20948_GYRO_OUT;
+        mpuConfiguration.accReadXRegister = ICM20948_ACCEL_OUT;
+
+
+
+        mpuWriteRegisterI2C(0x7F, 0x00);  //change userbank 0
+
+        delay(10);
+
+        mpuWriteRegisterI2C(0x03, 0x78); //disable I2C master
+
+        delay(10);
+
+
+        mpuWriteRegisterI2C(0x06, 0x01);  //set best available clock
+
+        delay(10);
+
+        //disable acc and gyro
+        mpuWriteRegisterI2C(0x07, (0x38 | 0x07));
+
+        delay(20);
+
+        //enable acc and gyro
+        mpuWriteRegisterI2C(0x07, (0x00 | 0x00));
+
+        delay(10);
+
+        return &mpuDetectionResult;
+    }
+
+
+
     inquiryResult &= MPU_INQUIRY_MASK;
     if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
         mpuDetectionResult.sensor = MPU_3050;
@@ -326,7 +367,7 @@ bool mpuAccRead(int16_t *accData)
 {
     uint8_t data[6];
 
-    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 6, data);
+    bool ack = mpuConfiguration.read(mpuConfiguration.accReadXRegister, 6, data);
     if (!ack) {
         return false;
     }

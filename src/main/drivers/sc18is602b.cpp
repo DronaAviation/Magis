@@ -153,7 +153,7 @@ bool SC18IS602B::i2c_write(uint8_t cmdByte, uint8_t* data, uint8_t len) {
 //    return Wire.endTransmission() == 0;
 
 
-    return I2C.write(address, cmdByte, len, data);
+  //  return I2C.write(address, cmdByte, len, data);
 
 }
 
@@ -180,7 +180,7 @@ uint8_t SC18IS602B::i2c_read(uint8_t* readBuf, uint8_t len) {
 //    while (Wire.requestFrom(address,len) == 0);
 //    return Wire.readBytes(readBuf, len);
 
-    return I2C.read(address,0xFF,len,readBuf);
+  //  return I2C.read(address,0xFF,len,readBuf);
 }
 
 bool SC18IS602B::spiTransfer(int slaveNum, uint8_t* txData, uint8_t txLen,
@@ -225,7 +225,7 @@ bool SC18IS602B::write(uint8_t register_address,uint8_t data){
     dataBuffer[1]=data;
 
 
-    success=I2C.write(address, slaveSelect, 2, dataBuffer);
+   // success=I2C.write(address, slaveSelect, 2, dataBuffer);
 
     delay(1);
 

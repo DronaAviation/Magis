@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -136,7 +138,7 @@ float debugOpticFlow2[3];
 
 
 
-#ifdef OPTIC_FLOW
+
 
 void updateHeightEstimate(uint32_t currentTime)
 {
@@ -389,4 +391,5 @@ void runFlowHold(uint32_t currentTime)
     calculateSensorFlow(currentTime);
 
 }
-#endif
+
+

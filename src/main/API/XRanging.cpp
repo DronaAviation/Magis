@@ -15,6 +15,8 @@
  * along with this software.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(PRIMUSX)
+
 #include "API-Utils.h"
 #include "Peripheral.h"
 #include "XRanging.h"
@@ -232,4 +234,4 @@ void xRangingInit(void)
 }
 
 XRanging_P XRanging;
-
+#endif

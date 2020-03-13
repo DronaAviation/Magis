@@ -33,12 +33,12 @@
 
 #include "sensors/barometer.h"
 
-#define UPDATE_FREQUENCY_10HZ (1000 * 100)
+#define UPDATE_FREQUENCY_10HZ (1000 * 101.5)
 
 baro_t baro;                        // barometer access functions
 uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
-int32_t baroPressure = 0;
-int32_t baroTemperature = 0;
+float baroPressure = 0;
+float baroTemperature = 0;
 float BaroAlt = 0;
 
 static uint32_t pressureSum = 0;
@@ -58,13 +58,14 @@ int16_t baroState = 0;
 #ifdef BARO
 
 static int32_t baroGroundAltitude = 0;
-int32_t baroGroundPressure = 0;
-int32_t baroGroundTemperature = 0;
+float baroGroundPressure = 0;
+float baroGroundTemperature = 0;
 static uint32_t baroPressureSum = 0;
 
 static bool _updated = false;
 
 static barometerConfig_t *barometerConfig;
+
 
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
 {
@@ -101,6 +102,27 @@ bool isBaroReady(void)
     return baroReady;
 }
 
+
+
+
+void icp10111BaroInit(void){
+    baro.measurment_start(VERY_ACCURATE);
+
+}
+
+
+void baroInit(void){
+
+#if defined(PRIMUSX2)
+
+    icp10111BaroInit();
+
+#else
+
+
+#endif
+
+}
 
 
 void apmBaroUpdate(uint32_t currentTime)
@@ -255,40 +277,55 @@ void apmBaroRead(uint32_t currentTime)
 
 }
 
-void apmBaroCalibrationRead()
-{
-    bool updated = _updated;
-    uint32_t T, P;
 
-    if (updated) {
-        T = temperatureSum / temperatureCount;
-        P = pressureSum / pressureCount;
+void icp10111BaroUpdate(uint32_t currentTime){
 
-        _updated = false;
 
-        pressureSum = 0;
-        temperatureSum = 0;
-        pressureCount = 0;
-        temperatureCount = 0;
+    uint32_t ctime=currentTime/1000;
+
+    if(baro.read(ctime,&baroPressure, &baroTemperature)){
+
+
+          _last_update = millis();
+        baro.measurment_start(VERY_ACCURATE);
 
     }
 
-    baro.calculate(&baroPressure, &baroTemperature, P, T);
 
-    if (updated) {
-        _last_update = millis();
 
-    }
+
 }
 
-int32_t getBaroPressure()
+
+
+void baroUpdate(uint32_t currentTime){
+
+
+#if defined(PRIMUSX2)
+
+    icp10111BaroUpdate(currentTime);
+
+#else
+
+    apmBaroUpdate(currentTime);
+    apmBaroRead(currentTime);
+
+#endif
+
+
+
+
+}
+
+
+float getBaroPressure()
 
 {
     return baroPressure;
 
 }
 
-int32_t getBaroTemperature()
+float getBaroTemperature()
 
 {
 
@@ -320,6 +357,73 @@ float apmBaroCalculateAltitude(void)
 }
 
 
+float icp10111BaroCalculateAltitude(void)
+{
+
+    // calculates height from ground via baro readings
+    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
+    float scaling = (float) baroGroundPressure / (float) baroPressure;
+
+    float temp = baroGroundTemperature+273.15;
+
+    BaroAlt = (logf(scaling) * temp * 29.271267f )* 100;
+
+    return BaroAlt;
+
+
+
+}
+
+
+float baroCalculateAltitude(void){
+
+#if defined(PRIMUSX2)
+
+    return icp10111BaroCalculateAltitude();
+
+#else
+
+    return apmBaroCalculateAltitude();
+
+
+#endif
+
+
+}
+
+
+
+void apmBaroCalibrationRead()
+{
+    bool updated = _updated;
+    uint32_t T, P;
+
+    if (updated) {
+        T = temperatureSum / temperatureCount;
+        P = pressureSum / pressureCount;
+
+        _updated = false;
+
+        pressureSum = 0;
+        temperatureSum = 0;
+        pressureCount = 0;
+        temperatureCount = 0;
+
+    }
+
+    baro.calculate(&baroPressure, &baroTemperature, P, T);
+
+    if (updated) {
+        _last_update = millis();
+
+    }
+}
+
+
+
+
+
+
 void performBaroCalibrationCycle(void)
 {
     baroGroundPressure -= baroGroundPressure / 8;
@@ -329,8 +433,10 @@ void performBaroCalibrationCycle(void)
     calibratingB--;
 }
 
-void apmBaroCallibrate(void)
-{
+
+
+void apmBaroCalibrate(void){
+
 
     baroGroundPressure = 0;
     baroGroundTemperature = 0;
@@ -362,6 +468,67 @@ void apmBaroCallibrate(void)
     baroGroundPressure /= 15;
     baroGroundTemperature /= 15;
 
+
+
+}
+
+
+void icp10111BaroCalibrate(void){
+
+
+    baroGroundPressure = 0;
+    baroGroundTemperature = 0;
+
+
+    baro.measurment_start(VERY_ACCURATE);
+
+
+    int i = 0, j = 0;
+    while (baroGroundPressure == 0) {    //Dump old values
+        for (i = 0; i < 35; i++) {
+            icp10111BaroUpdate(micros());
+            delay(10);
+        }
+
+        baroGroundPressure = getBaroPressure();
+        baroGroundTemperature = getBaroTemperature();
+    }
+
+    baroGroundPressure = 0;
+    baroGroundTemperature = 0;
+//Start gathering new values
+    for (j = 0; j < 15; j++) {
+        for (i = 0; i < 10; i++) {
+            icp10111BaroUpdate(micros());
+            delay(10);
+        }
+
+        baroGroundPressure += getBaroPressure();
+        baroGroundTemperature += getBaroTemperature();
+    }
+    baroGroundPressure /= 15;
+    baroGroundTemperature /= 15;
+
+
+
+}
+
+
+
+
+void baroCalibrate(void)
+{
+
+#if defined(PRIMUSX2)
+
+     icp10111BaroCalibrate();
+
+#else
+
+     apmBaroCalibrate();
+
+
+#endif
 
 }
 

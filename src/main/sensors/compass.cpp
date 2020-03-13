@@ -63,7 +63,7 @@ void compassInit(void)
     magInit = 1;
 }
 
-#define COMPASS_UPDATE_FREQUENCY_10HZ (1000 * 100)
+#define COMPASS_UPDATE_FREQUENCY_10HZ (1000 * 101.5)
 void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magScale)
 {
     static uint32_t nextUpdateAt, tCal = 0;
