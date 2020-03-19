@@ -670,7 +670,7 @@ mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
 
 
-#if defined(PRIMUSX)
+#if defined(PRIMUSX) || defined(PRIMUSX2)
 unibusAdcInit();
 reverseMotorGPIOInit();
 xRangingInit();

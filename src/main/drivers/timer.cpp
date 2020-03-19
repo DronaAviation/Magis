@@ -265,6 +265,7 @@ if(initInternalMotors){
     timerHardware[1]=T2;
     timerHardware[2]=T3;
     timerHardware[3]=T4;
+    timerHardware[4]=T11;
 
 }
 
