@@ -15,7 +15,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= PRIMUSX2
+TARGET		?= PRIMUSX
 
 BUILD_TYPE  ?= BIN
 

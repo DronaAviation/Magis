@@ -16,7 +16,7 @@
  */
 
 #pragma once
-#if defined(PRIMUSX)
+
 
 #include <stdint.h>
 
@@ -48,4 +48,3 @@ extern XRanging_P XRanging;
 }
 #endif
 
-#endif

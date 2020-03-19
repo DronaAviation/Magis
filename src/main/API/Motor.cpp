@@ -107,11 +107,22 @@ void Motor_P::init(motor_e motor)
 
         if (!initInternalMotors && !isUserMotorInit[0]) {
 
+#if defined(PRIMUSX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
             timerHardware = {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+            timerHardware ={TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1};
+#endif
+
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -131,11 +142,22 @@ void Motor_P::init(motor_e motor)
 
         if (!initInternalMotors && !isUserMotorInit[1]) {
 
+
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
             timerHardware = {TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_2};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+            timerHardware = {TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1};
+#endif
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -155,11 +177,21 @@ void Motor_P::init(motor_e motor)
 
         if (!initInternalMotors && !isUserMotorInit[2]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
             timerHardware = {TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+            timerHardware = {TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1};
+#endif
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -179,11 +211,23 @@ void Motor_P::init(motor_e motor)
 
         if (!initInternalMotors && !isUserMotorInit[3]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
             RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
 
             timerHardware = {TIM8, GPIOB, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_5};
+#endif
+
+#if defined(PRIMUSX2)
+
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+            RCC_APB2PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+            timerHardware = {TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1};
+#endif
+
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -203,11 +247,22 @@ void Motor_P::init(motor_e motor)
 
         if (initInternalMotors && !isUserMotorInit[4]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
             timerHardware = {TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+            timerHardware =  {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2};
+#endif
+
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -227,11 +282,23 @@ void Motor_P::init(motor_e motor)
 
         if (initInternalMotors && !isUserMotorInit[5]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
             timerHardware = {TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+            timerHardware = {TIM3, GPIOA, Pin_7, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2};
+#endif
+
+
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -251,11 +318,22 @@ void Motor_P::init(motor_e motor)
 
         if (initInternalMotors && !isUserMotorInit[6]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
             timerHardware = {TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+            timerHardware ={TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_2};
+#endif
+
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,
@@ -275,11 +353,21 @@ void Motor_P::init(motor_e motor)
 
         if (initInternalMotors && !isUserMotorInit[7]) {
 
+#if defined(PRIMUX)
             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
             RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
             timerHardware = {TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1};
+#endif
+
+#if defined(PRIMUSX2)
+            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+            timerHardware = {TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_2};
+#endif
 
             GPIO_PinAFConfig(timerHardware.gpio,
                     (uint16_t) timerHardware.gpioPinSource,

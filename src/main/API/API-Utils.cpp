@@ -153,38 +153,6 @@ volatile uint16_t adc2Values[UB_ADC2_CHANNEL_COUNT];
 volatile uint16_t adc3Values[UB_ADC3_CHANNEL_COUNT];
 volatile uint16_t adc4Values[UB_ADC4_CHANNEL_COUNT];
 
-void setM1GPIO(bool direction)
-{
-    if (direction)
-        digitalHi(GPIOB, Pin_4);
-    else
-        digitalLo(GPIOB, Pin_4);
-}
-
-void setM2GPIO(bool direction)
-{
-    if (direction)
-        digitalHi(GPIOA, Pin_7);
-    else
-        digitalLo(GPIOA, Pin_7);
-}
-
-void setM3GPIO(bool direction)
-{
-    if (direction)
-        digitalHi(GPIOB, Pin_1);
-    else
-        digitalLo(GPIOB, Pin_1);
-}
-
-void setM4GPIO(bool direction)
-{
-   if (direction)
-        digitalHi(GPIOA, Pin_15);
-    else
-        digitalLo(GPIOA, Pin_15);
-}
-
 void resetUserRCflag(void)
 {
     if ((int32_t)(micros() - autoRcTimerLoop) >= 0) {
@@ -201,7 +169,7 @@ void resetUser(void)
     rcData[AUX2] = 1200;
 }
 
-#if defined(PRIMUSX)
+
 
 void unibusAdc1init(void)
 {
@@ -990,6 +958,10 @@ uint8_t getADCCh(unibus_e pin)
     return temp;
 }
 
+
+
+#if defined(PRIMUSX)
+
 void reverseMotorGPIOInit(void)
 {
 
@@ -1040,4 +1012,122 @@ void reverseMotorGPIOInit(void)
 
 }
 
+
+void setM1GPIO(bool direction)
+{
+    if (direction)
+        digitalHi(GPIOB, Pin_4);
+    else
+        digitalLo(GPIOB, Pin_4);
+}
+
+void setM2GPIO(bool direction)
+{
+    if (direction)
+        digitalHi(GPIOA, Pin_7);
+    else
+        digitalLo(GPIOA, Pin_7);
+}
+
+void setM3GPIO(bool direction)
+{
+    if (direction)
+        digitalHi(GPIOB, Pin_1);
+    else
+        digitalLo(GPIOB, Pin_1);
+}
+
+void setM4GPIO(bool direction)
+{
+   if (direction)
+        digitalHi(GPIOA, Pin_15);
+    else
+        digitalLo(GPIOA, Pin_15);
+}
+
+#endif
+
+#if defined(PRIMUSX2)
+void reverseMotorGPIOInit(void)
+{
+
+    // GPIO setup for reversible motors
+
+    GPIO_TypeDef* gpio;
+    gpio_config_t cfg;
+
+    //M1
+    gpio = GPIOB;
+
+    cfg.pin = Pin_4;
+    cfg.mode = Mode_Out_PP;
+    cfg.speed = Speed_2MHz;
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    gpioInit(gpio, &cfg);
+    digitalLo(GPIOB, Pin_4);
+
+    //M2
+    gpio = GPIOB;
+
+    cfg.pin = Pin_5;
+    cfg.mode = Mode_Out_PP;
+    cfg.speed = Speed_2MHz;
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    gpioInit(gpio, &cfg);
+    digitalLo(GPIOB, Pin_5);
+
+    //M3
+    gpio = GPIOB;
+
+    cfg.pin = Pin_7;
+    cfg.mode = Mode_Out_PP;
+    cfg.speed = Speed_2MHz;
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    gpioInit(gpio, &cfg);
+    digitalLo(GPIOB, Pin_7);
+
+    //M4
+    gpio = GPIOB;
+
+    cfg.pin = Pin_6;
+    cfg.mode = Mode_Out_PP;
+    cfg.speed = Speed_2MHz;
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    gpioInit(gpio, &cfg);
+    digitalLo(GPIOB, Pin_6);
+
+}
+
+
+void setM1GPIO(bool direction)
+{
+    if (direction)
+        digitalHi(GPIOB, Pin_4);
+    else
+        digitalLo(GPIOB, Pin_4);
+}
+
+void setM2GPIO(bool direction)
+{
+    if (direction)
+        digitalLo(GPIOB, Pin_5);
+    else
+        digitalHi(GPIOB, Pin_5);
+}
+
+void setM3GPIO(bool direction)
+{
+    if (direction)
+        digitalHi(GPIOB, Pin_7);
+    else
+        digitalLo(GPIOB, Pin_7);
+}
+
+void setM4GPIO(bool direction)
+{
+   if (direction)
+        digitalLo(GPIOB, Pin_6);
+    else
+        digitalHi(GPIOB, Pin_6);
+}
 #endif
