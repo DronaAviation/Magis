@@ -179,10 +179,10 @@ if(initInternalMotors){
 }
 #else
 
-timerHardware[0]=;
-timerHardware[1]=;
-timerHardware[2]=;
-timerHardware[3]=;
+timerHardware[0]=T9;
+timerHardware[1]=T10;
+timerHardware[2]=T7;
+timerHardware[3]=T11;
 
 #endif
 
