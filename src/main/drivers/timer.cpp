@@ -130,11 +130,11 @@ timerHardware_t T7= {TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP
 //Virtual Motor 4 Actual Motor M1
 timerHardware_t T8= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2}; // PWM1  - PA0  - TIM2_CH1, TIM8
 
-timerHardware_t T9=	{TIM4, GPIOA, Pin_13, TIM_Channel_3, TIM4_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource13, GPIO_AF_10};
+timerHardware_t T9=	{TIM2, GPIOA, Pin_5, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_1};
 
-timerHardware_t T10= {TIM8, GPIOA, Pin_14, TIM_Channel_2, TIM8_CC_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource14, GPIO_AF_5}; // PWM8  - PA7  - !TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
+timerHardware_t T10= {TIM2, GPIOB, Pin_3, TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource3, GPIO_AF_1};
 
-timerHardware_t T11= {TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 0, Mode_AF_PP_PD, GPIO_PinSource8, GPIO_AF_6}; // PWM9  - PA4  - *TIM3_CH2
+timerHardware_t T11= {TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 0, Mode_AF_PP, GPIO_PinSource4, GPIO_AF_2};
 
 timerHardware_t T12= {TIM1, GPIOA, Pin_8, TIM_Channel_1, TIM1_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_6};// PWM  - PA8  - *TIM1_CH1, TIM4_ETR
 
@@ -157,7 +157,7 @@ timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 
 //timerHardware[10]=T11;
 
 
-
+#ifdef BRUSHED_MOTOR
 if(initInternalMotors){
 
     timerHardware[0]=T5;
@@ -177,6 +177,14 @@ if(initInternalMotors){
     timerHardware[4]=T11;
 
 }
+#else
+
+timerHardware[0]=;
+timerHardware[1]=;
+timerHardware[2]=;
+timerHardware[3]=;
+
+#endif
 
 
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(17) |  TIM_N(4))
