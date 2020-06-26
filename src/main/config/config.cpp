@@ -73,7 +73,7 @@
 #include "config/config_master.h"
 
 #define BRUSHED_MOTORS_PWM_RATE 18000
-#define BRUSHLESS_MOTORS_PWM_RATE 50
+#define BRUSHLESS_MOTORS_PWM_RATE 400
 
 #ifdef __cplusplus
 extern "C" {
@@ -1110,4 +1110,3 @@ uint32_t featureMask(void)
 {
     return masterConfig.enabledFeatures;
 }
-
