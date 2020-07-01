@@ -156,18 +156,18 @@ timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 
 
 	} else {
 
-		timerHardware[0]=T1;
-		timerHardware[1]=T2;
-		timerHardware[2]=T3;
-		timerHardware[3]=T4;
+		timerHardware[0]=T1;  // M7 Back-right position
+		timerHardware[1]=T2;  // M8 Front-right position
+		timerHardware[2]=T3;  // M6 Back-left position
+		timerHardware[3]=T4;  // M5 Front-left position
 		timerHardware[4]=T11; //PPM IN
 	}
 
 #else //Brusheless configuration
-		timerHardware[0]=T7;
-		timerHardware[1]=T9;
-		timerHardware[2]=T10;
-		timerHardware[3]=T12;
+		timerHardware[0]=T7;  // X-Hulk V2 -> M3 Back-right position
+		timerHardware[1]=T12; // X-Hulk V2 -> M4 Front-right position
+		timerHardware[2]=T10; // X-Hulk V2 -> M2 Back-left position
+		timerHardware[3]=T9;  // X-Hulk V2 -> M1 Front-left position
 		timerHardware[4]=T11; //PPM IN
 #endif
 

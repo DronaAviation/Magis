@@ -732,6 +732,7 @@ float get_filt_alpha(uint16_t dt)
     return dt / (dt + rc);
 }
 
+//pidRewrite is currently being used by Pluto
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);

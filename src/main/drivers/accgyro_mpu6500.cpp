@@ -99,8 +99,8 @@ void mpu6500GyroInit(uint16_t lpf)
     //mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
-    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter);
-    mpuConfiguration.write(0x1D, 0x04);
+    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //Filter Gyro with masterConfig.gyro_lpf (42Hz)
+    mpuConfiguration.write(0x1D, 0x04);	// Acc low pass filter of 20Hz
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // 1kHz S/R
 
     // Data ready interrupt configuration

@@ -667,13 +667,10 @@ pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
 
-
-
-
 #if defined(PRIMUSX) || defined(PRIMUSX2)
 unibusAdcInit();
 	#ifdef BRUSHED_MOTORS
-	reverseMotorGPIOInit();
+	reverseMotorGPIOInit(); //This is disabled due to pin conflict with PB1
 	#endif
 xRangingInit();
 if(localisationType==UWB){
