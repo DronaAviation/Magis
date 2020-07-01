@@ -73,7 +73,7 @@ extern "C" {
 #define BARO
 #define USE_BARO_MS5611
 
-#define BRUSHED_MOTORS
+//#define BRUSHED_MOTORS
 
 //#define BEEPER
 #define LED0

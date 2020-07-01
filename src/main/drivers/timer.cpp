@@ -144,49 +144,32 @@ timerHardware_t T14= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 0, Mode_AF_P
 
 timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 1, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_1}; // PWM  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
 
-//timerHardware[0]=T1;
-//timerHardware[1]=T2;
-//timerHardware[2]=T3;
-//timerHardware[3]=T4;
-//timerHardware[4]=T5;
-//timerHardware[5]=T6;
-//timerHardware[6]=T7;
-//timerHardware[7]=T8;
-//timerHardware[8]=T12;
-//timerHardware[9]=T10;
-//timerHardware[10]=T11;
+
+#ifdef BRUSHED_MOTORS
+	if(initInternalMotors){
+
+		timerHardware[0]=T5;
+		timerHardware[1]=T6;
+		timerHardware[2]=T7;
+		timerHardware[3]=T8;
 
 
+	} else {
 
-if(initInternalMotors){
+		timerHardware[0]=T1;
+		timerHardware[1]=T2;
+		timerHardware[2]=T3;
+		timerHardware[3]=T4;
+		timerHardware[4]=T11; //PPM IN
+	}
 
-    timerHardware[0]=T5;
-    timerHardware[1]=T6;
-    timerHardware[2]=T7;
-    timerHardware[3]=T8;
-
-
-
-} else {
-
-
-    /* Original
-    timerHardware[0]=T1;
-    timerHardware[1]=T2;
-    timerHardware[2]=T3;
-    timerHardware[3]=T4;
-    timerHardware[4]=T11;
-    */
-
-	//Trying for brushless control
-	timerHardware[0]=T7;
-	timerHardware[1]=T9;
-	timerHardware[2]=T10;
-	timerHardware[3]=T12;
-	timerHardware[4]=T11;
-
-}
-
+#else //Brusheless configuration
+		timerHardware[0]=T7;
+		timerHardware[1]=T9;
+		timerHardware[2]=T10;
+		timerHardware[3]=T12;
+		timerHardware[4]=T11; //PPM IN
+#endif
 
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(17) |  TIM_N(4))
 
@@ -197,12 +180,10 @@ if(initInternalMotors){
 #define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM17)
 #define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
 
-
 //#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2)
 //#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM17)
 //#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
 #endif
-
 
 
 #if defined(PRIMUSX2)
@@ -255,7 +236,6 @@ timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 
 //timerHardware[8]=T12;
 //timerHardware[9]=T10;
 //timerHardware[10]=T11;
-
 
 
 if(initInternalMotors){

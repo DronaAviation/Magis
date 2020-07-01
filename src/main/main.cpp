@@ -672,7 +672,9 @@ mixerUsePWMOutputConfiguration(pwmOutputConfiguration);
 
 #if defined(PRIMUSX) || defined(PRIMUSX2)
 unibusAdcInit();
-reverseMotorGPIOInit();
+	#ifdef BRUSHED_MOTORS
+	reverseMotorGPIOInit();
+	#endif
 xRangingInit();
 if(localisationType==UWB){
 UART.init(UART2, BAUD_RATE_115200);
