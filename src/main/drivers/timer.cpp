@@ -148,10 +148,10 @@ timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 
 #ifdef BRUSHED_MOTORS
 	if(initInternalMotors){
 
-		timerHardware[0]=T5;
-		timerHardware[1]=T6;
-		timerHardware[2]=T7;
-		timerHardware[3]=T8;
+		timerHardware[0]=T5; // M3 Back-right position
+		timerHardware[1]=T6; // M4 Front-right position
+		timerHardware[2]=T7; // M2 Back-left position
+		timerHardware[3]=T8; // M1 Front-left position
 
 
 	} else {
@@ -225,36 +225,23 @@ timerHardware_t T14= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 0, Mode_AF_P
 
 timerHardware_t T15= {TIM15, GPIOB, Pin_15, TIM_Channel_2, TIM1_BRK_TIM15_IRQn, 1, Mode_AF_PP, GPIO_PinSource15, GPIO_AF_1}; // PWM  - PB15 - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
 
-//timerHardware[0]=T1;
-//timerHardware[1]=T2;
-//timerHardware[2]=T3;
-//timerHardware[3]=T4;
-//timerHardware[4]=T5;
-//timerHardware[5]=T6;
-//timerHardware[6]=T7;
-//timerHardware[7]=T8;
-//timerHardware[8]=T12;
-//timerHardware[9]=T10;
-//timerHardware[10]=T11;
 
 
 if(initInternalMotors){
 
-    timerHardware[0]=T5;
-    timerHardware[1]=T6;
-    timerHardware[2]=T7;
-    timerHardware[3]=T8;
-
+    timerHardware[0]=T5; // M3 Back-right position
+    timerHardware[1]=T6; // M4 Front-right position
+    timerHardware[2]=T7; // M2 Back-left position
+    timerHardware[3]=T8; // M1 Front-left position
 
 
 } else {
 
-
-    timerHardware[0]=T1;
-    timerHardware[1]=T2;
-    timerHardware[2]=T3;
-    timerHardware[3]=T4;
-    timerHardware[4]=T11;
+    timerHardware[0]=T1;  // M7 Back-right position
+    timerHardware[1]=T2;  // M8 Front-right position
+    timerHardware[2]=T3;  // M6 Back-left position
+    timerHardware[3]=T4;  // M5 Front-left position
+    timerHardware[4]=T11; // PPM In
 
 }
 
