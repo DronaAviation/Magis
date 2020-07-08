@@ -83,9 +83,17 @@ RANGING_SRC = $(notdir $(wildcard $(RANGING_DIR)/core/src/*.c \
 								$(RANGING_DIR)/platform/src/*.c\
 								$(RANGING_DIR)/core/src/*.cpp \
 								$(RANGING_DIR)/platform/src/*.cpp))
+
+RANGING_SRC2 = $(ROOT)/lib/main/VL53L1X_API/core/src/*.c \
+				$(ROOT)/lib/main/VL53L1X_API/platform/src/*.c
+
+
 INCLUDE_DIRS:=$(INCLUDE_DIRS) \
               $(RANGING_DIR)/core/inc \
-              $(RANGING_DIR)/platform/inc   
+              $(RANGING_DIR)/platform/inc \
+              $(ROOT)/lib/main/VL53L1X_API/core/inc \
+              $(ROOT)/lib/main/VL53L1X_API/platform/inc
+                
 VPATH		:= $(VPATH):$(RANGING_DIR)/core/src:$(RANGING_DIR)/platform/src
 
 
@@ -456,6 +464,7 @@ DRONA_SRC = flight/acrobats.cpp \
 PRIMUSV3R_SRC = \
 		   startup_stm32f10x_md_gcc.S \
 		   $(RANGING_SRC) \
+		   $(RANGING_SRC2) \
 		   drivers/adc.cpp \
 		   drivers/adc_stm32f10x.cpp \
 		   drivers/accgyro_mpu.cpp \
@@ -484,6 +493,7 @@ PRIMUSV3R_SRC = \
 PRIMUSX_SRC = \
 		   startup_stm32f30x_md_gcc.S \
 		   $(RANGING_SRC) \
+		   $(RANGING_SRC2) \
 		   drivers/adc.cpp \
 		   drivers/adc_stm32f30x.c \
 		   drivers/accgyro_mpu.cpp \
@@ -515,6 +525,7 @@ PRIMUSX_SRC = \
 PRIMUSX2_SRC = \
 		   startup_stm32f30x_md_gcc.S \
 		   $(RANGING_SRC) \
+		   $(RANGING_SRC2) \
 		   drivers/adc.cpp \
 		   drivers/adc_stm32f30x.c \
 		   drivers/accgyro_mpu.cpp \
