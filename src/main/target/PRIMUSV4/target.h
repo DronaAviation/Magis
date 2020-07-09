@@ -65,7 +65,7 @@
 #define BARO
 #define USE_BARO_MS5611
 
-//#define LASER_TOF
+//#define LASER_TOF_L0x // This is for VL53L0x
 
 #define BRUSHED_MOTORS
 

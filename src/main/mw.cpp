@@ -771,7 +771,7 @@ void executePeriodicTasks(void)
 
     case UPDATE_LASER_TOF_TASK:
 
-#ifdef LASER_TOF
+#ifdef LASER_TOF_L0x
 
         getRange();
 

@@ -165,7 +165,7 @@ extern "C" {
 
 
 
-//#define LASER_TOF
+//#define LASER_TOF_L0x // This is for VL53L0x
 
 //#define FLIGHT_STATUS_INDICATOR
 //#define ENABLE_ACROBAT

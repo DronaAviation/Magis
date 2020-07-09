@@ -575,7 +575,7 @@ motorControlEnable = true;
 
 systemState |= SYSTEM_STATE_READY;
 
-#ifdef LASER_TOF
+#ifdef LASER_TOF_L0x
 
 ranging_init();
 

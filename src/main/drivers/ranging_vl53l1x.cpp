@@ -21,20 +21,20 @@
 
 #include "platform.h"
 
-#include "vl53l0x_platform.h"
-#include "vl53l0x_i2c_platform.h"
+#include "vl53l1x_platform.h"
+//#include "vl53l0x_i2c_platform.h"
 
-#include "vl53l0x_api_core.h"
-#include "vl53l0x_api_strings.h"
-#include "vl53l0x_def.h"
-#include "vl53l0x_api.h"
-#include "vl53l0x_types.h"
+#include "vl53l1x_api_core.h"
+#include "vl53l1x_api_strings.h"
+#include "vl53l1x_def.h"
+#include "vl53l1x_api.h"
+#include "vl53l1x_types.h"
 
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/system.h"
-#include "ranging_vl53l0x.h"
+#include "ranging_vl53l1x.h"
 #include "API/Peripheral.h"
 #include "API/Utils.h"
 
@@ -43,11 +43,11 @@
 #define LASER_LPS 0.1
 
 
-VL53L0X_Dev_t MyDevice;
+VL53L1_Dev_t MyDevice;
 //VL53L0X_Dev_t *pMyDevice = &MyDevice;
 
-VL53L0X_Error Global_Status = 0;
-VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+VL53L1_Error Global_Status = 0;
+VL53L1X_RangingMeasurementData_t RangingMeasurementData;
 
 
 uint8_t Range_Status = 0;
@@ -63,12 +63,12 @@ Interval rangePoll;
 
 
 
-void update_status(VL53L0X_Error Status)
+void update_status(VL53L1_Error Status)
 {
     Global_Status = Status;
 }
 
-#ifdef LASER_TOF_L0x
+#ifdef LASER_TOF_L1x
 
 void ranging_init(void)
 {

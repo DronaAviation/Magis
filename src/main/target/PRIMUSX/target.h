@@ -174,7 +174,7 @@ extern "C" {
 #define DCM
 //#define OPTIC_FLOW
 //
-//#define LASER_TOF // only to get laser height
+//#define LASER_TOF_L0X // only to get laser height for VL53L0x
 //#define LASER_ALT // to integrate with althold
 
 

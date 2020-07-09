@@ -84,6 +84,7 @@ RANGING_SRC = $(notdir $(wildcard $(RANGING_DIR)/core/src/*.c \
 								$(RANGING_DIR)/core/src/*.cpp \
 								$(RANGING_DIR)/platform/src/*.cpp))
 
+# Ranging sensor VL53L1X libraries
 RANGING_SRC2 = $(ROOT)/lib/main/VL53L1X_API/core/src/*.c \
 				$(ROOT)/lib/main/VL53L1X_API/platform/src/*.c
 
