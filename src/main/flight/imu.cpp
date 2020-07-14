@@ -47,7 +47,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "../api/API-Utils.h"
+#include "API/API-Utils.h"
 #include "config/runtime_config.h"
 #include "mw.h"
 

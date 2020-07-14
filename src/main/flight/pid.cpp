@@ -40,7 +40,7 @@
 
 #include "flight/pid.h"
 
-#include "../api/API-Utils.h"
+#include "API/API-Utils.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
@@ -918,4 +918,3 @@ void pidSetController(pidControllerType_e type)
         pid_controller = pidHarakiri;
     }
 }
-

@@ -43,7 +43,7 @@
 #include "flight/posControl.h"
 
 #include "command/localisationCommand.h"
-#include "../api/API-Utils.h"
+#include "API/API-Utils.h"
 
 #define timeScale 1000000
 

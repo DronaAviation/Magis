@@ -24,7 +24,7 @@
 
 #include "config/runtime_config.h"
 
-#include "../api/API-Utils.h"
+#include "API/API-Utils.h"
 #include "io/beeper.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
@@ -295,4 +295,3 @@ void flightStatusIndicator(void)
     }
 }
 #endif
-
