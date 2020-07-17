@@ -68,6 +68,7 @@
 
 // #include "stm32xxx_hal.h"
 #include <string.h>
+#include "drivers/bus_i2c.h"
 // #include <time.h>
 // #include <math.h>
 
@@ -112,29 +113,74 @@
 //    return Status;
 // }
 
-VL53L1_Error VL53L1_WriteMulti(VL53L1_DEV Dev, uint16_t index, uint8_t *pdata, uint32_t count) {
+VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, int32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
-    return Status;
+	bool temp;
+	uint8_t data = 0;
+	
+	temp = i2cWriteBuffer(address, reg, count, pdata);
+	if(!temp){
+			Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	}
+    
+	return Status;
 }
 
 // the ranging_sensor_comms.dll will take care of the page selection
-VL53L1_Error VL53L1_ReadMulti(VL53L1_DEV Dev, uint16_t index, uint8_t *pdata, uint32_t count) {
+VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint16_t index, uint8_t *pdata, uint32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
+    bool temp;
+	uint8_t len = (uint8_t)count;
+	
+	temp = i2cRead(address, index, len, pdata);
+	if(!temp){
+		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	}
+	return Status;
+}
+
+VL53L1_Error VL53L1_WrByte(uint8_t address, uint16_t index, uint8_t data) {
+    VL53L1_Error Status = VL53L1_ERROR_NONE;
+	bool temp;
+	
+	temp = i2cWrite(address, index, data);
+	 if(!temp)
+		Status=VL53L1_ERROR_PLATFORM_SPECIFIC_START;
     return Status;
 }
 
-VL53L1_Error VL53L1_WrByte(VL53L1_DEV Dev, uint16_t index, uint8_t data) {
+VL53L1_Error VL53L1_WrWord(uint8_t address, uint16_t index, uint16_t data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
+	uint8_t  buffer[2];
+	bool temp;
+	
+    // Split 16-bit word into MS and LS uint8_t
+    buffer[1] = (uint8_t)(data & 0xFF);
+	buffer[0] = (uint8_t)((data >> 8) & 0xFF);
+    
+	temp=i2cWriteBuffer(address, index, 2, (uint8_t *)buffer);
+	
+    if(!temp)
+		Status=VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	
     return Status;
 }
 
-VL53L1_Error VL53L1_WrWord(VL53L1_DEV Dev, uint16_t index, uint16_t data) {
+VL53L1_Error VL53L1_WrDWord(uint8_t address, uint16_t index, uint32_t data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
-    return Status;
-}
+	uint8_t  buffer[4];
+	bool temp;
 
-VL53L1_Error VL53L1_WrDWord(VL53L1_DEV Dev, uint16_t index, uint32_t data) {
-    VL53L1_Error Status = VL53L1_ERROR_NONE;
+    // Split 32-bit word into MS ... LS bytes
+    buffer[3] = (uint8_t) (data &  0xFF);
+	buffer[2] = (uint8_t) ((data >> 8) & 0xFF);
+	buffer[0] = (uint8_t) ((data >> 24) & 0xFF);
+    buffer[1] = (uint8_t) ((data >> 16) & 0xFF);
+    
+	temp=i2cWriteBuffer(address, index, 4, (uint8_t *)buffer);
+	
+	if(!temp)
+		Status=VL53L1_ERROR_PLATFORM_SPECIFIC_START;
     return Status;
 }
 
@@ -143,18 +189,44 @@ VL53L1_Error VL53L1_UpdateByte(VL53L1_DEV Dev, uint16_t index, uint8_t AndData, 
     return Status;
 }
 
-VL53L1_Error VL53L1_RdByte(VL53L1_DEV Dev, uint16_t index, uint8_t *data) {
+VL53L1_Error VL53L1_RdByte(uint8_t address, uint16_t index, uint8_t *data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
+	    bool temp;
+	
+	temp = i2cRead(address, index, 1, (uint8_t *)data);
+	if(!temp){
+		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	}	
     return Status;
 }
 
-VL53L1_Error VL53L1_RdWord(VL53L1_DEV Dev, uint16_t index, uint16_t *data) {
+VL53L1_Error VL53L1_RdWord(uint8_t address, uint16_t index, uint16_t *data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
+	
+	uint8_t  buffer[2];
+	bool temp;
+    
+	temp = i2cRead(address, index, 2, (uint8_t *)buffer);
+	if(!temp){
+		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	}
+	
+	*data = ((uint16_t)buffer[0]<<8) | buffer[1];
+	
     return Status;
 }
 
-VL53L1_Error VL53L1_RdDWord(VL53L1_DEV Dev, uint16_t index, uint32_t *data) {
+VL53L1_Error VL53L1_RdDWord(uint8_t address, uint16_t index, uint32_t *data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
+	uint8_t  buffer[4];
+	bool temp;
+	
+	temp = i2cRead(address, index, 4, (uint8_t *)buffer);
+    if(!temp){
+		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
+	}
+	
+	*data = ((uint32_t)buffer[0]<<24) | ((uint32_t)buffer[1]<<16) | ((uint32_t)buffer[2]<<8) | buffer[3];
     return Status;
 }
 
@@ -200,6 +272,7 @@ VL53L1_Error VL53L1_WaitValueMaskEx(
 	VL53L1_Error status  = VL53L1_ERROR_NONE;
 	return status;
 }
+
 
 
 
