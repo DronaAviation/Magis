@@ -85,43 +85,43 @@ VL53L1_Error VL53L1_CommsClose(
 
 VL53L1_Error VL53L1_WriteMulti(
 		uint8_t address,
-		uint16_t      index,
+		uint8_t      reg,
 		uint8_t      *pdata,
 		uint32_t      count);
 
 VL53L1_Error VL53L1_ReadMulti(
 		uint8_t address,
-		uint16_t      index,
+		uint8_t      index,
 		uint8_t      *pdata,
 		uint32_t      count);
 
 VL53L1_Error VL53L1_WrByte(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint8_t       VL53L1_PRM_00005);
 
 VL53L1_Error VL53L1_WrWord(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint16_t      VL53L1_PRM_00005);
 
 VL53L1_Error VL53L1_WrDWord(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint32_t      VL53L1_PRM_00005);
 
 VL53L1_Error VL53L1_RdByte(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint8_t      *pdata);
 
 VL53L1_Error VL53L1_RdWord(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint16_t     *pdata);
 
 VL53L1_Error VL53L1_RdDWord(
-		VL53L1_Dev_t *pdev,
+		uint8_t address,
 		uint16_t      index,
 		uint32_t     *pdata);
 

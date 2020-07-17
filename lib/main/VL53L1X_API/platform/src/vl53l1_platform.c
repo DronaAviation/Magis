@@ -60,6 +60,9 @@
 ********************************************************************************
 *
 */
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 
 #include "vl53l1_platform.h"
@@ -113,7 +116,7 @@
 //    return Status;
 // }
 
-VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, int32_t count) {
+VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, uint32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
 	bool temp;
 	uint8_t data = 0;
@@ -127,7 +130,7 @@ VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, int
 }
 
 // the ranging_sensor_comms.dll will take care of the page selection
-VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint16_t index, uint8_t *pdata, uint32_t count) {
+VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint8_t index, uint8_t *pdata, uint32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
     bool temp;
 	uint8_t len = (uint8_t)count;
