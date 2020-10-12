@@ -50,6 +50,7 @@
 #include "drivers/flash.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/ranging_vl53l0x.h"
+#include "drivers/ranging_vl53l1x.h"
 #include "rx/rx.h"
 
 #include "io/serial.h"
@@ -581,6 +582,11 @@ ranging_init();
 
 #endif
 
+#ifdef LASER_TOF_L1x
+
+ranging_init_L1();
+
+#endif
 
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);

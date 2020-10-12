@@ -22,15 +22,15 @@ extern "C" {
 #endif
 
 #include "vl53l1_def.h"
-#include "vl53l0x_device.h"
+#include "vl53l1_LL_device.h"
 #include "vl53l1_platform.h"
 #include "vl53l1_platform_user_data.h"
 #include "API/Specifiers.h"
 
-class LaserSensor {
+class LaserSensor_L1 {
 
     int16_t range;
-    VL53L0X_Dev_t MyDevice;
+    VL53L1_Dev_t MyDevice_L1;
     unibus_e statusLEDPin;
 
 public:
@@ -44,22 +44,22 @@ public:
 
 
 
-void ranging_init(void);
-void getRange(void);
-bool isTofDataNew(void);
-bool isOutofRange(void);
+void ranging_init_L1(void);
+void getRange_L1(void);
+bool isTofDataNew_L1(void);
+bool isOutofRange_L1(void);
 
 
 
-extern VL53L0X_Error Global_Status;
-extern VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+extern VL53L1_Error Global_Status_L1;
+extern VL53L1_RangingMeasurementData_t RangingMeasurementData_L1;
 
-extern uint8_t Range_Status;
-extern uint16_t NewSensorRange;
-extern uint16_t debug_range;
-extern bool startRanging;
-extern bool isTofDataNewflag;
-extern bool useRangingSensor;
+extern uint8_t Range_Status_L1;
+extern uint16_t NewSensorRange_L1;
+extern uint16_t debug_range_L1;
+extern bool startRanging_L1;
+extern bool isTofDataNewflag_L1;
+extern bool useRangingSensor_L1;
 
 
 #ifdef __cplusplus

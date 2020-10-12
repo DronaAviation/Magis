@@ -442,6 +442,7 @@ OLIMEXINO_SRC = startup_stm32f10x_md_gcc.S \
 DRONA_SRC = flight/acrobats.cpp \
             drivers/opticflow_paw3903.cpp \
             drivers/ranging_vl53l0x.cpp \
+            drivers/ranging_vl53l1x.cpp \
             drivers/sc18is602b.cpp\
             flight/posControl.cpp\
             flight/posEstimate.cpp\
