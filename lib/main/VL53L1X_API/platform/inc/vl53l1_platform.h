@@ -85,13 +85,13 @@ VL53L1_Error VL53L1_CommsClose(
 
 VL53L1_Error VL53L1_WriteMulti(
 		uint8_t address,
-		uint8_t      reg,
+		uint16_t      reg,
 		uint8_t      *pdata,
 		uint32_t      count);
 
 VL53L1_Error VL53L1_ReadMulti(
 		uint8_t address,
-		uint8_t      index,
+		uint16_t      index,
 		uint8_t      *pdata,
 		uint32_t      count);
 

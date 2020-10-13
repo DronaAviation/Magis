@@ -116,12 +116,12 @@
 //    return Status;
 // }
 
-VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, uint32_t count) {
+VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint16_t index, uint8_t *pdata, uint32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
 	bool temp;
 	uint8_t data = 0;
 	
-	temp = i2cWriteBuffer(address, reg, count, pdata);
+	temp = i2cWriteBuffer(address, index, count, pdata);
 	if(!temp){
 			Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
 	}
@@ -130,7 +130,7 @@ VL53L1_Error VL53L1_WriteMulti(uint8_t address, uint8_t reg, uint8_t *pdata, uin
 }
 
 // the ranging_sensor_comms.dll will take care of the page selection
-VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint8_t index, uint8_t *pdata, uint32_t count) {
+VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint16_t index, uint8_t *pdata, uint32_t count) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
     bool temp;
 	uint8_t len = (uint8_t)count;
