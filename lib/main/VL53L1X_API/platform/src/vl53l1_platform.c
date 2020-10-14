@@ -135,7 +135,7 @@ VL53L1_Error VL53L1_ReadMulti(uint8_t address, uint16_t index, uint8_t *pdata, u
     bool temp;
 	uint8_t len = (uint8_t)count;
 	
-	temp = i2cRead(address, index, len, pdata);
+	temp = i2cRead_v2(address, index, len, pdata);
 	if(!temp){
 		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
 	}
@@ -146,7 +146,7 @@ VL53L1_Error VL53L1_WrByte(uint8_t address, uint16_t index, uint8_t data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
 	bool temp;
 	
-	temp = i2cWrite(address, index, data);
+	temp = i2cWrite_v2(address, index, data);
 	 if(!temp)
 		Status=VL53L1_ERROR_PLATFORM_SPECIFIC_START;
     return Status;
@@ -161,7 +161,7 @@ VL53L1_Error VL53L1_WrWord(uint8_t address, uint16_t index, uint16_t data) {
     buffer[1] = (uint8_t)(data & 0xFF);
 	buffer[0] = (uint8_t)((data >> 8) & 0xFF);
     
-	temp=i2cWriteBuffer(address, index, 2, (uint8_t *)buffer);
+	temp=i2cWriteBuffer_v2(address, index, 2, (uint8_t *)buffer);
 	
     if(!temp)
 		Status=VL53L1_ERROR_PLATFORM_SPECIFIC_START;
@@ -196,7 +196,7 @@ VL53L1_Error VL53L1_RdByte(uint8_t address, uint16_t index, uint8_t *data) {
     VL53L1_Error Status = VL53L1_ERROR_NONE;
 	    bool temp;
 	
-	temp = i2cRead(address, index, 1, (uint8_t *)data);
+	temp = i2cRead_v2(address, index, 1, (uint8_t *)data);
 	if(!temp){
 		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
 	}	
@@ -209,7 +209,7 @@ VL53L1_Error VL53L1_RdWord(uint8_t address, uint16_t index, uint16_t *data) {
 	uint8_t  buffer[2];
 	bool temp;
     
-	temp = i2cRead(address, index, 2, (uint8_t *)buffer);
+	temp = i2cRead_v2(address, index, 2, (uint8_t *)buffer);
 	if(!temp){
 		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
 	}
@@ -224,7 +224,7 @@ VL53L1_Error VL53L1_RdDWord(uint8_t address, uint16_t index, uint32_t *data) {
 	uint8_t  buffer[4];
 	bool temp;
 	
-	temp = i2cRead(address, index, 4, (uint8_t *)buffer);
+	temp = i2cRead_v2(address, index, 4, (uint8_t *)buffer);
     if(!temp){
 		Status = VL53L1_ERROR_PLATFORM_SPECIFIC_START;
 	}
