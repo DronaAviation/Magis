@@ -374,7 +374,7 @@ uint8_t i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
     addr_ <<= 1;
     uint8_t recived = 0;
-    uint8_t regL, regH;
+
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -395,15 +395,9 @@ uint8_t i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
         }
     }
 
-    /* Send Register address 16 bit register */
-    regL = reg & 0xff;
-    regH = reg >> 8;
 
-    I2C_SendData(I2Cx, (uint8_t) regH);
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET){}
-
-    I2C_SendData(I2Cx, (uint8_t) regL);
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET){}
+    /* Send Register address */
+    I2C_SendData(I2Cx, (uint8_t) reg);
 
     /* Wait until TC flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -458,6 +452,7 @@ uint8_t i2cRead_v2(uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
 {
     addr_ <<= 1;
     uint8_t recived = 0;
+    uint8_t regL, regH;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -478,8 +473,10 @@ uint8_t i2cRead_v2(uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
         }
     }
 
-    /* Send Register address */
-    I2C_SendData(I2Cx, (uint8_t) reg);
+
+    /* Send Register address 16 bit register */
+    regL = reg & 0xff;
+    regH = reg >> 8;
 
     /* Wait until TC flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
