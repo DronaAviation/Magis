@@ -93,6 +93,7 @@ void ranging_init_L1(void)
 
     }
 
+    //Calibration is not necessary. Will look into this later. RefSpad, crosstalk and offset calibrations are available.
 
 /*
     if( Global_Status_L1 == VL53L1_ERROR_NONE ) {
@@ -167,37 +168,46 @@ void getRange_L1()
     static bool startNow = true;
 
 
-    if(rangePoll_L1.set(33,true)) {
+    if(rangePoll_L1.set(200,true)) {			//Default polling period is 100ms
+
+    	Monitor.print("StartNow = ", startNow);
+    	Monitor.println(", Error = ", Global_Status_L1);
 
     if(Global_Status_L1 == VL53L1_ERROR_NONE) {
         if(startNow) {
+        	Monitor.println("Hi");
             Status = VL53L1_StartMeasurement(&MyDevice_L1);
             update_status_L1(Status);
             startNow = false;
         }
     }
 
-//    if(Global_Status_L1 == VL53L1_ERROR_NONE) {
-//
-//        if(!startNow) {
-//            Status = VL53L0X_GetMeasurementDataReady(&MyDevice_L1,&dataFlag);
-//            update_status_L1(Status);
-//
-//        }
-//    }
+    if(Global_Status_L1 == VL53L1_ERROR_NONE) {		//Check if data is ready
 
+        if(!startNow) {
+
+            Status = VL53L1_GetMeasurementDataReady(&MyDevice_L1,&dataFlag);
+            update_status_L1(Status);
+            Monitor.println("Data flag ", dataFlag);
+        }
+    }
+
+
+    /**/
     if(Global_Status_L1 == VL53L1_ERROR_NONE) {
-//        if(dataFlag) {
+        if(dataFlag) {
+        	Monitor.println("123");
 
             Status = VL53L1_GetRangingMeasurementData(&MyDevice_L1, &RangingMeasurementData_L1);
             update_status_L1(Status);
-            // printInt("return status#4:",Global_Status_L1);
+            Monitor.print("Range status ", RangingMeasurementData_L1.RangeStatus);
+            Monitor.println(",   return status#4: ",Global_Status_L1);
 
 //            if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
 //                debug_range_L1 = RangingMeasurementData.RangeDMaxMilliMeter/10;
 //            }
 
-            startNow = true;
+            //startNow = true;
             isTofDataNewflag_L1 = true;
             Range_Status_L1 = RangingMeasurementData_L1.RangeStatus;
             if(RangingMeasurementData_L1.RangeStatus == 0) {
@@ -205,10 +215,11 @@ void getRange_L1()
             	if(RangingMeasurementData_L1.RangeMilliMeter<2000){
 
               //  NewSensorRange_L1 = RangingMeasurementData.RangeMilliMeter;
-
+            	Monitor.println("Range is : ", RangingMeasurementData_L1.RangeMilliMeter);
                 NewSensorRange_L1 = NewSensorRange_L1*(1-LASER_LPS)+RangingMeasurementData_L1.RangeMilliMeter*LASER_LPS;
 
                 out_of_range_L1 = false;
+
 
             	} else {
                     out_of_range_L1 = true;
@@ -216,8 +227,10 @@ void getRange_L1()
 
             } else
             out_of_range_L1 = true;
-//        }
+            dataFlag = 0;		//Reset the data flag
+        }
     }
+    /**/
 
     }
 

@@ -165,9 +165,9 @@ VL53L1_Error VL53L1_data_init(
 			Dev,
 			VL53L1_DEVICESTATE_UNKNOWN);
 
-	pdev->wait_method             = VL53L1_WAIT_METHOD_BLOCKING;
+	pdev->wait_method             = VL53L1_WAIT_METHOD_NON_BLOCKING;
 	pdev->preset_mode             = VL53L1_DEVICEPRESETMODE_STANDARD_RANGING;
-	pdev->measurement_mode        = VL53L1_DEVICEMEASUREMENTMODE_STOP;
+	pdev->measurement_mode        = VL53L1_DEVICEMEASUREMENTMODE_BACKTOBACK;
 
 	pdev->offset_calibration_mode =
 		VL53L1_OFFSETCALIBRATIONMODE__MM1_MM2__STANDARD;

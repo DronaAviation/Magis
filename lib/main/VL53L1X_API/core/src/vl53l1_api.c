@@ -72,7 +72,7 @@
 #include "vl53l1_api_core.h"
 
 
-//#define USE_I2C_2V8
+#define USE_I2C_2V8
 
 /* Check for minimum user zone requested by Xtalk calibration */
 /* no need for VL53L1_MAX_USER_ZONES check, set 5 to pass the test */

@@ -587,7 +587,7 @@ ranging_init();
 ranging_init_L1();
 
 #endif
-
+/*
 if (Global_Status_L1 == 0)
 {
 	LED_M_ON;
@@ -599,6 +599,7 @@ if (Global_Status_L1 == 0)
 	LED_L_ON;
 }
 
+
 while(1){
 
 	Monitor.println("Error ",Global_Status_L1);
@@ -606,7 +607,7 @@ while(1){
 	//ranging_init_L1();
 
 }//Testing vl53l1x
-
+*/
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);
 

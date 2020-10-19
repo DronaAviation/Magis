@@ -41,6 +41,7 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/flash.h"
 #include "drivers/ranging_vl53l0x.h"
+#include "drivers/ranging_vl53l1x.h"
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"
@@ -774,6 +775,11 @@ void executePeriodicTasks(void)
 #ifdef LASER_TOF_L0x
 
         getRange();
+
+#endif
+#ifdef LASER_TOF_L1x
+
+        getRange_L1();
 
 #endif
 //        if(useRangingSensor)
