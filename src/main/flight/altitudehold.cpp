@@ -31,6 +31,7 @@
 #include "drivers/light_led.h"
 #include "drivers/gpio.h"
 #include "drivers/ranging_vl53l0x.h"
+#include "drivers/ranging_vl53l1x.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -132,7 +133,7 @@ float _position_z1; // sum(_position_base, _position_correction) - corrected pos
 float ToF_Height = 0.0f;
 float Baro_Height = 0.0f;
 float fused = 0.0f;
-float filtered = 0.0f;
+float Baro_filtered = 0.0f;
 
 int32_t altholdDebug = 0;
 int32_t altholdDebug1 = 0;
@@ -726,12 +727,13 @@ void checkReading()
     {
         dt = (float)(baro_update_time - baro_last_update) * 0.001f; // in seconds
         Baro_Height = baroCalculateAltitude();
-        filtered = (0.75f * filtered) + ((1-0.75f)* Baro_Height);
+        Baro_filtered = (0.75f * Baro_filtered) + ((1-0.75f)* Baro_Height);
 
         baro_last_update = baro_update_time;
     }
 
     //Laser sensor update reading
+#ifdef LASER_TOF_L0x
     if(isTofDataNew() && (!isOutofRange())) {
 
         ToF_Height = (float)NewSensorRange/10.0f;
@@ -741,25 +743,59 @@ void checkReading()
         if(tilt < 25)
         ToF_Height *= cos_approx(tilt);
     }
-
     //Fusion
-    if ((ToF_Height > 0 && ToF_Height < 200) && (!isOutofRange())) {
-        //   	baro_offset = ToF_Height-filtered;
-        baro_offset = filtered-ToF_Height;
-        //baroAlt_offset_print = baro_offset;
-        correctedWithTof(ToF_Height);
-    } /* else
-     //{ Baro_Height -= baro_offset;
-     if (ToF_Height >= 120  && ToF_Height <= 200) {
-     //tofTransition = (200 - ToF_Height) / 100.0f;
-     tofTransition = 0.5f;
-     fused = ToF_Height * tofTransition + Baro_Height * (1.0f - tofTransition);
+	if ((ToF_Height > 0 && ToF_Height < 200) && (!isOutofRange())) {
+		//   	baro_offset = ToF_Height-Baro_filtered;
+		baro_offset = Baro_filtered-ToF_Height;
+		//baroAlt_offset_print = baro_offset;
+		correctedWithTof(ToF_Height);
+	} /* else
+	 //{ Baro_Height -= baro_offset;
+	 if (ToF_Height >= 120  && ToF_Height <= 200) {
+	 //tofTransition = (200 - ToF_Height) / 100.0f;
+	 tofTransition = 0.5f;
+	 fused = ToF_Height * tofTransition + Baro_Height * (1.0f - tofTransition);
 
-     correctedWithBaro( fused, dt);
-     } */
-    else {
-        correctedWithBaro(Baro_Height-baro_offset, dt);
-    }
+	 correctedWithBaro( fused, dt);
+	 } */
+	else {
+		correctedWithBaro(Baro_Height-baro_offset, dt);
+	}
+#endif
+
+#ifdef LASER_TOF_L1x
+    if(isTofDataNew_L1() && (!isOutofRange_L1())) {
+
+		ToF_Height = (float)NewSensorRange_L1/10.0f;
+		isTofDataNewflag = false;
+
+		tilt = degreesToRadians(calculateTiltAngle(&inclination)/10);
+		if(tilt < 25)
+		ToF_Height *= cos_approx(tilt);
+        }
+    //Fusion
+	if (ToF_Height > 0 && ToF_Height < 350 ) {
+		baro_offset = Baro_filtered-EstAlt;
+		correctedWithTof(ToF_Height);
+	} /* else
+	 //{ Baro_Height -= baro_offset;
+	 if (ToF_Height >= 120  && ToF_Height <= 200) {
+	 //tofTransition = (200 - ToF_Height) / 100.0f;
+	 tofTransition = 0.5f;
+	 fused = ToF_Height * tofTransition + Baro_Height * (1.0f - tofTransition);
+
+	 correctedWithBaro( fused, dt);
+	 } */
+	else {
+		correctedWithBaro(Baro_Height-baro_offset, dt);
+	}
+
+#endif
+
+
+
+
+
 }
 #endif
 

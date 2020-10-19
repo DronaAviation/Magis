@@ -41,7 +41,7 @@
 
 
 #define LASER_LPS 0.1
-
+#define RANGE_POLL 10
 
 VL53L1_Dev_t MyDevice_L1;
 //VL53L0X_Dev_t *pMyDevice = &MyDevice;
@@ -166,16 +166,17 @@ void getRange_L1()
     VL53L1_Error Status = Global_Status_L1;
     static uint8_t dataFlag = 0, SysRangeStatus = 0;
     static bool startNow = true;
+    static uint8_t print_counter;
 
 
-    if(rangePoll_L1.set(200,true)) {			//Default polling period is 100ms
-
-    	Monitor.print("StartNow = ", startNow);
-    	Monitor.println(", Error = ", Global_Status_L1);
+    if(rangePoll_L1.set(RANGE_POLL,true)) {			//Check for new data every 10ms
+    	print_counter++;
+    	//Monitor.print("StartNow = ", startNow);
+    	//Monitor.println(", Error = ", Global_Status_L1);
 
     if(Global_Status_L1 == VL53L1_ERROR_NONE) {
         if(startNow) {
-        	Monitor.println("Hi");
+        	//Monitor.println("Hi");
             Status = VL53L1_StartMeasurement(&MyDevice_L1);
             update_status_L1(Status);
             startNow = false;
@@ -183,12 +184,11 @@ void getRange_L1()
     }
 
     if(Global_Status_L1 == VL53L1_ERROR_NONE) {		//Check if data is ready
-
         if(!startNow) {
 
             Status = VL53L1_GetMeasurementDataReady(&MyDevice_L1,&dataFlag);
             update_status_L1(Status);
-            Monitor.println("Data flag ", dataFlag);
+            //Monitor.println("Data flag ", dataFlag);
         }
     }
 
@@ -196,12 +196,11 @@ void getRange_L1()
     /**/
     if(Global_Status_L1 == VL53L1_ERROR_NONE) {
         if(dataFlag) {
-        	Monitor.println("123");
-
-            Status = VL53L1_GetRangingMeasurementData(&MyDevice_L1, &RangingMeasurementData_L1);
+        	Status = VL53L1_GetRangingMeasurementData(&MyDevice_L1, &RangingMeasurementData_L1);
             update_status_L1(Status);
-            Monitor.print("Range status ", RangingMeasurementData_L1.RangeStatus);
-            Monitor.println(",   return status#4: ",Global_Status_L1);
+            if(RangingMeasurementData_L1.RangeStatus && RANGE_POLL > 100)
+            	Monitor.print("Range status ", RangingMeasurementData_L1.RangeStatus);
+            //Monitor.println(",   return status#4: ",Global_Status_L1);
 
 //            if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
 //                debug_range_L1 = RangingMeasurementData.RangeDMaxMilliMeter/10;
@@ -212,12 +211,20 @@ void getRange_L1()
             Range_Status_L1 = RangingMeasurementData_L1.RangeStatus;
             if(RangingMeasurementData_L1.RangeStatus == 0) {
 
-            	if(RangingMeasurementData_L1.RangeMilliMeter<2000){
-
+            	if(RangingMeasurementData_L1.RangeMilliMeter<3500){
               //  NewSensorRange_L1 = RangingMeasurementData.RangeMilliMeter;
-            	Monitor.println("Range is : ", RangingMeasurementData_L1.RangeMilliMeter);
-                NewSensorRange_L1 = NewSensorRange_L1*(1-LASER_LPS)+RangingMeasurementData_L1.RangeMilliMeter*LASER_LPS;
+            	if(RANGE_POLL > 100){
+            		Monitor.print("Ambient light ", RangingMeasurementData_L1.AmbientRateRtnMegaCps, 2);		//Ambient light
+            		Monitor.println(", Range is : ", RangingMeasurementData_L1.RangeMilliMeter);
+            	}else if(print_counter % 20 == 0){	//for proper debugging
+            		//Monitor.print("Ambient light ", RangingMeasurementData_L1.AmbientRateRtnMegaCps, 2);		//Ambient light
+            		//Monitor.println(", Range is : ", RangingMeasurementData_L1.RangeMilliMeter);
 
+            	}
+
+
+                //NewSensorRange_L1 = NewSensorRange_L1*(1-LASER_LPS)+RangingMeasurementData_L1.RangeMilliMeter*LASER_LPS;	Why is this required
+            	NewSensorRange_L1 = RangingMeasurementData_L1.RangeMilliMeter;
                 out_of_range_L1 = false;
 
 
