@@ -584,7 +584,7 @@ ranging_init();
 
 #ifdef LASER_TOF_L1x
 
-//ranging_init_L1();
+ranging_init_L1();
 
 #endif
 
@@ -599,7 +599,13 @@ if (Global_Status_L1 == 0)
 	LED_L_ON;
 }
 
-//while(1){}//Testing vl53l1x
+while(1){
+
+	Monitor.println("Error ",Global_Status_L1);
+	delay(1000);
+	//ranging_init_L1();
+
+}//Testing vl53l1x
 
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);

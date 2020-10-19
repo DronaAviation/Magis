@@ -285,7 +285,7 @@ bool i2cWriteBuffer_v2(uint8_t addr_, uint16_t reg,  uint8_t len, uint8_t* buf)
     }
 
     /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
+    I2C_TransferHandling(I2Cx, addr_, 2, I2C_Reload_Mode, I2C_Generate_Start_Write);
 
     /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -296,15 +296,24 @@ bool i2cWriteBuffer_v2(uint8_t addr_, uint16_t reg,  uint8_t len, uint8_t* buf)
     }
 
     regL = reg & 0xff;
-    regH = reg >> 8;
+    regH = (reg >> 8) & 0xff;
 
     /* Send Register address in two bytes */
     I2C_SendData(I2Cx, (uint8_t) regH);
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET){}
+    i2cTimeout = I2C_LONG_TIMEOUT;
+    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXE) == RESET){
+    	if ((i2cTimeout--) == 0) {
+    	    return i2cTimeoutUserCallback(I2Cx);
+    	}
+    }
 
     I2C_SendData(I2Cx, (uint8_t) regL);
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET){}
-
+    i2cTimeout = I2C_LONG_TIMEOUT;
+    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXE) == RESET){
+    	if ((i2cTimeout--) == 0) {
+    		return i2cTimeoutUserCallback(I2Cx);
+    	}
+    }
 
     /* Wait until TCR flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -463,7 +472,7 @@ uint8_t i2cRead_v2(uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
     }
 
     /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    I2C_TransferHandling(I2Cx, addr_, 2, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
     /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -476,7 +485,26 @@ uint8_t i2cRead_v2(uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
 
     /* Send Register address 16 bit register */
     regL = reg & 0xff;
-    regH = reg >> 8;
+    regH = (reg >> 8) & 0xff;
+
+    /* Send Register address in two bytes */
+	I2C_SendData(I2Cx, (uint8_t) regH);
+	i2cTimeout = I2C_LONG_TIMEOUT;
+	while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXE) == RESET){
+		if ((i2cTimeout--) == 0) {
+			return i2cTimeoutUserCallback(I2Cx);
+		}
+	}
+
+
+	I2C_SendData(I2Cx, (uint8_t) regL);
+	i2cTimeout = I2C_LONG_TIMEOUT;
+	while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXE) == RESET){
+		if ((i2cTimeout--) == 0) {
+			return i2cTimeoutUserCallback(I2Cx);
+		}
+	}
+
 
     /* Wait until TC flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;

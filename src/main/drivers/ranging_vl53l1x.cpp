@@ -92,6 +92,8 @@ void ranging_init_L1(void)
         update_status_L1(Status);
 
     }
+
+
 /*
     if( Global_Status_L1 == VL53L1_ERROR_NONE ) {
         Status = VL53L1_PerformRefSpadManagement( &MyDevice_L1, &refSpadCount, &isApertureSpads ); // Device Initialization

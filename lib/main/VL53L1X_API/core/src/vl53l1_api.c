@@ -71,6 +71,9 @@
 #include "vl53l1_api_debug.h"
 #include "vl53l1_api_core.h"
 
+
+//#define USE_I2C_2V8
+
 /* Check for minimum user zone requested by Xtalk calibration */
 /* no need for VL53L1_MAX_USER_ZONES check, set 5 to pass the test */
 #define ZONE_CHECK 5
@@ -781,7 +784,7 @@ VL53L1_Error VL53L1_DataInit(VL53L1_DEV Dev)
 				VL53L1_PRESETMODE_LOWPOWER_AUTONOMOUS);
 	}
 
-	/* Enable all check */
+	// Enable all check
 	for (i = 0; i < VL53L1_CHECKENABLE_NUMBER_OF_CHECKS; i++) {
 		if (Status == VL53L1_ERROR_NONE)
 			Status |= VL53L1_SetLimitCheckEnable(Dev, i, 1);
@@ -790,7 +793,7 @@ VL53L1_Error VL53L1_DataInit(VL53L1_DEV Dev)
 
 	}
 
-	/* Limit default values */
+	// Limit default values
 	if (Status == VL53L1_ERROR_NONE) {
 		Status = VL53L1_SetLimitCheckValue(Dev,
 			VL53L1_CHECKENABLE_SIGMA_FINAL_RANGE,
@@ -800,10 +803,11 @@ VL53L1_Error VL53L1_DataInit(VL53L1_DEV Dev)
 		Status = VL53L1_SetLimitCheckValue(Dev,
 			VL53L1_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
 				(FixPoint1616_t)(25 * 65536 / 100));
-				/* 0.25 * 65536 */
+				// 0.25 * 65536
 	}
 
 	LOG_FUNCTION_END(Status);
+
 	return Status;
 }
 
