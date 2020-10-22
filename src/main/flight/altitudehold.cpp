@@ -945,7 +945,6 @@ void updateGains1()
 }
 
 void setAltitude(float new_altitude)
-
 {
     _position_base_z = new_altitude;
     _position_correction_z = 0;
