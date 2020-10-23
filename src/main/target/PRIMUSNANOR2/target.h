@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif 
-#define TARGET_BOARD_IDENTIFIER "PRIMUSX2"
+#define TARGET_BOARD_IDENTIFIER "PRIMUSNANOR2"
 
 /* #define LED0_GPIO   GPIOB
  #define LED0_PIN    Pin_4 // Blue LEDs - PB4
@@ -30,20 +30,20 @@ extern "C" {
 //#define BEEP_GPIO   GPIOA
 //#define BEEP_PIN    Pin_5  // White LEDs - PA5
 //#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
-#define LED0_GPIO GPIOC
-#define LED0_PIN Pin_13 // PC14 (LED)	//Blue
+#define LED0_GPIO GPIOA					//This currently assigned to NC pin.
+#define LED0_PIN Pin_1 // PC14 (LED)	//Blue
 #define LED_R
-#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOA
 
-#define LED1_GPIO GPIOC
-#define LED1_PIN Pin_13 // PC13 (LED)	//Red
+#define LED1_GPIO GPIOA		//THis needs to be used for vbat. This is currently unused.
+#define LED1_PIN Pin_0 // PC13 (LED)	//Red
 #define LED_L
-#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOA
 
-#define LED2_GPIO GPIOC
-#define LED2_PIN Pin_15 // PC15 (LED)	//Green
+#define LED2_GPIO GPIOA					// This is the only led used for status led
+#define LED2_PIN Pin_14 // PC15 (LED)	//Green
 #define LED_M
-#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
+#define LED2_PERIPHERAL RCC_AHBPeriph_GPIOA
 
 #define USABLE_TIMER_CHANNEL_COUNT 5
 
@@ -58,20 +58,20 @@ extern "C" {
 
 
 #define ACC
-#define USE_ACC_ICM20948
-//#define ACC_ICM20948_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
+#define USE_ACC_ICM20689
+#define ACC_ICM20689_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
 
 #define GYRO
-#define USE_GYRO_ICM20948
-//#define GYRO_ICM20948_ALIGN CW90_DEG_FLIP //For plutoX-new comment  else for old uncomment
+#define USE_GYRO_ICM20689
+#define GYRO_ICM20689_ALIGN CW90_DEG_FLIP //For PrimusNanoR2
 
 #define MAG
-#define USE_MAG_AK09916
-#define MAG_AK09916_ALIGN CW180_DEG_FLIP //For plutoX-new remove comment  else for old comment
+#define USE_MAG_HSCDTD
+#define MAG_HSCDTD_ALIGN CW180_DEG_FLIP //For plutoX-new remove comment  else for old comment
 //#define MAG_ENFORCE
 
 #define BARO
-#define USE_BARO_ICP10111
+#define USE_BARO_LPS22HB
 
 #define BRUSHED_MOTORS
 

@@ -204,6 +204,7 @@ latchActiveFeatures();
 
 ledInit();
 
+
 #ifdef SPEKTRUM_BIND
 if (feature(FEATURE_RX_SERIAL)) {
     switch (masterConfig.rxConfig.serialrx_provider) {
@@ -393,6 +394,8 @@ if (feature(FEATURE_DISPLAY)) {
 }
 #endif
 
+
+
 //#ifdef TEST_ENABLE
 failureFlag = 0;
 if (!sensorsAutodetectmpu(&masterConfig.sensorAlignmentConfig,
@@ -402,6 +405,9 @@ if (!sensorsAutodetectmpu(&masterConfig.sensorAlignmentConfig,
     //LEDx_ON;   //PA4
     failureFlag |= (1 << FAILURE_MISSING_ACC);
 }
+
+
+
 #ifdef BARO
 if (!sensorsAutodetectbaro(masterConfig.baro_hardware)) {
     // if baro was not detected due to whatever reason, we give up now.
@@ -413,11 +419,19 @@ if (!sensorsAutodetectbaro(masterConfig.baro_hardware)) {
     failureFlag |= (1 << FAILURE_BARO);
 }
 #endif
+
+while(failureFlag == 0)
+{
+	LED_M_TOGGLE;
+	delay(3000);
+}
+
 if (clockcheck == 1) {
     //failure if running on internal clock
     //LEDz_ON;   //PA6
     failureFlag |= (1 << FAILURE_EXTCLCK);
 }
+
 
 //failureFlag = 0;
 //
@@ -427,6 +441,8 @@ if (clockcheck == 1) {
 if (failureFlag != 0) {
     failureMode(failureFlag);
 }
+
+
 //#endif
 systemState |= SYSTEM_STATE_SENSORS_READY;
 

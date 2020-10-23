@@ -33,7 +33,8 @@ typedef enum {
     ACC_MPU6000 = 7,
     ACC_MPU6500 = 8,
     ACC_ICM20948=9,
-    ACC_FAKE = 10,
+	ACC_ICM20689=10,
+    ACC_FAKE = 11,
 } accelerationSensor_e;
 
 #define ACC_MAX  ACC_FAKE

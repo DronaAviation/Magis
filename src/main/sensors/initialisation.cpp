@@ -41,6 +41,7 @@
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
 #include "drivers/accgyro_icm20948.h"
+#include "drivers/accgyro_icm20689.h"
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
 
@@ -53,12 +54,14 @@
 #include "drivers/barometer_bmp280.h"
 #include "drivers/barometer_ms5611.h"
 #include "drivers/barometer_icp10111.h"
+#include "drivers/barometer_lps22hb.h"
 
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
 #include "drivers/compass_ak09916.h"
+#include "drivers/compass_hscdtd008a.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -71,6 +74,8 @@
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
 #include "sensors/initialisation.h"
+
+#include "drivers/light_led.h"		//temp for debugging
 
 #ifdef NAZE
 #include "hardware_revision.h"
@@ -305,6 +310,19 @@ bool detectGyro(void)
 #endif
             ; // fallthrough
 
+        case GYRO_ICM20689:
+#ifdef USE_GYRO_ICM20689
+
+        	if (ICM20689GyroDetect(&gyro))
+        	{
+        		gyroHardware = GYRO_ICM20689;
+        		#ifdef GYRO_ICM20689_ALIGN
+        	    	gyroAlign = GYRO_ICM20689_ALIGN;
+        		#endif
+                break;
+            }
+#endif
+
         case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
             if (fakeGyroDetect(&gyro)) {
@@ -435,6 +453,19 @@ static void detectAcc(accelerationSensor_e accHardwareToUse)
 #endif
             ; // fallthrough
 
+        case ACC_ICM20689:
+#ifdef USE_ACC_ICM20689
+        	if (ICM20689AccDetect(&acc))
+            {
+        	#ifdef ACC_ICM20689_ALIGN
+                        accAlign = ACC_ICM20689_ALIGN;
+        	#endif
+                        accHardware = ACC_ICM20689;
+                        break;
+            }
+#endif
+                    ; // fallthrough
+
 
         case ACC_MPU6500:
 #ifdef USE_ACC_MPU6500
@@ -536,6 +567,15 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             }
 #endif
             ; // fallthough
+        case BARO_LPS22HB:
+
+#ifdef USE_BARO_LPS22HB
+            if (lps22hbDetect(&baro)) {
+            	baroHardware = BARO_LPS22HB;
+                break;
+            }
+#endif
+                    ; // fallthough
         case BARO_BMP085:
 #ifdef USE_BARO_BMP085
             if (bmp085Detect(bmp085Config, &baro)) {
@@ -649,7 +689,23 @@ static void detectMag(magSensor_e magHardwareToUse)
             }
 #endif
             ; // fallthrough
-//changes made by DD
+
+        case MAG_HSCDTD:
+#ifdef USE_MAG_HSCDTD
+            if (hscdtdDetect(&mag)) {
+				#ifdef MAG_HSCDTD_ALIGN
+            	magAlign = MAG_HSCDTD_ALIGN;
+       	   		#endif
+                magHardware = MAG_HSCDTD;
+                while(1){
+                	delay(50);
+                	LED_M_TOGGLE;
+                }
+                break;
+            }
+#endif
+            ; // fallthrough
+
         case MAG_AK8963:
 #ifdef USE_MAG_AK8963
             if (ak8963Detect(&mag)) {
@@ -712,24 +768,31 @@ bool sensorsAutodetectmpu(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_ICM20948) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
+
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_ICM20948) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_ICM20689)
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 
     mpuDetectionResult_t *mpuDetectionResult = detectMpu(extiConfig);
+
     UNUSED(mpuDetectionResult);
 #endif
+
 
     if (!detectGyro()) {
         return false;
     }
+
+    //Check from here.
     detectAcc((accelerationSensor_e) accHardwareToUse);
+
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC))
         acc.init();
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init(gyroLpf);
+
 
     detectMag((magSensor_e) magHardwareToUse);
 

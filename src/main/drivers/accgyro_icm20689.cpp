@@ -32,30 +32,34 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
-#include "accgyro_mpu6500.h"
+#include "accgyro_icm20689.h"
+
+#include "drivers/light_led.h"
 
 extern uint16_t acc_1G;
 extern uint8_t mpuLowPassFilter;
 
-bool mpu6500AccDetect(acc_t *acc)
+bool ICM20689AccDetect(acc_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
     }
 
-    acc->init = mpu6500AccInit;
+    acc->init = ICM20689AccInit;
     acc->read = mpuAccRead;
 
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro)
+bool ICM20689GyroDetect(gyro_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+
+    if (mpuDetectionResult.sensor != ICM_20689) {
         return false;
     }
 
-    gyro->init = mpu6500GyroInit;
+
+    gyro->init = ICM20689GyroInit;
     gyro->read = mpuGyroRead;
 
     // 16.4 dps/lsb scalefactor
@@ -64,50 +68,40 @@ bool mpu6500GyroDetect(gyro_t *gyro)
     return true;
 }
 
-void mpu6500AccInit(void)
+void ICM20689AccInit(void)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
     acc_1G = 512 * 8;
 }
 
-void mpu6500GyroInit(uint16_t lpf)
+
+void ICM20689GyroInit(uint16_t lpf)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
-#ifdef NAZE
-    // FIXME target specific code in driver code.
-
-    gpio_config_t gpio;
-    // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices
-    if (hse_value == 12000000) {
-        gpio.pin = Pin_13;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_IN_FLOATING;
-        gpioInit(GPIOC, &gpio);
-    }
-#endif
 
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
     delay(100);
-    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
+    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x03);		//Reset acc & temp digital path
     delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
+    mpuConfiguration.write(MPU_RA_USER_CTRL, 0x01);				//Reset gyro digital path
+    delay(100);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);				//Not sure why this is done
     delay(100);
     //mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
-    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //Filter Gyro with masterConfig.gyro_lpf (42Hz)
-    mpuConfiguration.write(0x1D, 0x04);	// Acc low pass filter of 20Hz
+    mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //Filter Gyro with masterConfig.gyro_lpf (41Hz)
+    mpuConfiguration.write(0x1D, 0x04);	// Acc low pass filter of 21.2Hz
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // 1kHz S/R
 
     // Data ready interrupt configuration
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_ANYRD_2CLEAR, BYPASS_EN
+    //mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_ANYRD_2CLEAR, BYPASS_EN
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
 }
-

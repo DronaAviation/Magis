@@ -423,6 +423,10 @@ static void resetConf(void)
     featureSet(FEATURE_GPS);
 #endif
 
+#if defined(PRIMUSNANOR2)
+    featureSet(FEATURE_RX_MSP);
+#endif
+
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
@@ -445,12 +449,20 @@ static void resetConf(void)
     masterConfig.boardAlignment.rollDegrees = 0;
     masterConfig.boardAlignment.pitchDegrees = 0;
     masterConfig.boardAlignment.yawDegrees = 0;
+#if defined(PRIMUSNANOR2)
+    masterConfig.acc_hardware = ACC_ICM20689;     // default/autodetect
+#else
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+#endif
     masterConfig.max_angle_inclination = 200; //drona   // 50 degrees  Drona
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
-
+#if defined(PRIMUSNANOR2)
+    masterConfig.mag_hardware = MAG_HSCDTD;
+#else
     masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+#endif
+
     masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);

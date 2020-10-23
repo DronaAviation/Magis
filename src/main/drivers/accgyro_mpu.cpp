@@ -43,6 +43,8 @@
 #include "accgyro_icm20948.h"
 #include "accgyro_mpu.h"
 
+#include "drivers/light_led.h"		//temp for debugging
+
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
@@ -61,10 +63,11 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_ADDRESS             0x68
 
-// WHO_AM_I register contents for MPU3050, 6050, 6500 and ICM 20948
+// WHO_AM_I register contents for MPU3050, 6050, 6500, ICM 20948 & ICM 20689
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPUx0x0_WHO_AM_I_CONST              (0x68)
 #define MPU_ICM_20948_WHO_AM_I_CONST        (0xEA)
+#define MPU_ICM_20689_WHO_AM_I_CONST        (0x98)
 
 #define MPU_INQUIRY_MASK   0x7E
 
@@ -80,9 +83,10 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     uint8_t inquiryResult;
 
     // MPU datasheet specifies 30ms.
-    delay(35);
+    delay(100);
 
     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
+
     if (ack) {
         mpuConfiguration.read = mpuReadRegisterI2C;
         mpuConfiguration.write = mpuWriteRegisterI2C;
@@ -101,6 +105,13 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     // If an MPU3050 is connected sig will contain 0.
     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
 
+    if(ack && sig == MPU_ICM_20689_WHO_AM_I_CONST){
+    	mpuDetectionResult.sensor = ICM_20689;
+    	//mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+    	//mpuConfiguration.accReadXRegister = MPU_RA_ACCEL_XOUT_H;
+    	return &mpuDetectionResult;
+
+    }
 
     // icm20948 detection
     if (ack && inquiryResult == MPU_ICM_20948_WHO_AM_I_CONST) {

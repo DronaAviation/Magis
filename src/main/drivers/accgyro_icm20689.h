@@ -21,34 +21,17 @@
 extern "C" {
 #endif 
 
-typedef enum {
-    GYRO_NONE = 0,
-    GYRO_DEFAULT,
-    GYRO_MPU6050,
-    GYRO_L3G4200D,
-    GYRO_MPU3050,
-    GYRO_L3GD20,
-    GYRO_MPU6000,
-    GYRO_MPU6500,
-    GYRO_ICM20948,
-	GYRO_ICM20689,
-    GYRO_FAKE
-} gyroSensor_e;
+#define ICM20689_WHO_AM_I_CONST              (0x98)
 
-extern gyro_t gyro;
-extern sensor_align_e gyroAlign;
+#define ICM20689_BIT_RESET                   (0x80)
 
-extern int16_t gyroADC[XYZ_AXIS_COUNT];
-extern int16_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT];
 
-typedef struct gyroConfig_s {
-        uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-} gyroConfig_t;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse);
-void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void gyroUpdate(void);
-bool isGyroCalibrationComplete(void);
+bool ICM20689AccDetect(acc_t *acc);
+bool ICM20689GyroDetect(gyro_t *gyro);
+
+void ICM20689AccInit(void);
+void ICM20689GyroInit(uint16_t lpf);
 
 #ifdef __cplusplus
 }
