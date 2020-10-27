@@ -32,6 +32,7 @@
 #include "config/config.h"
 
 #include "sensors/barometer.h"
+//#include "drivers/barometer_lps22hb.h"
 
 #define UPDATE_FREQUENCY_10HZ (1000 * 101.5)
 
@@ -65,6 +66,19 @@ static uint32_t baroPressureSum = 0;
 static bool _updated = false;
 
 static barometerConfig_t *barometerConfig;
+
+#if defined(USE_BARO_LPS22HB)
+float lps22hbBaroCalculateAltitude(void);
+void lps22hbBaroUpdate(uint32_t currentTime);
+void lps22hbBaroCalibrate(void);
+#endif
+
+#if defined(USE_BARO_ICP10111)
+void icp10111BaroInit(void);
+float icp10111BaroCalculateAltitude(void);
+void icp10111BaroUpdate(uint32_t currentTime);
+void icp10111BaroCalibrate(void);
+#endif
 
 
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
@@ -103,31 +117,26 @@ bool isBaroReady(void)
 }
 
 
-
-
-void icp10111BaroInit(void){
-    baro.measurment_start(VERY_ACCURATE);
-
-}
-
-
 void baroInit(void){
 
-#if defined(PRIMUSX2)
+#if defined(USE_BARO_ICP10111)
 
     icp10111BaroInit();
 
-#else
-
-
 #endif
+
+#ifdef USE_BARO_LPS22HB
+    //lps22hbInit();	//Nothing inside the function as of now. May be can shift ODR related registers here.
+#endif
+
+
 
 }
 
 
 void apmBaroUpdate(uint32_t currentTime)
 {
-    static uint32_t baroDeadline = 0;
+	static uint32_t baroDeadline = 0;
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
     if ((int32_t) (currentTime - baroDeadline) < 0)
@@ -213,6 +222,7 @@ void apmBaroUpdate(uint32_t currentTime)
             break;
     }
     baroDeadline += micros();        // make sure deadline is set after calling baro callbacks
+
 }
 
 void apmBaroRead(uint32_t currentTime)
@@ -277,67 +287,37 @@ void apmBaroRead(uint32_t currentTime)
 
 }
 
-
-void icp10111BaroUpdate(uint32_t currentTime){
-
-
-    uint32_t ctime=currentTime/1000;
-
-    if(baro.read(ctime,&baroPressure, &baroTemperature)){
-
-
-          _last_update = millis();
-        baro.measurment_start(VERY_ACCURATE);
-
-    }
-
-
-
-
-}
-
-
-
 void baroUpdate(uint32_t currentTime){
 
 
-#if defined(PRIMUSX2)
-
+#if defined(USE_BARO_ICP10111)
     icp10111BaroUpdate(currentTime);
 
-#else
+#elif defined(USE_BARO_LPS22HB)
+    lps22hbBaroUpdate(currentTime);
 
+#else
     apmBaroUpdate(currentTime);
     apmBaroRead(currentTime);
 
 #endif
 
-
-
-
 }
 
 
 float getBaroPressure()
-
 {
     return baroPressure;
-
 }
 
 float getBaroTemperature()
-
 {
-
     return baroTemperature;
-
 }
 
 uint32_t getBaroLastUpdate()
 {
-
     return _last_update;
-
 }
 
 float apmBaroCalculateAltitude(void)
@@ -356,41 +336,23 @@ float apmBaroCalculateAltitude(void)
 
 }
 
-
-float icp10111BaroCalculateAltitude(void)
-{
-
-    // calculates height from ground via baro readings
-    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    float scaling = (float) baroGroundPressure / (float) baroPressure;
-
-    float temp = baroGroundTemperature+273.15;
-
-    BaroAlt = (logf(scaling) * temp * 29.271267f )* 100;
-
-    return BaroAlt;
-
-
-
-}
-
-
 float baroCalculateAltitude(void){
 
-#if defined(PRIMUSX2)
+#if defined(USE_BARO_ICP10111)
 
     return icp10111BaroCalculateAltitude();
 
+#elif defined(USE_BARO_LPS22HB)
+
+    return lps22hbBaroCalculateAltitude();
+
 #else
-
     return apmBaroCalculateAltitude();
-
 
 #endif
 
 
 }
-
 
 
 void apmBaroCalibrationRead()
@@ -472,6 +434,98 @@ void apmBaroCalibrate(void){
 
 }
 
+void baroCalibrate(void)
+{
+
+#if defined(USE_BARO_ICP10111)
+
+	 icp10111BaroCalibrate();
+
+#elif defined(USE_BARO_LPS22HB)
+
+     lps22hbBaroCalibrate();
+
+#else
+     apmBaroCalibrate();
+
+#endif
+
+}
+
+
+
+
+#if defined(USE_BARO_LPS22HB)
+void lps22hbBaroCalibrate(void){
+	baroGroundPressure = 0;
+	baroGroundTemperature = 0;
+
+
+	//baro.measurment_start(VERY_ACCURATE);
+
+
+	int i = 0, j = 0;
+	//while (baroGroundPressure == 0) {    //Dump old values
+		for (i = 0; i < 35; i++) {
+			lps22hbBaroUpdate(micros());
+			delay(10);
+	//	}
+
+		baroGroundPressure = getBaroPressure();
+		baroGroundTemperature = getBaroTemperature();
+	}
+
+	baroGroundPressure = 0;
+	baroGroundTemperature = 0;
+
+	//Start gathering new values
+	for (j = 0; j < 15; j++) {
+		lps22hbBaroUpdate(micros());
+		delay(10);
+
+		baroGroundPressure += getBaroPressure();
+		baroGroundTemperature += getBaroTemperature();
+	}
+	baroGroundPressure /= 15;
+	baroGroundTemperature /= 15;
+
+
+}
+
+void lps22hbBaroUpdate(uint32_t currentTime){
+	static uint32_t last_update;
+
+	if ((int32_t) (currentTime - last_update) < 0)
+	        return;
+	last_update = currentTime + baro.up_delay;
+
+	baro.read(currentTime, &baroPressure, &baroTemperature);
+	_last_update = millis();
+
+}
+
+float lps22hbBaroCalculateAltitude(void){
+	float scaling = (float) baroGroundPressure / (float) baroPressure;
+
+	float temp = baroGroundTemperature+273.15;
+
+	BaroAlt = (logf(scaling) * temp * 29.271267f )* 100;
+
+	return BaroAlt;
+
+
+}
+
+
+#endif
+
+
+#if defined(USE_BARO_ICP10111)
+
+void icp10111BaroInit(void){
+    baro.measurment_start(VERY_ACCURATE);
+
+}
 
 void icp10111BaroCalibrate(void){
 
@@ -513,23 +567,37 @@ void icp10111BaroCalibrate(void){
 
 }
 
+void icp10111BaroUpdate(uint32_t currentTime){
+
+    uint32_t ctime=currentTime/1000;
+
+    if(baro.read(ctime,&baroPressure, &baroTemperature)){
 
 
+          _last_update = millis();
+        baro.measurment_start(VERY_ACCURATE);
 
-void baroCalibrate(void)
-{
-
-#if defined(PRIMUSX2)
-
-     icp10111BaroCalibrate();
-
-#else
-
-     apmBaroCalibrate();
-
-
-#endif
+    }
 
 }
+
+
+float icp10111BaroCalculateAltitude(void)
+{
+
+    // calculates height from ground via baro readings
+    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
+    float scaling = (float) baroGroundPressure / (float) baroPressure;
+
+    float temp = baroGroundTemperature+273.15;
+
+    BaroAlt = (logf(scaling) * temp * 29.271267f )* 100;
+
+    return BaroAlt;
+
+
+
+}
+#endif
 
 #endif /* BARO */

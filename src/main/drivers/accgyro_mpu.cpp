@@ -102,8 +102,6 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
     mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
     mpuConfiguration.accReadXRegister = MPU_RA_ACCEL_XOUT_H;
 
-    // If an MPU3050 is connected sig will contain 0.
-    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
 
     if(ack && sig == MPU_ICM_20689_WHO_AM_I_CONST){
     	mpuDetectionResult.sensor = ICM_20689;
@@ -113,7 +111,10 @@ mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
 
     }
 
-    // icm20948 detection
+    // If an MPU3050 is connected sig will contain 0.
+     ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
+
+     // icm20948 detection
     if (ack && inquiryResult == MPU_ICM_20948_WHO_AM_I_CONST) {
         mpuDetectionResult.sensor = MPU_ICM_20948;
         mpuConfiguration.gyroReadXRegister = ICM20948_GYRO_OUT;

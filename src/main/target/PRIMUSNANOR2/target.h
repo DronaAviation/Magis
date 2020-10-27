@@ -59,11 +59,11 @@ extern "C" {
 
 #define ACC
 #define USE_ACC_ICM20689
-#define ACC_ICM20689_ALIGN CW90_DEG_FLIP	//For plutoX-new V1 comment else for old uncomment
+#define ACC_ICM20689_ALIGN CW270_DEG	//For PrimusNanoR2
 
 #define GYRO
 #define USE_GYRO_ICM20689
-#define GYRO_ICM20689_ALIGN CW90_DEG_FLIP //For PrimusNanoR2
+#define GYRO_ICM20689_ALIGN CW270_DEG //For PrimusNanoR2
 
 #define MAG
 #define USE_MAG_HSCDTD
@@ -143,9 +143,9 @@ extern "C" {
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
-#define VBAT_ADC_GPIO        GPIOB	//TODO: check Vbat working, connected to internal ADC
-#define VBAT_ADC_GPIO_PIN    GPIO_Pin_2
-#define VBAT_ADC_CHANNEL     ADC_Channel_12
+#define VBAT_ADC_GPIO        GPIOA	//TODO: check Vbat working, connected to internal ADC
+#define VBAT_ADC_GPIO_PIN    GPIO_Pin_6
+#define VBAT_ADC_CHANNEL     ADC_Channel_3
 
 
 //#define BLACKBOX
@@ -176,8 +176,8 @@ extern "C" {
 //#define OPTIC_FLOW
 
 //#define LASER_TOF_L0x // only to get laser height for VL53L0x
-#define LASER_TOF_L1x // only to get laser height for VL53L1x
-#define LASER_ALT // to integrate with althold
+//#define LASER_TOF_L1x // only to get laser height for VL53L1x
+//#define LASER_ALT // to integrate with althold
 
 
 #define FLIGHT_STATUS_INDICATOR

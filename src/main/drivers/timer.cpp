@@ -264,16 +264,16 @@ if(initInternalMotors){
 
 #if defined(PRIMUSNANOR2)
 //Virtual Motor 4 Actual Motor M5
-timerHardware_t T4= {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2}; // PWM1  - PA0  - TIM2_CH1, TIM8
+timerHardware_t T4= {TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_2}; // PWM1  - PA0  - TIM2_CH1, TIM8
 
 //Virtual Motor 3 Actual Motor M6
-timerHardware_t T3= {TIM3, GPIOA, Pin_7, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2}; // PWM2  - PA1  - *TIM2_CH2, TIM15_CH1N
+timerHardware_t T3= {TIM3, GPIOB, Pin_4, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource4, GPIO_AF_2}; // PWM2  - PA1  - *TIM2_CH2, TIM15_CH1N
 
 //Virtual Motor 1 Actual Motor M7
-timerHardware_t T1= {TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_2}; // PWM3  - PB10 - TIM2_CH3, USART3_TX (AF7)
+timerHardware_t T1= {TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10}; // PWM3  - PB10 - TIM2_CH3, USART3_TX (AF7)
 
 //Virtual Motor 2 Actual Motor M8
-timerHardware_t T2= {TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_2}; // PWM4  - PB11 - *TIM2_CH4, USART3_RX (AF7)
+timerHardware_t T2= {TIM3, GPIOA, Pin_7, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2}; // PWM4  - PB11 - *TIM2_CH4, USART3_RX (AF7)
 
 //Virtual Motor 1 Actual Motor M3
 timerHardware_t T5= {TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1}; // PWM3  - PB10 - TIM2_CH3, USART3_TX (AF7)
@@ -335,7 +335,7 @@ if(initInternalMotors){
 //#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2)
 //#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM17)
 //#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
-#endif
+#endif //PrimusNanoR2
 
 
 

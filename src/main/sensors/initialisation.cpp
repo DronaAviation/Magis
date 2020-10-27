@@ -697,10 +697,7 @@ static void detectMag(magSensor_e magHardwareToUse)
             	magAlign = MAG_HSCDTD_ALIGN;
        	   		#endif
                 magHardware = MAG_HSCDTD;
-                while(1){
-                	delay(50);
-                	LED_M_TOGGLE;
-                }
+
                 break;
             }
 #endif

@@ -38,6 +38,7 @@
 #include "compass.h"
 
 #include "compass_hscdtd008a.h"
+#include "drivers/light_led.h"		//temp for debugging
 
 // This sensor is available in MPU-9150.
 
@@ -45,7 +46,11 @@
 #define HSCDTD_MAG_I2C_ADDRESS      0x0c
 
 // Registers
-#define HSCDTD_MAG_REG_WHO_AM_I     0x0C
+#define HSCDTD_MAG_REG_WHO_AM_I     0x0f
+#define HSCDTD_MAG_CONTROL1     	0x1b
+#define HSCDTD_MAG_CONTROL2     	0x1c
+#define HSCDTD_MAG_CONTROL3     	0x1d
+#define HSCDTD_MAG_CONTROL4     	0x1e
 
 #define AK8975_MAG_REG_INFO         0x01
 #define AK8975_MAG_REG_STATUS1      0x02
@@ -70,7 +75,7 @@ bool hscdtdDetect(mag_t *mag)
     uint8_t sig = 0;
 
     ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_REG_WHO_AM_I, 1, &sig);
-    if (!ack || sig != 0x55) // 0x48 / 01001000 / 'H'
+    if (!ack || sig != 0x49)
         return false;
 
     mag->init = hscdtdInit;
@@ -88,24 +93,9 @@ void hscdtdInit()
 
     UNUSED(ack);
 
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x00); // power down before entering fuse mode
-    delay(20);
-
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x0F); // Enter Fuse ROM access mode
+    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL1, 0x88); // Active mode, 10hz odr, continuous measurement
     delay(10);
 
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975A_ASAX, 3, &buffer[0]); // Read the x-, y-, and z-axis calibration values
-    delay(10);
-
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x00); // power down after reading.
-    delay(10);
-
-    // Clear status registers
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
-
-    // Trigger first measurement
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01);
 }
 
 #define BIT_STATUS1_REG_DATA_READY              (1 << 0)

@@ -41,7 +41,7 @@ extern uint8_t mpuLowPassFilter;
 
 bool ICM20689AccDetect(acc_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+    if (mpuDetectionResult.sensor != ICM_20689) {
         return false;
     }
 
@@ -83,20 +83,27 @@ void ICM20689GyroInit(uint16_t lpf)
 
     uint8_t mpuLowPassFilter = determineMPULPF(lpf);
 
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);	//Device reset
     delay(100);
-    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x03);		//Reset acc & temp digital path
-    delay(100);
+    //mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x03);			//Reset acc & temp digital path
+    //delay(100);
     mpuConfiguration.write(MPU_RA_USER_CTRL, 0x01);				//Reset gyro digital path
     delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);				//Not sure why this is done
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);				//Sleep mode off, Internal oscillator 20Mhz
+    delay(100);
+    mpuConfiguration.write(MPU_RA_PWR_MGMT_2, 0);				//Enable acc, gyro
     delay(100);
     //mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    delay(10);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    delay(10);
     mpuConfiguration.write(MPU_RA_CONFIG, mpuLowPassFilter); //Filter Gyro with masterConfig.gyro_lpf (41Hz)
+    delay(10);
     mpuConfiguration.write(0x1D, 0x04);	// Acc low pass filter of 21.2Hz
+    delay(10);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // 1kHz S/R
+    delay(10);
 
     // Data ready interrupt configuration
     //mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_ANYRD_2CLEAR, BYPASS_EN

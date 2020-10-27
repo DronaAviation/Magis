@@ -420,18 +420,13 @@ if (!sensorsAutodetectbaro(masterConfig.baro_hardware)) {
 }
 #endif
 
-while(failureFlag == 0)
-{
-	LED_M_TOGGLE;
-	delay(3000);
-}
+
 
 if (clockcheck == 1) {
     //failure if running on internal clock
     //LEDz_ON;   //PA6
     failureFlag |= (1 << FAILURE_EXTCLCK);
 }
-
 
 //failureFlag = 0;
 //
@@ -468,6 +463,8 @@ LED_L_OFF;
 if (sensors(SENSOR_MAG))
     compassInit();
 #endif
+
+
 
 imuInit();
 
@@ -543,6 +540,8 @@ updateGains();
 gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
 baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+
+
 baroCalibrate();
 baroInit();
 #endif

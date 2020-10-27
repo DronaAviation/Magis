@@ -22,6 +22,8 @@ extern "C" {
 #endif 
 
 bool lps22hbDetect(baro_t *baro);
+//bool lps22hb_calculate(uint32_t _currentTime, float *_baroPressure, float *_baroTemperature);
+//bool lps22hbInit(void);
 
 #ifdef __cplusplus
 }

@@ -449,7 +449,7 @@ static void resetConf(void)
     masterConfig.boardAlignment.rollDegrees = 0;
     masterConfig.boardAlignment.pitchDegrees = 0;
     masterConfig.boardAlignment.yawDegrees = 0;
-#if defined(PRIMUSNANOR2)
+#if defined(USE_ACC_ICM20689)
     masterConfig.acc_hardware = ACC_ICM20689;     // default/autodetect
 #else
     masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
@@ -457,14 +457,17 @@ static void resetConf(void)
     masterConfig.max_angle_inclination = 200; //drona   // 50 degrees  Drona
     masterConfig.yaw_control_direction = 1;
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
-#if defined(PRIMUSNANOR2)
+#if defined(USE_MAG_HSCDTD)
     masterConfig.mag_hardware = MAG_HSCDTD;
 #else
     masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
 #endif
 
+#if defined(USE_BARO_LPS22HB)
+    masterConfig.baro_hardware = BARO_LPS22HB;   // default/autodetect
+#else
     masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
-
+#endif
     resetBatteryConfig(&masterConfig.batteryConfig);
 
     resetTelemetryConfig(&masterConfig.telemetryConfig);

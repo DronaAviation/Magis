@@ -27,6 +27,8 @@ typedef void (*baroOpStartFuncPtr)(void);                       // baro start op
 typedef uint32_t (*baroOpGetFuncPtr)(void);                     // baro start operation
 typedef uint32_t (*baroMeaStartFuncPtr)(mmode mode);           // baro meaasurement start operation
 typedef bool (*baroReadFuncPtr)(uint32_t currentTime,float *pressure, float *temperature);                          // baro read operation
+typedef bool (*baroPressureStatusPtr)(void);                          // Is pressure reading ready?
+typedef bool (*baroTemperatureStatusPtr)(void);                       // Is pressure reading ready?
 typedef void (*baroCalculateFuncPtr)(float *pressure, float *temperature, uint32_t P, uint32_t T); // baro calculation (filled params are pressure and temperature)
 
 typedef struct baro_s {
@@ -39,6 +41,9 @@ typedef struct baro_s {
         baroMeaStartFuncPtr measurment_start;
         baroCalculateFuncPtr calculate;
         baroReadFuncPtr read;
+        baroPressureStatusPtr pressure_rdy;
+        baroPressureStatusPtr temperature_rdy;
+
 } baro_t;
 
 
