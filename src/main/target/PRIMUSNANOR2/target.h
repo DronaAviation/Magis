@@ -67,13 +67,15 @@ extern "C" {
 
 #define MAG
 #define USE_MAG_HSCDTD
-#define MAG_HSCDTD_ALIGN CW180_DEG_FLIP //For plutoX-new remove comment  else for old comment
+#define MAG_HSCDTD_ALIGN CW90_DEG //For PrimusNanoR2
 //#define MAG_ENFORCE
 
 #define BARO
 #define USE_BARO_LPS22HB
 
 #define BRUSHED_MOTORS
+
+//#define TACT_SWITCH
 
 //#define BEEPER
 #define LED0
@@ -126,7 +128,7 @@ extern "C" {
 #define USE_SPI_DEVICE_2
 #define SPI2_GPIO               GPIOB
 #define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            GPIO_Pin_5
+#define SPI2_NSS_PIN            GPIO_Pin_10
 #define SPI2_NSS_PIN_SOURCE     GPIO_PinSource5
 #define SPI2_SCK_PIN            GPIO_Pin_13
 #define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
@@ -176,7 +178,7 @@ extern "C" {
 //#define OPTIC_FLOW
 
 //#define LASER_TOF_L0x // only to get laser height for VL53L0x
-//#define LASER_TOF_L1x // only to get laser height for VL53L1x
+#define LASER_TOF_L1x // only to get laser height for VL53L1x
 //#define LASER_ALT // to integrate with althold
 
 

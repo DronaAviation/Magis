@@ -97,8 +97,8 @@
 
 #include "opticflow_paw3903.h"
 
-#define DISABLE_SPI       GPIO_SetBits(GPIOB,   GPIO_Pin_5)
-#define ENABLE_SPI        GPIO_ResetBits(GPIOB, GPIO_Pin_5)
+#define DISABLE_SPI       GPIO_SetBits(GPIOB,   GPIO_Pin_12)
+#define ENABLE_SPI        GPIO_ResetBits(GPIOB, GPIO_Pin_12)
 
 #define CXOF_HEADER         (uint8_t)0xFE
 #define CXOF_FOOTER         (uint8_t)0xAA

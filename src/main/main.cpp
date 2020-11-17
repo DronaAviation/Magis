@@ -139,6 +139,10 @@ void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
+#if defined(TACT_SWITCH)
+void manage_switch(void);
+#endif
+
 uint8_t failureFlag;
 
 #ifdef STM32F303xC
@@ -169,6 +173,8 @@ void init(void)
 {
 uint8_t i;
 drv_pwm_config_t pwm_params;
+
+
 
 printfSupportInit();
 
@@ -204,6 +210,15 @@ latchActiveFeatures();
 
 ledInit();
 
+/*while(1){
+
+	delay(50);
+	LED_M_TOGGLE;
+}*/
+
+#if defined(TACT_SWITCH)
+manage_switch();		//Handle the tact switch
+#endif
 
 #ifdef SPEKTRUM_BIND
 if (feature(FEATURE_RX_SERIAL)) {
@@ -602,27 +617,17 @@ ranging_init();
 ranging_init_L1();
 
 #endif
-/*
-if (Global_Status_L1 == 0)
-{
-	LED_M_ON;
-	LED_R_ON;
-	LED_L_OFF;
-}else {
-	LED_M_OFF;
-	LED_R_OFF;
-	LED_L_ON;
-}
+/**/
 
-
-while(1){
+while(Global_Status_L1){
 
 	Monitor.println("Error ",Global_Status_L1);
-	delay(1000);
+	delay(2000);
+	LED_M_TOGGLE;
 	//ranging_init_L1();
 
 }//Testing vl53l1x
-*/
+/**/
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);
 
@@ -778,3 +783,47 @@ if ((systemState & requiredState) == requiredState) {
 }
 while (1);
 }
+
+
+#if defined(TACT_SWITCH)
+void manage_switch(void){
+
+	uint8_t v_bat_sw;
+
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+
+	//Std peripheral lib
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	GPIO_StructInit(&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_StructInit(&GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+
+	v_bat_sw = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5);
+
+	if(v_bat_sw)
+	{//Wait for 900ms
+		LED_M_TOGGLE;
+		delay(300);
+		LED_M_TOGGLE;
+		delay(300);
+		LED_M_TOGGLE;
+		delay(300);
+
+		GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET);
+	}
+
+}
+#endif

@@ -105,12 +105,15 @@
 #include "command/localisationCommand.h"
 #include "drivers/opticflow_paw3903.h"
 
+#if defined(TACT_SWITCH)
+void switch_manage2(void);
+#endif
+
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 
-int8_t returnValue = 100;
 uint8_t motorControlEnable = false;
 extern uint8_t dynP8[3];
 extern uint8_t dynI8[3];
@@ -1145,6 +1148,10 @@ void loop(void)
     if (masterConfig.looptime == 0 || (int32_t)(currentTime - loopTime) >= 0) {
         loopTime = currentTime + masterConfig.looptime;
 
+		#if defined(TACT_SWITCH)
+        switch_manage2();
+		#endif
+
         imuUpdate(&currentProfile->accelerometerTrims);
 
         // Measure loop rate just after reading the sensors
@@ -1313,3 +1320,31 @@ void loop(void)
 
 
 }
+
+#if defined(TACT_SWITCH)
+void switch_manage2(void){
+	uint8_t v_bat_sw2;
+	static uint16_t counter;
+
+	v_bat_sw2 = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5);
+
+	if(v_bat_sw2){
+		counter++;
+
+	}
+
+	if(counter>550)
+	{
+		while(1){	//Switch off the drone
+			LED_M_OFF;
+			delay(2000);	//Wait for 2 seconds and then turn off.
+			LED_M_ON;
+			delay(3000);	//Wait for 2 seconds and then turn off.
+			GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
+		}
+
+	}
+
+}
+#endif
+

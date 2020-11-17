@@ -73,6 +73,7 @@
 
 
 #define USE_I2C_2V8
+#define VL53L1_NOCALIB
 
 /* Check for minimum user zone requested by Xtalk calibration */
 /* no need for VL53L1_MAX_USER_ZONES check, set 5 to pass the test */
@@ -835,7 +836,7 @@ VL53L1_Error VL53L1_StaticInit(VL53L1_DEV Dev)
 
 	/* ticket 472728 fix */
 	Status = VL53L1_SetPresetMode(Dev,
-			VL53L1_PRESETMODE_LOWPOWER_AUTONOMOUS);
+			VL53L1_PRESETMODE_AUTONOMOUS);
 	/* end of ticket 472728 fix */
 	LOG_FUNCTION_END(Status);
 	return Status;
@@ -1002,7 +1003,7 @@ VL53L1_Error VL53L1_SetPresetMode(VL53L1_DEV Dev, VL53L1_PresetModes PresetMode)
 	if (Status == VL53L1_ERROR_NONE) {
 		/* Set default intermeasurement period to 1000 ms */
 		Status = VL53L1_SetInterMeasurementPeriodMilliSeconds(Dev,
-				1000);
+				100);
 	}
 
 	LOG_FUNCTION_END(Status);

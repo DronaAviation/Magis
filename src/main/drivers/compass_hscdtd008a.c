@@ -51,23 +51,11 @@
 #define HSCDTD_MAG_CONTROL2     	0x1c
 #define HSCDTD_MAG_CONTROL3     	0x1d
 #define HSCDTD_MAG_CONTROL4     	0x1e
+#define HSCDTD_MAG_STATUS	     	0x18
+#define HSCDTD_MAG_OUTPUT_X_OUT		0x10
 
-#define AK8975_MAG_REG_INFO         0x01
-#define AK8975_MAG_REG_STATUS1      0x02
-#define AK8975_MAG_REG_HXL          0x03
-#define AK8975_MAG_REG_HXH          0x04
-#define AK8975_MAG_REG_HYL          0x05
-#define AK8975_MAG_REG_HYH          0x06
-#define AK8975_MAG_REG_HZL          0x07
-#define AK8975_MAG_REG_HZH          0x08
-#define AK8975_MAG_REG_STATUS2      0x09
-#define AK8975_MAG_REG_CNTL         0x0a
-#define AK8975_MAG_REG_ASCT         0x0c // self test
-
-#define AK8975A_ASAX 0x10 // Fuse ROM x-axis sensitivity adjustment value
-#define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
-#define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
-
+#define BIT_STATUS_REG_DATA_READY			(1 << 6)
+#define BIT_STATUS_REG_MAG_SENSOR_OVERRUN	(1 << 5)
 
 bool hscdtdDetect(mag_t *mag)
 {
@@ -93,15 +81,14 @@ void hscdtdInit()
 
     UNUSED(ack);
 
+    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL4, 0x90); // 15-bit data
+    delay(10);
     ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL1, 0x88); // Active mode, 10hz odr, continuous measurement
     delay(10);
 
+
 }
 
-#define BIT_STATUS1_REG_DATA_READY              (1 << 0)
-
-#define BIT_STATUS2_REG_DATA_ERROR              (1 << 2)
-#define BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW     (1 << 3)
 
 bool hscdtdRead(int16_t *magData)
 {
@@ -110,39 +97,29 @@ bool hscdtdRead(int16_t *magData)
     uint8_t status;
     uint8_t buf[6];
 
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
-    if (!ack || (status & BIT_STATUS1_REG_DATA_READY) == 0) {
+    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_STATUS, 1, &status);
+    if (!ack || (status & BIT_STATUS_REG_DATA_READY) == 0) {
         return false;
     }
 
-#if 1 // USE_I2C_SINGLE_BYTE_READS
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL, 6, buf); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
-#else
-            for (uint8_t i = 0; i < 6; i++) {
-                ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL + i, 1, &buf[i]); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
-                if (!ack) {
-                    return false
-                }
-            }
-#endif
 
-    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
+    /*ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_STATUS, 1, &status);
+    if (status & BIT_STATUS_REG_MAG_SENSOR_OVERRUN) {
+            return false;
+        }*/
+
+    ack = i2cRead(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_OUTPUT_X_OUT, 6, buf); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
+
     if (!ack) {
-        return false;
-    }
+            return false;
+        }
 
-    if (status & BIT_STATUS2_REG_DATA_ERROR) {
-        return false;
-    }
 
-    if (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW) {
-        return false;
-    }
 
-    magData[X] = -(int16_t) (buf[1] << 8 | buf[0]) * 4;
-    magData[Y] = -(int16_t) (buf[3] << 8 | buf[2]) * 4;
-    magData[Z] = -(int16_t) (buf[5] << 8 | buf[4]) * 4;
+    magData[X] = -(int16_t) (buf[1] << 8 | buf[0]);
+    magData[Y] = -(int16_t) (buf[3] << 8 | buf[2]);
+    magData[Z] = -(int16_t) (buf[5] << 8 | buf[4]);
 
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01); // start reading again
+
     return true;
 }

@@ -41,7 +41,7 @@
 
 
 #define LASER_LPS 0.1
-#define RANGE_POLL 10
+#define RANGE_POLL 100
 
 VL53L1_Dev_t MyDevice_L1;
 //VL53L0X_Dev_t *pMyDevice = &MyDevice;
@@ -73,6 +73,7 @@ void update_status_L1(VL53L1_Error Status)
 void ranging_init_L1(void)
 {
     VL53L1_Error Status = Global_Status_L1;
+    VL53L1_DeviceInfo_t DeviceInfo;
 
     uint32_t refSpadCount;
     uint8_t isApertureSpads;
@@ -83,7 +84,10 @@ void ranging_init_L1(void)
     MyDevice_L1.comms_type = 1;
     MyDevice_L1.comms_speed_khz = 400;
 
-    Status = VL53L1_DataInit(&MyDevice_L1); // Data initialization
+    Status = VL53L1_WaitDeviceBooted(&MyDevice_L1);	//Wait till the device boots. Blocking.
+
+    if(Status == VL53L1_ERROR_NONE)
+    	Status = VL53L1_DataInit(&MyDevice_L1); // Data initialization
 
     update_status_L1(Status);
 
@@ -93,15 +97,23 @@ void ranging_init_L1(void)
 
     }
 
+	/*if(Global_Status_L1 == VL53L1_ERROR_NONE) {
+            Status = VL53L1_GetDeviceInfo(&MyDevice_L1, &DeviceInfo); // Device Initialization
+            update_status_L1(Status);
+
+    }
+	*/
+
+     /**/
     //Calibration is not necessary. Will look into this later. RefSpad, crosstalk and offset calibrations are available.
 
 /*
     if( Global_Status_L1 == VL53L1_ERROR_NONE ) {
-        Status = VL53L1_PerformRefSpadManagement( &MyDevice_L1, &refSpadCount, &isApertureSpads ); // Device Initialization
+        Status = VL53L1_PerformRefSpadManagement( &MyDevice_L1); // Device Initialization
         update_status_L1(Status);
 
     }
-
+/*
     if( Global_Status_L1 == VL53L1_ERROR_NONE ){
         Status = VL53L1_PerformOffsetCalibration( &MyDevice_L1, &VhvSettings, &PhaseCal ); // Device Initialization
         update_status_L1(Status);
@@ -167,6 +179,7 @@ void getRange_L1()
     static uint8_t dataFlag = 0, SysRangeStatus = 0;
     static bool startNow = true;
     static uint8_t print_counter;
+    VL53L1_State CurrPalState;
 
 
     if(rangePoll_L1.set(RANGE_POLL,true)) {			//Check for new data every 10ms
@@ -179,6 +192,8 @@ void getRange_L1()
         	//Monitor.println("Hi");
             Status = VL53L1_StartMeasurement(&MyDevice_L1);
             update_status_L1(Status);
+            if(Status)
+            	Monitor.println(", Error = ", Global_Status_L1);
             startNow = false;
         }
     }
@@ -188,7 +203,10 @@ void getRange_L1()
 
             Status = VL53L1_GetMeasurementDataReady(&MyDevice_L1,&dataFlag);
             update_status_L1(Status);
-            //Monitor.println("Data flag ", dataFlag);
+            Monitor.println("Data flag ", dataFlag);
+            //CurrPalState = VL53L1DevDataGet(MyDevice_L1, PalState);
+            //Monitor.println("PAL ", MyDevice_L1.Data.LLData.measurement_mode);
+
         }
     }
 
@@ -198,22 +216,24 @@ void getRange_L1()
         if(dataFlag) {
         	Status = VL53L1_GetRangingMeasurementData(&MyDevice_L1, &RangingMeasurementData_L1);
             update_status_L1(Status);
-            if(RangingMeasurementData_L1.RangeStatus && RANGE_POLL > 100)
-            	Monitor.print("Range status ", RangingMeasurementData_L1.RangeStatus);
+            if(RANGE_POLL > 90)
+            	{
+            		//Monitor.print("Timestamp ", RangingMeasurementData_L1.TimeStamp);
+            		Monitor.println("StreamCount : ", RangingMeasurementData_L1.StreamCount);
+            		Monitor.println("Range status : ", RangingMeasurementData_L1.RangeStatus);
+            	}
             //Monitor.println(",   return status#4: ",Global_Status_L1);
 
-//            if(RangingMeasurementData.RangeDMaxMilliMeter != 0) {
-//                debug_range_L1 = RangingMeasurementData.RangeDMaxMilliMeter/10;
-//            }
+
 
             //startNow = true;
             isTofDataNewflag_L1 = true;
             Range_Status_L1 = RangingMeasurementData_L1.RangeStatus;
             if(RangingMeasurementData_L1.RangeStatus == 0) {
 
-            	if(RangingMeasurementData_L1.RangeMilliMeter<3500){
+            	if(RangingMeasurementData_L1.RangeMilliMeter<4500){
               //  NewSensorRange_L1 = RangingMeasurementData.RangeMilliMeter;
-            	if(RANGE_POLL > 100){
+            	if(RANGE_POLL > 90){
             		Monitor.print("Ambient light ", RangingMeasurementData_L1.AmbientRateRtnMegaCps, 2);		//Ambient light
             		Monitor.println(", Range is : ", RangingMeasurementData_L1.RangeMilliMeter);
             	}else if(print_counter % 20 == 0){	//for proper debugging
