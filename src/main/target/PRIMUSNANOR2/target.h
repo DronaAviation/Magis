@@ -48,8 +48,8 @@ extern "C" {
 #define USABLE_TIMER_CHANNEL_COUNT 5
 
 
-#define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
+#define M25P16_CS_GPIO        GPIOA
+#define M25P16_CS_PIN         GPIO_Pin_3
 #define M25P16_SPI_INSTANCE   SPI2
 
 #define USE_FLASHFS
@@ -86,7 +86,7 @@ extern "C" {
 #define USE_USART2 	//Unibus
 //#define USE_USART3 //Unibus, but cannot be used if Motor 7 and 8 are being used
 
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT 4		//TODO fix this to 1. when this is done, code gets stuck
 
 #define UART1_TX_PIN        GPIO_Pin_9 // PA9
 #define UART1_RX_PIN        GPIO_Pin_10 // PA10
@@ -95,7 +95,7 @@ extern "C" {
 #define UART1_TX_PINSOURCE  GPIO_PinSource9
 #define UART1_RX_PINSOURCE  GPIO_PinSource10
 
-#define UART2_TX_PIN        GPIO_Pin_2 // PA2
+#define UART2_TX_PIN        GPIO_Pin_2// PA2
 #define UART2_RX_PIN        GPIO_Pin_3 // PA3
 #define UART2_GPIO          GPIOA
 #define UART2_GPIO_AF       GPIO_AF_7
@@ -175,7 +175,7 @@ extern "C" {
 //#define BINDPLUG_PIN   Pin_12
 
 #define DCM
-//#define OPTIC_FLOW
+#define OPTIC_FLOW
 
 //#define LASER_TOF_L0x // only to get laser height for VL53L0x
 #define LASER_TOF_L1x // only to get laser height for VL53L1x

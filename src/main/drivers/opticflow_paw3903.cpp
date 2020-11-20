@@ -107,6 +107,8 @@
 #define CXOF_PIXEL_SCALING        0.00745
 #define CXOF_TIMEOUT_SEC             0.3f
 
+#define PRODUCT_ID_3903		0x49
+
 int16_t flowScalerX = 0;
 int16_t flowScalerY = 0;
 
@@ -155,7 +157,7 @@ uint8_t opticFlowAddress = 12;
 uint8_t debugOf=13;
 
 
-#define SPI_MODE
+#define PAW_SPI_MODE
 
 
 void addGyroXY(float gyroX, float gyroY)
@@ -742,17 +744,17 @@ static void initRegisters()
     SPI.write(0x54, 0x00);
 }
 
-void initOpticFlow()
+bool initOpticFlow()
 {
-
-#ifndef SPI_MODE
+uint8_t product_id;
+#ifndef PAW_SPI_MODE
 
     spiBridge.init(0, 1, 1, 1);
 
     spiBridge.configureSPI(false, SC18IS601B_SPIMODE_3, SC18IS601B_SPICLK_1843_kHz);
 
 #endif
-
+//Startup sequence
     GPIO.init(Pin14, OUTPUT);
     GPIO.write(Pin14, STATE_HIGH);
 
@@ -772,7 +774,7 @@ void initOpticFlow()
 //    opticFlowAddress=spiReadBuf[1];
 
 
-#ifdef SPI_MODE
+#ifdef PAW_SPI_MODE
 
     opticFlowAddress = SPI.read(0x00);
     SPI.write(0x3A, 0x5A);
@@ -789,6 +791,7 @@ void initOpticFlow()
     delay(100);
 
     debugOf= SPI.read(0x4E);
+    product_id = SPI.read(0x00);
 
 #else
     opticFlowAddress= spiBridge.read(0x00);
@@ -811,33 +814,10 @@ void initOpticFlow()
 #endif
 
 
-
-
-
-   // spi.Write(0x3A, 0x5A);
-
-
-
-
-
-
-
-
-
-
-
-  //  mode_0_init_();
-   // spi.Write(0x4E, 0xA7);
-   // mode_0_init();
-
-
-
-
-
-
-
-  //  debugOf= spi.Read(0x4E,1);
-
+if(product_id==PRODUCT_ID_3903)
+	return 0; 	//No issue
+else
+	return 1;	//Report issue
 
 }
 
@@ -967,7 +947,7 @@ void updateSpiOpticFlow()
 
     if (opticInterval.set(40, true)) {
 
-#ifdef SPI_MODE
+#ifdef PAW_SPI_MODE
         ENABLE_SPI;
 
         delayMicroseconds(50);

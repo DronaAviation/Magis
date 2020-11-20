@@ -200,6 +200,19 @@ void initSpi2(void)
 
 #endif
 
+//Special case
+//#ifdef USE_FLASHFS
+    GPIO_InitTypeDef GPIO_InitStructure2;
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    GPIO_InitStructure2.GPIO_Pin = M25P16_CS_PIN;
+	GPIO_InitStructure2.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure2.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure2.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure2.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(M25P16_CS_GPIO, &GPIO_InitStructure2);
+
+//#endif
+
 #endif
 
 #ifdef STM32F10X

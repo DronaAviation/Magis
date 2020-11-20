@@ -87,7 +87,7 @@
 #define USART3_APB2_PERIPHERALS RCC_APB2Periph_GPIOB
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1
+//#define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C

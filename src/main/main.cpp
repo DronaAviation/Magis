@@ -240,7 +240,7 @@ if (feature(FEATURE_RX_SERIAL)) {
 //
 //timerInit();  // timer must be initialized before any channel is allocated
 
-serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));	//TODO why softserial??
 
 /*
 #ifdef USE_SERVOS
@@ -343,7 +343,7 @@ initInverter();
 #endif
 
 #ifdef USE_SPI
-spiInit (SPI1);
+//spiInit (SPI1);
 spiInit (SPI2);
 #endif
 
@@ -531,7 +531,15 @@ if (hardwareRevision == NAZE32_REV5) {
     m25p16_init();
 }
 #elif defined(USE_FLASH_M25P16)
-m25p16_init();
+bool flash_init;
+flash_init = m25p16_init();
+//flash_init = m25p16_init();
+while(flash_init){
+	Monitor.println("Flash error ",flash_init);
+	delay(2000);
+	LED_M_TOGGLE;
+}
+
 #endif
 
 flashfsInit();
@@ -616,24 +624,31 @@ ranging_init();
 
 ranging_init_L1();
 
-#endif
+
 /**/
 
 while(Global_Status_L1){
 
-	Monitor.println("Error ",Global_Status_L1);
+	Monitor.println("Laser L1 Error ",Global_Status_L1);
 	delay(2000);
 	LED_M_TOGGLE;
 	//ranging_init_L1();
 
 }//Testing vl53l1x
+#endif
+
 /**/
 //spi.Init();
 //spi.Settings(MODE0, 562, LSBFIRST);
 
 #ifdef OPTIC_FLOW
-
-initOpticFlow();
+bool result;
+result = initOpticFlow();
+while(result){
+	Monitor.println("Optic flow error ",result);
+	delay(2000);
+	LED_M_TOGGLE;
+}
 
 #endif
 

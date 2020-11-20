@@ -144,6 +144,11 @@ static bool m25p16_readIdentification()
      */
     in[1] = 0;
 
+    ENABLE_M25P16;	//Generate Pulse for reset
+    delay(2);
+    DISABLE_M25P16;
+    delay(2);
+
     ENABLE_M25P16;
 
     spiTransfer(M25P16_SPI_INSTANCE, in, out, sizeof(out));
@@ -182,7 +187,7 @@ static bool m25p16_readIdentification()
 
             geometry.sectorSize = 0;
             geometry.totalSize = 0;
-            return false;
+            return 1;
     }
 
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
@@ -190,7 +195,7 @@ static bool m25p16_readIdentification()
 
     couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
-    return true;
+    return 0;
 }
 
 /**
