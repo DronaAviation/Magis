@@ -29,6 +29,7 @@
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
+
 #include "sensors/boardalignment.h"
 #include "config/runtime_config.h"
 #include "config/config.h"
@@ -39,6 +40,8 @@
 #ifdef NAZE
 #include "hardware_revision.h"
 #endif
+
+#define COMPASS_UPDATE_FREQUENCY_10HZ 100000
 
 mag_t mag;                   // mag access functions
 int16_t mag_declination = 0;
@@ -63,7 +66,7 @@ void compassInit(void)
     magInit = 1;
 }
 
-#define COMPASS_UPDATE_FREQUENCY_10HZ (1000 * 100)
+
 void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magScale)
 {
     static uint32_t nextUpdateAt, tCal = 0;
@@ -71,12 +74,16 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
     static flightDynamicsTrims_t magZeroTempMax;
     static flightDynamicsTrims_t magScaleTemp;
     uint32_t axis;
+
+
     if ((int32_t) (currentTime - nextUpdateAt) < 0)
         return;
     nextUpdateAt = currentTime + COMPASS_UPDATE_FREQUENCY_10HZ;
     compassLastUpdatedAt=currentTime;
+
     mag.read(magADC);
     alignSensors(magADC, magADC, magAlign);
+    //Calibration
     if (STATE(CALIBRATE_MAG)) {
         tCal = nextUpdateAt;
         have_initial_yaw=false;
@@ -101,7 +108,7 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
             tCal = 0;
             for (axis = 0; axis < 3; axis++) {
                 magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets: hard iron correction
-                magScaleTemp.raw[axis] = ((magZeroTempMax.raw[axis] - magZeroTempMin.raw[axis]) * 10) / 2;
+                magScaleTemp.raw[axis] = ((magZeroTempMax.raw[axis] - magZeroTempMin.raw[axis]) * 10) / 2; //Those are the deltas x 10.
             }
             for (axis = 0; axis < 3; axis++) {
                 magScale->raw[axis] = ((magScaleTemp.raw[0] + magScaleTemp.raw[1] + magScaleTemp.raw[2]) * 10) / (3 * magScaleTemp.raw[axis]);
@@ -109,7 +116,9 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
             saveConfigAndNotify();
         }
     }
-
+    /**/
+    //End calibration
+    /**/
     if (magInit) {              // we apply offset only once mag calibration is done
         magADC[X] -= magZero->raw[X];
         magADC[Y] -= magZero->raw[Y];
@@ -119,10 +128,11 @@ void updateCompass(flightDynamicsTrims_t *magZero, flightDynamicsTrims_t *magSca
         magADC[Y] *= magScale->raw[Y];
         magADC[Z] *= magScale->raw[Z];
 
-        magADC[X] /= 10;
+        magADC[X] /= 10;	//Magscale is multiplied by ten earlier.
         magADC[Y] /= 10;
         magADC[Z] /= 10;
-    }
+    }/**/
+
 }
 #endif
 

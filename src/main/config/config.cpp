@@ -526,7 +526,7 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 3500;
+    masterConfig.looptime = 4000;	//Main loop time
     masterConfig.emf_avoidance = 0;
 
     resetPidProfile(&currentProfile->pidProfile);
@@ -569,7 +569,7 @@ static void resetConf(void)
     mac_5->range.startStep = 16;    //1300
     mac_5->range.endStep = 32;    //1700
 
-    currentProfile->mag_declination = 0;
+    currentProfile->mag_declination = 0;	//Deviation from true north
     currentProfile->acc_lpf_factor = 4;    //krish
     currentProfile->accz_lpf_cutoff = 5.0f;
     currentProfile->accDeadband.xy = 40;

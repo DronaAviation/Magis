@@ -624,9 +624,6 @@ ranging_init();
 
 ranging_init_L1();
 
-
-/**/
-
 while(Global_Status_L1){
 
 	Monitor.println("Laser L1 Error ",Global_Status_L1);

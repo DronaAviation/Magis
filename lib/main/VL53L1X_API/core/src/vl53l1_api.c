@@ -826,13 +826,13 @@ VL53L1_Error VL53L1_StaticInit(VL53L1_DEV Dev)
 	VL53L1DevDataSet(Dev, LLData.measurement_mode, measurement_mode);
 
 	VL53L1DevDataSet(Dev, CurrentParameters.NewDistanceMode,
-			VL53L1_DISTANCEMODE_LONG);
+			VL53L1_DISTANCEMODE_MEDIUM);
 
 	VL53L1DevDataSet(Dev, CurrentParameters.InternalDistanceMode,
-			VL53L1_DISTANCEMODE_LONG);
+			VL53L1_DISTANCEMODE_MEDIUM);
 
 	VL53L1DevDataSet(Dev, CurrentParameters.DistanceMode,
-			VL53L1_DISTANCEMODE_LONG);
+			VL53L1_DISTANCEMODE_MEDIUM);
 
 	/* ticket 472728 fix */
 	Status = VL53L1_SetPresetMode(Dev,
@@ -973,7 +973,7 @@ static VL53L1_Error SetPresetMode(VL53L1_DEV Dev,
 VL53L1_Error VL53L1_SetPresetMode(VL53L1_DEV Dev, VL53L1_PresetModes PresetMode)
 {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	VL53L1_DistanceModes DistanceMode = VL53L1_DISTANCEMODE_LONG;
+	VL53L1_DistanceModes DistanceMode = VL53L1_DISTANCEMODE_MEDIUM;
 
 	LOG_FUNCTION_START("%d", (int)PresetMode);
 
@@ -1003,7 +1003,7 @@ VL53L1_Error VL53L1_SetPresetMode(VL53L1_DEV Dev, VL53L1_PresetModes PresetMode)
 	if (Status == VL53L1_ERROR_NONE) {
 		/* Set default intermeasurement period to 1000 ms */
 		Status = VL53L1_SetInterMeasurementPeriodMilliSeconds(Dev,
-				100);
+				100);//can make this 50ms
 	}
 
 	LOG_FUNCTION_END(Status);
@@ -2177,11 +2177,16 @@ VL53L1_Error VL53L1_GetRangingMeasurementData(VL53L1_DEV Dev,
 		sizeof(VL53L1_RangingMeasurementData_t));
 
 	/* Get Ranging Data */
-	Status = VL53L1_get_device_results(
+	/*Status = VL53L1_get_device_results(
 			Dev,
 			VL53L1_DEVICERESULTSLEVEL_FULL,
 			presults);
-
+	*///This takes 134 byte transfer which amounts to 2.68ms
+	Status = VL53L1_get_device_results(
+				Dev,
+				VL53L1_DEVICERESULTSLEVEL_SYSTEM_RESULTS,
+				presults);
+	 /**/
 	if (Status == VL53L1_ERROR_NONE) {
 		pRangingMeasurementData->StreamCount = presults->stream_count;
 

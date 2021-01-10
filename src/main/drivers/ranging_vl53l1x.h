@@ -45,7 +45,7 @@ public:
 
 
 void ranging_init_L1(void);
-void getRange_L1(void);
+void getRange_L1(uint32_t currentTime);
 bool isTofDataNew_L1(void);
 bool isOutofRange_L1(void);
 

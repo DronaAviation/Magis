@@ -36,7 +36,7 @@ extern float bodyRate2[2];
 
 bool initOpticFlow();
 void updateOpticFlow();
-void updateSpiOpticFlow();
+void updateSpiOpticFlow(uint32_t cTime);
 
 extern uint8_t opticFlowAddress;
 

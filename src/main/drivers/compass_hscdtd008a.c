@@ -81,7 +81,7 @@ void hscdtdInit()
 
     UNUSED(ack);
 
-    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL4, 0x90); // 15-bit data
+    ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL4, 0x80); // 14-bit data
     delay(10);
     ack = i2cWrite(HSCDTD_MAG_I2C_ADDRESS, HSCDTD_MAG_CONTROL1, 0x88); // Active mode, 10hz odr, continuous measurement
     delay(10);
@@ -116,9 +116,9 @@ bool hscdtdRead(int16_t *magData)
 
 
 
-    magData[X] = -(int16_t) (buf[1] << 8 | buf[0]);
-    magData[Y] = -(int16_t) (buf[3] << 8 | buf[2]);
-    magData[Z] = -(int16_t) (buf[5] << 8 | buf[4]);
+    magData[X] = (int16_t) (buf[1] << 8 | buf[0]);
+    magData[Y] = (int16_t) (buf[3] << 8 | buf[2]);
+    magData[Z] = (int16_t) (buf[5] << 8 | buf[4]);
 
 
     return true;

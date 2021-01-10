@@ -1045,7 +1045,7 @@ static void loadMainState(void)
 #endif
 
 #ifdef BARO
-    blackboxCurrent->BaroAlt = BaroAlt;
+    blackboxCurrent->BaroAlt = (int32_t)getBaroPressure();//BaroAlt;
 #endif
 
 #ifdef SONAR

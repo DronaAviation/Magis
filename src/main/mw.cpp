@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <math.h>
 
+
 #include "platform.h"
 
 #include "common/maths.h"
@@ -698,7 +699,7 @@ void executePeriodicTasks(void)
 {
 
     static int periodicTaskIndex = 0;
-
+    //currentTime = micros();
     switch (periodicTaskIndex++) {
 #ifdef MAG
     case UPDATE_COMPASS_TASK:
@@ -768,7 +769,7 @@ void executePeriodicTasks(void)
     case UPDATE_OPTICFLOW:
 
 #ifdef OPTIC_FLOW
-        updateSpiOpticFlow();
+        updateSpiOpticFlow(currentTime);
         runFlowHold(currentTime);
 #endif
         break;
@@ -782,7 +783,7 @@ void executePeriodicTasks(void)
 #endif
 #ifdef LASER_TOF_L1x
 
-        getRange_L1();
+        getRange_L1(currentTime); //Too much waiting time
 
 #endif
 //        if(useRangingSensor)

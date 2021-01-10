@@ -67,9 +67,9 @@ typedef enum {
 
 typedef enum {
     ALIGN_DEFAULT = 0,                                      // driver-provided alignment
-    CW0_DEG = 1,
-    CW90_DEG = 2,
-    CW180_DEG = 3,
+    CW0_DEG = 1,				//Rotate the sensor ccw by 0 to align with board axis
+    CW90_DEG = 2,				//Rotate the sensor ccw by 90
+    CW180_DEG = 3,				//Rotate the sensor ccw by 180 etc
     CW270_DEG = 4,
     CW0_DEG_FLIP = 5,
     CW90_DEG_FLIP = 6,

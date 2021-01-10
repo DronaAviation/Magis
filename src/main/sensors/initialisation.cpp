@@ -790,9 +790,9 @@ bool sensorsAutodetectmpu(sensorAlignmentConfig_t *sensorAlignmentConfig, uint16
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init(gyroLpf);
 
-
+	#ifdef MAG
     detectMag((magSensor_e) magHardwareToUse);
-
+	#endif
     reconfigureAlignment(sensorAlignmentConfig);
 
     /*	 block moved to compass.cpp

@@ -97,6 +97,8 @@
 
 #include "opticflow_paw3903.h"
 
+#define OPTICFLOW_UPDATE_FREQUENCY	40000
+
 #define DISABLE_SPI       GPIO_SetBits(GPIOB,   GPIO_Pin_12)
 #define ENABLE_SPI        GPIO_ResetBits(GPIOB, GPIO_Pin_12)
 
@@ -942,14 +944,20 @@ void updateOpticFlow()
 
 }
 
-void updateSpiOpticFlow()
+void updateSpiOpticFlow(uint32_t cTime)
 {
+	static uint32_t nextUpdateAt;
 
-    if (opticInterval.set(40, true)) {
+	if ((int32_t) (cTime - nextUpdateAt) < 0)
+	           return;
+	nextUpdateAt = cTime + OPTICFLOW_UPDATE_FREQUENCY;
+
+
 
 #ifdef PAW_SPI_MODE
-        ENABLE_SPI;
+    	//Total delay 300 microseconds??
 
+    	ENABLE_SPI;
         delayMicroseconds(50);
 
         spiTransferByte(SPI2, (0x16 & ~0x80u));
@@ -997,11 +1005,6 @@ void updateSpiOpticFlow()
 
 
 
-
-
-
-
-
         uint32_t this_frame_us = micros();
         last_opticflow_update_ms = millis();
 
@@ -1009,7 +1012,6 @@ void updateSpiOpticFlow()
         last_frame_us = this_frame_us;
 
         flowRate[0] *= (0.051);
-
         flowRate[1] *= (0.051);
 
         gyro_sum[0] = gyroADC[0] * 0.00106;
@@ -1030,7 +1032,7 @@ void updateSpiOpticFlow()
         bodyRate[0] = gyro_sum[0];
         bodyRate[1] = gyro_sum[1];
 
-    }
+
 
 }
 

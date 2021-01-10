@@ -71,7 +71,7 @@ bool lps22hbDetect(baro_t *baro)
 
     	delay(1);
     	temp_reg = 0;
-    	temp_reg = 2 << 4 | 1 << 3 | 1 << 1; 		// ODR 25Hz, Enable LPF, BDU = 1,
+    	temp_reg = 3 << 4 | 1 << 3 | 1 << 1; 		// ODR 25Hz, Enable LPF, BDU = 1,
     	//temp_reg = 2 << 4 | 1 << 3 | 1 << 2| 1 << 3| 1 << 1; 		// ODR 25Hz, Enable LPF, Bandwidth, BDU = 1,
     	ack = i2cWrite(LPS22HB_ADDR, CTRL_REG1, temp_reg);
 

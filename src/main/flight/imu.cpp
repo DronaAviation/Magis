@@ -51,6 +51,11 @@
 #include "config/runtime_config.h"
 #include "mw.h"
 
+/*
+/#define ARM_MATH_CM4
+#include "arm_math.h"
+*/
+
 int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 int32_t accSumXYZ[XYZ_AXIS_COUNT];
@@ -899,10 +904,11 @@ float calculate_heading()
 // to sin() of the current heading error in earth frame
 float yaw_error_compass(void)
 {
+
 float mag[3];
 float rb[2];
 float earth_mag[2]={cosf(magneticDeclination), sinf(magneticDeclination)};
-
+float *temp_rb, normalised_magnitude;
 mag[0]=(float)magADC[0];
 mag[1]=(float)magADC[1];
 mag[2]=(float)magADC[2];
@@ -911,23 +917,23 @@ mag[2]=(float)magADC[2];
 //debugIMU=mag[0];
 //debugIMU_1=mag[1];
 
-
-
-float *temp_rb;
-
 // get the mag vector in the earth frame
-temp_rb=dcmMulXY(mag);
 
-rb[0]=temp_rb[0];
-rb[1]=temp_rb[1];
+//temp_rb=dcmMulXY(mag);
 
+rb[0]= dcm_matrix[0][0]*mag[0] + dcm_matrix[0][1]*mag[1] + dcm_matrix[0][2]*mag[2];
+rb[1]= dcm_matrix[1][0]*mag[0] + dcm_matrix[1][1]*mag[1] + dcm_matrix[1][2]*mag[2];
 
+//rb[0]=temp_rb[0];
+//rb[1]=temp_rb[1];
 
+//normalised_magnitude = 100;
+normalised_magnitude = sqrtf(sq(rb[0])+sq(rb[1]));
 
-rb[0]/= sqrtf(sq(rb[0])+sq(rb[1]));
-rb[1]/= sqrtf(sq(rb[0])+sq(rb[1]));
-
-
+rb[0]/= normalised_magnitude;	//This is causing a huge spike
+rb[1]/= normalised_magnitude;
+//rb[0] = 1;
+//rb[1] = 2;
 //debugIMU_2=rb[0]*100;
 //debugIMU_3=rb[1]*100;
 
@@ -939,10 +945,7 @@ if(isinf(rb[0])||isinf(rb[1]))
 
 }
 
-
-
 return ((rb[0]*earth_mag[1])-(rb[1]*earth_mag[0]));
-
 
 
 }

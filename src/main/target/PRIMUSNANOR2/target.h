@@ -67,7 +67,7 @@ extern "C" {
 
 #define MAG
 #define USE_MAG_HSCDTD
-#define MAG_HSCDTD_ALIGN CW90_DEG //For PrimusNanoR2
+#define MAG_HSCDTD_ALIGN CW270_DEG //For PrimusNanoR2
 //#define MAG_ENFORCE
 
 #define BARO
@@ -150,7 +150,7 @@ extern "C" {
 #define VBAT_ADC_CHANNEL     ADC_Channel_3
 
 
-//#define BLACKBOX
+#define BLACKBOX
 #define SERIAL_RX
 //#define GPS
 //#define GTUNE
@@ -178,7 +178,7 @@ extern "C" {
 #define OPTIC_FLOW
 
 //#define LASER_TOF_L0x // only to get laser height for VL53L0x
-#define LASER_TOF_L1x // only to get laser height for VL53L1x
+//#define LASER_TOF_L1x // only to get laser height for VL53L1x
 //#define LASER_ALT // to integrate with althold
 
 
