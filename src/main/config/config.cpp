@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
-
+#include "API/ppm_test.h"
 #include "build_config.h"
 
 #include "common/color.h"
@@ -418,7 +418,15 @@ static void resetConf(void)
     featureClearAll();
 #if defined(CJMCU) ||  defined(PRIMUSV3R) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(ALIENWIIF3) ||  defined(PRIMUSX) || defined(PRIMUSX2)
     //featureSet(FEATURE_RX_PPM);
-    featureSet(FEATURE_RX_MSP);
+
+if(PPM_MODE)
+    	featureSet(FEATURE_RX_PPM);
+
+else
+    	featureSet(FEATURE_RX_MSP);
+
+
+
     featureSet(FEATURE_CURRENT_METER);//testing virtual adc current measurement
     featureSet(FEATURE_GPS);
 #endif
@@ -529,13 +537,19 @@ static void resetConf(void)
     mac_1->auxChannelIndex = 3;    //Aux channel 4
     mac_1->range.startStep = 16;    //Means 1300
     mac_1->range.endStep = 32;    //Means 1700
+if(PPM_MODE){
+       		mac_1->auxChannelIndex = 1;    //Aux channel 1
+       		mac_1->range.endStep = 48;
+}
 
     modeActivationCondition_t *mac_2 = &currentProfile->modeActivationConditions[1];
     mac_2->modeId = (boxId_e) 1;    //BOXANGLE from rccontrols.h
     mac_2->auxChannelIndex = 3;    //Aux channel 4
     mac_2->range.startStep = 0;    //900
     mac_2->range.endStep = 48;    //2100
-
+if(PPM_MODE) {//TechTronix
+        		mac_2->auxChannelIndex = 1;    //Aux channel 1
+}
     modeActivationCondition_t *mac_3 = &currentProfile->modeActivationConditions[2];
     mac_3->modeId = (boxId_e) 3;    //BOXBARO from rccontrols.h
     mac_3->auxChannelIndex = 2;    //Aux channel 3
