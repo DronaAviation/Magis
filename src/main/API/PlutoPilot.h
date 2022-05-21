@@ -20,6 +20,8 @@
 
 #include<stdint.h>
 
+void rxconfig(void);
+
 void plutoInit(void);
 
 void onLoopStart(void);
