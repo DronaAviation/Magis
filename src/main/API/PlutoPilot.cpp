@@ -1,7 +1,7 @@
 // Do not remove the include below
 #include "PlutoPilot.h"
 
-void rxconfig(void)
+void rxconfig()
 {
   //To setup your Reciever input use this function 
   //RX.InputStatus(PPM_IP);
