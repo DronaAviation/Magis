@@ -16,7 +16,7 @@
  */
 
 
-#include"ppm_test.h"
+#include"RxMode.h"
 
 void RX_P::InputStatus(RX_state STATE)
 {
