@@ -1,3 +1,17 @@
+Description: Added new library to change receiver input from plutopilot.cpp 
+
+Scope: rxconfig()
+Example: 
+1. For PPM Input Mode
+    void rxconfig(void){
+    RX.InputStatus(PPM_IP);
+     }
+2.  For MSP Input Mode
+    void rxconfig(void){
+    RX.InputStatus(MSP_IP);
+     }
+     
+ Detailed description will added soon.
 ## Magis
 
 Magis is flight controller software (firmware) used to fly **Pluto V3R** and **PlutoX** nano drones of **Pluto Platform**
