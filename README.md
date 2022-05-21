@@ -1,5 +1,5 @@
 Description: Added new library to change receiver input from plutopilot.cpp 
-
+#include "RxMode.h"
 Scope: rxconfig()
 Example: 
 1. For PPM Input Mode
