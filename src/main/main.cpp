@@ -175,7 +175,7 @@ initEEPROM();
 
 ensureEEPROMContainsValidData();
 readEEPROM();
-
+rxconfig(); //caling new added function
 systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
 #ifdef STM32F303
