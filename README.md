@@ -1,15 +1,31 @@
-Description: Added new library to change receiver input from plutopilot.cpp 
+## Description: 
+Added new library to change receiver input from plutopilot.cpp 
+
 #include "RxMode.h"
-Scope: rxconfig()
-Example: 
+
+
+## Scope:
+rxconfig()
+
+
+## Example: 
 1. For PPM Input Mode
-    void rxconfig(void){
+
+
+    void rxconfig(){
+        
     RX.InputStatus(PPM_IP);
-     }
+    
+    }
 2.  For MSP Input Mode
-    void rxconfig(void){
+
+
+    void rxconfig(){
+        
     RX.InputStatus(MSP_IP);
+        
      }
+     
      
  Detailed description will added soon.
 ## Magis
