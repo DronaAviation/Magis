@@ -450,7 +450,7 @@ DRONA_SRC = flight/acrobats.cpp \
 			API/Motor.cpp\
 			API/API-Utils.cpp\
 			API/Localisation.cpp\
-			API/ppm_test.cpp\
+			API/RxMode.cpp\
 
 
 		    
