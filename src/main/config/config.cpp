@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
-#include "API/ppm_test.h"
+#include "API/RxMode.h"
 #include "build_config.h"
 
 #include "common/color.h"
