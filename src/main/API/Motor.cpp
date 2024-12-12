@@ -94,506 +94,205 @@
 #include "Motor.h"
 #include "API-Utils.h"
 
-pwmOutputPort_t* userMotor[8];
+pwmOutputPort_t *userMotor [ 8 ];
 
-void Motor_P::init(motor_e motor)
-{
 
-    timerHardware_t timerHardware;
+void setupMotorAndGPIO ( int index, uint32_t GPIOx_RCC, uint32_t TIMx_RCC, TIM_TypeDef *TIMx, GPIO_TypeDef *GPIOx, uint16_t pin_x, uint8_t channel, uint8_t irqn, GPIO_Mode mode, uint16_t pinSource, uint8_t AF, GPIO_TypeDef *gpio, uint16_t cfgPin, bool digitalState ) {
 
-    switch (motor) {
+  timerHardware_t timerHardware;
+  gpio_config_t cfg;
 
-    case M1:
+  RCC_AHBPeriphClockCmd ( GPIOx_RCC, ENABLE );
+  RCC_APB1PeriphClockCmd ( TIMx_RCC, ENABLE );
 
-        if (!initInternalMotors && !isUserMotorInit[0]) {
+  timerHardware = { TIMx, GPIOx, pin_x, channel, irqn, 1, mode, pinSource, AF };
 
-#if defined(PRIMUSX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+  GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
 
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+  uint32_t hz         = PWM_BRUSHED_TIMER_MHZ * 1000000;
+  userMotor [ index ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
 
-            timerHardware = {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2};
-#endif
+  cfg.pin   = cfgPin;
+  cfg.mode  = Mode_Out_PP;
+  cfg.speed = Speed_2MHz;
+  RCC_AHBPeriphClockCmd ( GPIOx_RCC, ENABLE );
+  gpioInit ( gpio, &cfg );
 
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware ={TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1};
-#endif
-
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[0] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[0] = true;
-        }
-
-        break;
-
-    case M2:
-
-        if (!initInternalMotors && !isUserMotorInit[1]) {
-
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_2};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1};
-#endif
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[1] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[1] = true;
-        }
-
-        break;
-
-    case M3:
-
-        if (!initInternalMotors && !isUserMotorInit[2]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-            timerHardware = {TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1};
-#endif
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[2] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[2] = true;
-        }
-
-        break;
-
-    case M4:
-
-        if (!initInternalMotors && !isUserMotorInit[3]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-
-            timerHardware = {TIM8, GPIOB, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_5};
-#endif
-
-#if defined(PRIMUSX2)
-
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB2PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1};
-#endif
-
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[3] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[3] = true;
-        }
-
-        break;
-
-    case M5:
-
-        if (initInternalMotors && !isUserMotorInit[4]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-            timerHardware =  {TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2};
-#endif
-
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[4] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[4] = true;
-        }
-
-        break;
-
-    case M6:
-
-        if (initInternalMotors && !isUserMotorInit[5]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-            timerHardware = {TIM3, GPIOA, Pin_7, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2};
-#endif
-
-
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[5] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[5] = true;
-        }
-
-        break;
-
-    case M7:
-
-        if (initInternalMotors && !isUserMotorInit[6]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-            timerHardware ={TIM3, GPIOB, Pin_0, TIM_Channel_3, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_2};
-#endif
-
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[6] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[6] = true;
-        }
-
-        break;
-
-    case M8:
-
-        if (initInternalMotors && !isUserMotorInit[7]) {
-
-#if defined(PRIMUX)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-            timerHardware = {TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, 0, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1};
-#endif
-
-#if defined(PRIMUSX2)
-            RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-            RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
-            timerHardware = {TIM3, GPIOB, Pin_1, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_2};
-#endif
-
-            GPIO_PinAFConfig(timerHardware.gpio,
-                    (uint16_t) timerHardware.gpioPinSource,
-                    timerHardware.alternateFunction);
-
-            uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
-
-            userMotor[7] = pwmOutConfig(&timerHardware, PWM_BRUSHED_TIMER_MHZ,
-                    hz / masterConfig.motor_pwm_rate, 0);
-
-            isUserMotorInit[7] = true;
-        }
-
-        break;
-
-    default:
-        break;
-
-    }
-
+  if ( digitalState )
+    digitalHi ( gpio, cfgPin );
+  else
+    digitalLo ( gpio, cfgPin );
 }
 
-void Motor_P::initReversibleMotors(void)
-{
-
-    initInternalMotors = true;
-
+void Motor_P::initReverseMotor ( reverse_motor_e motor ) {
+  switch ( motor ) {
+#ifdef PRIMUSX
+    case M1:
+      setupMotorAndGPIO ( 0, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM3, TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2, GPIOB, Pin_4, false );
+      break;
+    case M2:
+      setupMotorAndGPIO ( 1, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_2, GPIOA, Pin_7, true );
+      break;
+    case M3:
+      setupMotorAndGPIO ( 2, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM3, TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10, GPIOB, Pin_1, false );
+      break;
+    case M4:
+      setupMotorAndGPIO ( 3, RCC_AHBPeriph_GPIOB, RCC_APB2Periph_TIM8, TIM8, GPIOB, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_5, GPIOA, Pin_15, true );
+      break;
+#endif
+#ifdef PRIMUSX2
+    case M1:
+      setupMotorAndGPIO ( 0, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM2, TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1, GPIOB, Pin_4, false );
+      break;
+    case M2:
+      setupMotorAndGPIO ( 1, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM2, TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1, GPIOB, Pin_5, false );
+      break;
+    case M3:
+      setupMotorAndGPIO ( 2, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1, GPIOB, Pin_7, false );
+      break;
+    case M4:
+      setupMotorAndGPIO ( 3, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1, GPIOB, Pin_6, false );
+      break;
+#endif
+    default:
+      break;
+  }
 }
 
-void Motor_P::set(motor_e motor, int16_t pwmValue)
-{
+void Motor_P::set ( std_motor_e motor, int16_t pwmValue ) {
+  bool morto_arm_stat;
+  pwmValue = constrain ( pwmValue, 1000, 2000 );
 
-    pwmValue = constrain(pwmValue, 1000, 2000);
+  if ( ! IS_RC_MODE_ACTIVE ( BOXARM ) ) {
+    morto_arm_stat = false;
+    switch ( motor ) {
 
-    switch (motor) {
-    case M1:
-
-        if (isUserMotorInit[0]) {
-
-            *(userMotor[0]->ccr) = (pwmValue - 1000) * userMotor[0]->period / 1000;
-
-        } else if (initInternalMotors) {
-
-            motor_disarmed[0] = pwmValue;
-        }
-
+      case M5:
+        motor_disarmed [ 3 ] = pwmValue;
         break;
 
-    case M2:
-
-        if (isUserMotorInit[1]) {
-
-            *userMotor[1]->ccr = (pwmValue - 1000) * userMotor[1]->period / 1000;
-
-        } else if (initInternalMotors) {
-
-            motor_disarmed[1] = pwmValue;
-        }
-
+      case M6:
+        motor_disarmed [ 2 ] = pwmValue;
         break;
 
-    case M3:
-
-        if (isUserMotorInit[2]) {
-
-            *userMotor[2]->ccr = (pwmValue - 1000) * userMotor[2]->period / 1000;
-
-        } else if (initInternalMotors) {
-
-            motor_disarmed[2] = pwmValue;
-        }
-
+      case M7:
+        motor_disarmed [ 0 ] = pwmValue;
         break;
 
-    case M4:
-
-        if (isUserMotorInit[3]) {
-
-            *userMotor[3]->ccr = (pwmValue - 1000) * userMotor[3]->period / 1000;
-
-        } else if (initInternalMotors) {
-
-            motor_disarmed[3] = pwmValue;
-        }
-
+      case M8:
+        motor_disarmed [ 1 ] = pwmValue;
         break;
 
-    case M5:
-
-        if (isUserMotorInit[4]) {
-
-            *userMotor[4]->ccr = (pwmValue - 1000) * userMotor[4]->period / 1000;
-
-        } else if (!initInternalMotors) {
-
-            motor_disarmed[0] = pwmValue;
-        }
-
+      default:
         break;
-
-    case M6:
-
-        if (isUserMotorInit[5]) {
-
-            *userMotor[5]->ccr = (pwmValue - 1000) * userMotor[5]->period / 1000;
-
-        } else if (!initInternalMotors) {
-
-            motor_disarmed[1] = pwmValue;
-        }
-
-        break;
-
-    case M7:
-
-        if (isUserMotorInit[6]) {
-
-            *userMotor[6]->ccr = (pwmValue - 1000) * userMotor[6]->period / 1000;
-
-        } else if (!initInternalMotors) {
-
-            motor_disarmed[2] = pwmValue;
-        }
-
-        break;
-
-    case M8:
-
-        if (isUserMotorInit[7]) {
-
-            *userMotor[7]->ccr = (pwmValue - 1000) * userMotor[7]->period / 1000;
-
-        } else if (!initInternalMotors) {
-
-            motor_disarmed[3] = pwmValue;
-        }
-
-        break;
-
-    default:
-        break;
-
     }
-
+  } else if ( IS_RC_MODE_ACTIVE ( BOXARM ) && ! morto_arm_stat ) {
+    morto_arm_stat       = true;
+    motor_disarmed [ 3 ] = 1000;
+    motor_disarmed [ 2 ] = 1000;
+    motor_disarmed [ 0 ] = 1000;
+    motor_disarmed [ 1 ] = 1000;
+  }
 }
 
-void Motor_P::setDirection(motor_e motor, motor_aerial_direction_e direction)
-{
+void Motor_P::set ( reverse_motor_e motor, int16_t pwmValue ) {
+  pwmValue = constrain ( pwmValue, 1000, 2000 );
 
-    switch (motor) {
+  switch ( motor ) {
     case M1:
-
-        setM1GPIO((bool) direction);
-        break;
+      *userMotor [ 0 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 0 ]->period / 1000;
+      break;
 
     case M2:
-
-        setM2GPIO((bool) direction);
-        break;
+      *userMotor [ 1 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 1 ]->period / 1000;
+      break;
 
     case M3:
-
-        setM3GPIO((bool) direction);
-        break;
+      *userMotor [ 2 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 2 ]->period / 1000;
+      break;
 
     case M4:
-
-        setM4GPIO((bool) direction);
-        break;
+      *userMotor [ 3 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 3 ]->period / 1000;
+      break;
 
     default:
-
-        break;
-
-    }
-
+      break;
+  }
 }
 
-void Motor_P::setDirection(motor_e motor,
-        motor_terrestrial_direction_e direction)
-{
+void Motor_P::set ( reverse_motor_e motor, motor_direction_e direction, int16_t pwmValue ) {
 
-    bool terrestrial_direction;
+  pwmValue = constrain ( pwmValue, 1000, 2000 );
 
-    if (motor == M1 || motor == M2) {
-
-        if (direction)
-            terrestrial_direction = (bool) CLOCK_WISE;
-        else
-            terrestrial_direction = (bool) ANTICLOCK_WISE;
-
-    } else {
-
-        if (direction)
-            terrestrial_direction = (bool) ANTICLOCK_WISE;
-        else
-            terrestrial_direction = (bool) CLOCK_WISE;
-    }
-
-    switch (motor) {
+  switch ( motor ) {
     case M1:
-
-        setM1GPIO(terrestrial_direction);
-        break;
+      if ( direction )
+        digitalHi ( GPIOB, Pin_4 );
+      else
+        digitalLo ( GPIOB, Pin_4 );
+      *userMotor [ 0 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 0 ]->period / 1000;
+      break;
 
     case M2:
-
-        setM2GPIO(terrestrial_direction);
-        break;
+      if ( direction )
+        digitalHi ( GPIOA, Pin_7 );
+      else
+        digitalLo ( GPIOA, Pin_7 );
+      *userMotor [ 1 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 1 ]->period / 1000;
+      break;
 
     case M3:
+      if ( direction )
+        digitalHi ( GPIOB, Pin_1 );
+      else
+        digitalLo ( GPIOB, Pin_1 );
 
-        setM3GPIO(terrestrial_direction);
-        break;
+      *userMotor [ 2 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 2 ]->period / 1000;
+      break;
 
     case M4:
-
-        setM4GPIO(terrestrial_direction);
-        break;
+      if ( direction )
+        digitalHi ( GPIOA, Pin_15 );
+      else
+        digitalLo ( GPIOA, Pin_15 );
+      *userMotor [ 3 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 3 ]->period / 1000;
+      break;
 
     default:
+      break;
+  }
+}
+struct Rev_Motor_Gpio {
+  GPIO_TypeDef *gpio;
+  uint16_t pin;
+};
 
-        break;
+// Initialize an array of Motor structs
+#if defined( PRIMUSX )
+Rev_Motor_Gpio motors_gpio [] = {
+  { GPIOB, Pin_4 },
+  { GPIOA, Pin_7 },
+  { GPIOB, Pin_1 },
+  { GPIOA, Pin_15 }
+};
+#endif
+#if defined( PRIMUS2X )
+Rev_Motor_Gpio motors_gpio [] = {
+  { GPIOB, Pin_4 },
+  { GPIOB, Pin_5 },
+  { GPIOB, Pin_7 },
+  { GPIOB, Pin_6 }
+};
+#endif
 
-    }
-
+void Motor_P::setDirection ( reverse_motor_e motor, motor_direction_e direction ) {
+  // Check if the motor index is within the valid range
+  if ( motor >= 0 && motor < sizeof ( motors_gpio ) / sizeof ( Rev_Motor_Gpio ) ) {
+    if ( direction )
+      digitalHi ( motors_gpio [ motor ].gpio, motors_gpio [ motor ].pin );
+    else
+      digitalLo ( motors_gpio [ motor ].gpio, motors_gpio [ motor ].pin );
+  }
 }
 
 Motor_P Motor;

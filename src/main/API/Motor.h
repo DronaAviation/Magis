@@ -10,46 +10,32 @@
 extern "C" {
 #endif
 
-typedef enum motor {
+typedef enum reverse_motor {
+  M1 = 0x0,
+  M2,
+  M3,
+  M4
+} reverse_motor_e;
 
-	M3 = 0,
-    M4,
-    M2,
-    M1,
-    M7,
-    M8,
-    M6,
-    M5
+typedef enum std_motor {
+  M5 = 0x0,
+  M6,
+  M7,
+  M8
+} std_motor_e;
 
-} motor_e;
-
-typedef enum {
-
-    CLOCK_WISE = 0,
-    ANTICLOCK_WISE
-
-} motor_aerial_direction_e;
-
-
-typedef enum {
-
-    FORWARD = 0,
-    BACKWARD
-
-} motor_terrestrial_direction_e;
-
+typedef enum motor_direction {
+  CLOCK_WISE = 0,
+  ANTICLOCK_WISE
+} motor_direction_e;
 
 class Motor_P {
-
-public:
-
-    void init(motor_e motor);
-    void initReversibleMotors();
-    void set(motor_e motor, int16_t pwmValue);
-    void setDirection(motor_e motor, motor_aerial_direction_e direction);
-    void setDirection(motor_e motor, motor_terrestrial_direction_e direction);
-
-
+ public:
+  void initReverseMotor ( reverse_motor_e motor );
+  void set ( std_motor_e motor, int16_t pwmValue );
+  void set ( reverse_motor_e motor, int16_t pwmValue );
+  void set ( reverse_motor_e motor, motor_direction_e direction, int16_t pwmValue );
+  void setDirection ( reverse_motor_e motor, motor_direction_e direction );
 };
 
 extern Motor_P Motor;
@@ -57,4 +43,3 @@ extern Motor_P Motor;
 #ifdef __cplusplus
 }
 #endif
-

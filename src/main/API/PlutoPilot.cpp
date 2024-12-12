@@ -7,24 +7,19 @@ void plutoInit ( void ) {
 }
 
 
-
 // The function is called once before plutoLoop when you activate Developer Mode
 void onLoopStart ( void ) {
   // do your one time stuffs here
 }
 
 
-
 // The loop function is called in an endless loop
 void plutoLoop ( void ) {
-
   // Add your repeated code here
 }
 
 
-
 // The function is called once after plutoLoop when you deactivate Developer Mode
 void onLoopFinish ( void ) {
-
   // do your cleanup stuffs here
 }

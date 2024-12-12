@@ -51,17 +51,17 @@ extern int16_t appHeading;
 extern int16_t AUX3_VALUE;
 extern int16_t userHeading;
 extern uint32_t userLoopFrequency;
-extern int32_t user_GPS_coord[2];
+extern int32_t user_GPS_coord [ 2 ];
 extern uint32_t autoRcTimerLoop;
-extern int32_t MOTOR_ARRAY[4];
-extern int32_t app_GPS_coord[2];
-extern int32_t RC_ARRAY[4];
+extern int32_t MOTOR_ARRAY [ 4 ];
+extern int32_t app_GPS_coord [ 2 ];
+extern int32_t RC_ARRAY [ 4 ];
 
 extern bool runUserCode;
 extern bool developerMode;
 extern bool useAutoRC;
-extern bool External_RC_FLAG[4];
-extern bool userRCflag[4];
+extern bool External_RC_FLAG [ 4 ];
+extern bool userRCflag [ 4 ];
 extern bool callibrateAccelero;
 extern bool FlightStatusEnabled;
 extern bool hasTakeOff;
@@ -74,35 +74,30 @@ extern bool fsCrash;
 extern bool isUserHeadingSet;
 extern bool isUserGPSCoordSet;
 extern bool startShieldRanging;
-extern bool initInternalMotors;
 extern bool reverseReferenceFrame;
 extern bool motorMixer;
 extern bool isLocalisationOn;
 extern bool DONT_USE_STATUS_LED;
 
-extern bool isPwmInit[11];
-extern bool isUserMotorInit[8];
-extern bool isUserFlightModeSet[6];
-extern bool isXLaserInit[5];
+extern bool isPwmInit [ 11 ];
+extern bool isUserFlightModeSet [ 6 ];
+extern bool isXLaserInit [ 5 ];
 
-extern int32_t userDesiredAngle[3];
-extern int32_t userDesiredRate[3];
-extern int32_t userMotorPwm[4];
+extern int32_t userDesiredAngle [ 3 ];
+extern int32_t userDesiredRate [ 3 ];
+extern int32_t userMotorPwm [ 4 ];
 extern int32_t userSetVelocity;
 extern int16_t userHeadFreeHoldHeading;
-extern bool isUserDesiredAngle[3];
-extern bool isUserDesiredRate[3];
-extern bool isUserMotorPwm[4];
+extern bool isUserDesiredAngle [ 3 ];
+extern bool isUserDesiredRate [ 3 ];
+extern bool isUserMotorPwm [ 4 ];
 extern bool isUserSetVelocity;
 extern bool isUserHeadFreeHoldSet;
 
-void setM1GPIO(bool direction);
-void setM2GPIO(bool direction);
-void setM3GPIO(bool direction);
-void setM4GPIO(bool direction);
 
-void userEnabledLand();
-void resetUserRCflag(void);
+
+void userEnabledLand ( );
+void resetUserRCflag ( void );
 
 #define UB_ADC1_CHANNEL_COUNT 2
 #define UB_ADC2_CHANNEL_COUNT 2
@@ -110,40 +105,39 @@ void resetUserRCflag(void);
 #define UB_ADC4_CHANNEL_COUNT 3
 
 typedef enum {
-    UB_ADC1_IN3,
-    UB_ADC1_IN4,
-    UB_ADC2_IN1,
-    UB_ADC2_IN2,
-    UB_ADC3_IN5,
-    UB_ADC4_IN3,
-    UB_ADC4_IN4,
-    UB_ADC4_IN5,
+  UB_ADC1_IN3,
+  UB_ADC1_IN4,
+  UB_ADC2_IN1,
+  UB_ADC2_IN2,
+  UB_ADC3_IN5,
+  UB_ADC4_IN3,
+  UB_ADC4_IN4,
+  UB_ADC4_IN5,
 
 } Unibus_AdcChannel;
 
 #define UB_ADC_CHANNEL_COUNT 8
 
-extern bool isADCEnable[UB_ADC_CHANNEL_COUNT];
-extern uint8_t adcDmaIndex[UB_ADC_CHANNEL_COUNT];
+extern bool isADCEnable [ UB_ADC_CHANNEL_COUNT ];
+extern uint8_t adcDmaIndex [ UB_ADC_CHANNEL_COUNT ];
 
-extern volatile uint16_t adc1Values[UB_ADC1_CHANNEL_COUNT];
-extern volatile uint16_t adc2Values[UB_ADC2_CHANNEL_COUNT];
-extern volatile uint16_t adc3Values[UB_ADC3_CHANNEL_COUNT];
-extern volatile uint16_t adc4Values[UB_ADC4_CHANNEL_COUNT];
+extern volatile uint16_t adc1Values [ UB_ADC1_CHANNEL_COUNT ];
+extern volatile uint16_t adc2Values [ UB_ADC2_CHANNEL_COUNT ];
+extern volatile uint16_t adc3Values [ UB_ADC3_CHANNEL_COUNT ];
+extern volatile uint16_t adc4Values [ UB_ADC4_CHANNEL_COUNT ];
 
-void unibusAdcInit(void);
-void xRangingInit(void);
+void unibusAdcInit ( void );
+void xRangingInit ( void );
 
-int getGPIOport(unibus_e pin);
-GPIO_Pin getGPIOpin(unibus_e pin);
-uint32_t getGPIOclock(unibus_e pin);
-uint8_t getGPIOpinSource(unibus_e pin);
+int getGPIOport ( unibus_e pin );
+GPIO_Pin getGPIOpin ( unibus_e pin );
+uint32_t getGPIOclock ( unibus_e pin );
+uint8_t getGPIOpinSource ( unibus_e pin );
+uint16_t getTimerCh ( unibus_e pin );
+uint8_t getADCCh ( unibus_e pin );
 
-uint16_t getTimerCh(unibus_e pin);
-uint8_t getADCCh(unibus_e pin);
 
-void reverseMotorGPIOInit(void);
-void resetUser(void);
+void resetUser ( void );
 
 #ifdef __cplusplus
 }
