@@ -17,6 +17,16 @@ typedef enum reverse_motor {
   M4
 } reverse_motor_e;
 
+typedef enum motor_direction {
+  CLOCK_WISE = 0,
+  ANTICLOCK_WISE
+} motor_direction_e;
+
+typedef enum {
+  FORWARD = 0,
+  BACKWARD
+} motor_terrestrial_direction_e;
+
 typedef enum std_motor {
   M5 = 0x0,
   M6,
@@ -24,17 +34,12 @@ typedef enum std_motor {
   M8
 } std_motor_e;
 
-typedef enum motor_direction {
-  CLOCK_WISE = 0,
-  ANTICLOCK_WISE
-} motor_direction_e;
-
 class Motor_P {
+
  public:
   void initReverseMotor ( reverse_motor_e motor );
   void set ( std_motor_e motor, int16_t pwmValue );
   void set ( reverse_motor_e motor, int16_t pwmValue );
-  void set ( reverse_motor_e motor, motor_direction_e direction, int16_t pwmValue );
   void setDirection ( reverse_motor_e motor, motor_direction_e direction );
 };
 

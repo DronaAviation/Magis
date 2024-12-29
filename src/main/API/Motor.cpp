@@ -94,70 +94,169 @@
 #include "Motor.h"
 #include "API-Utils.h"
 
-pwmOutputPort_t *userMotor [ 8 ];
+// pwmOutputPort_t *userMotor [ 8 ];
 
+// void MotorInit ( int index, uint32_t RCC_AHBPeriph, uint32_t RCC_APB1Periph, TIM_TypeDef *tim, GPIO_TypeDef *gpio, uint16_t pin, uint8_t channel, uint8_t irq, uint8_t outputEnable, GPIO_Mode gpioInputMode, uint8_t gpioPinSource, uint8_t alternateFunction ) {
+//   timerHardware_t timerHardware;
 
-void setupMotorAndGPIO ( int index, uint32_t GPIOx_RCC, uint32_t TIMx_RCC, TIM_TypeDef *TIMx, GPIO_TypeDef *GPIOx, uint16_t pin_x, uint8_t channel, uint8_t irqn, GPIO_Mode mode, uint16_t pinSource, uint8_t AF, GPIO_TypeDef *gpio, uint16_t cfgPin, bool digitalState ) {
+//   RCC_AHBPeriphClockCmd ( RCC_AHBPeriph, ENABLE );
 
-  timerHardware_t timerHardware;
-  gpio_config_t cfg;
+//   RCC_APB1PeriphClockCmd ( RCC_APB1Periph, ENABLE );
 
-  RCC_AHBPeriphClockCmd ( GPIOx_RCC, ENABLE );
-  RCC_APB1PeriphClockCmd ( TIMx_RCC, ENABLE );
+//   timerHardware = { tim, gpio, pin, channel, irq, outputEnable, gpioInputMode, gpioPinSource, alternateFunction };
 
-  timerHardware = { TIMx, GPIOx, pin_x, channel, irqn, 1, mode, pinSource, AF };
+//   GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
 
-  GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
+//   uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
 
-  uint32_t hz         = PWM_BRUSHED_TIMER_MHZ * 1000000;
-  userMotor [ index ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+//   userMotor [ index ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+// }
 
-  cfg.pin   = cfgPin;
-  cfg.mode  = Mode_Out_PP;
-  cfg.speed = Speed_2MHz;
-  RCC_AHBPeriphClockCmd ( GPIOx_RCC, ENABLE );
-  gpioInit ( gpio, &cfg );
+pwmOutputPort_t *userMotor [ 4 ];
 
-  if ( digitalState )
-    digitalHi ( gpio, cfgPin );
-  else
-    digitalLo ( gpio, cfgPin );
-}
+struct Rev_Motor_Gpio {
+  GPIO_TypeDef *gpio;
+  uint16_t pin;
+  uint32_t RCC_AHBPeriph;
+};
+
+// Initialize an array of Motor structs
+Rev_Motor_Gpio motors_gpio [ 4 ];
+
 
 void Motor_P::initReverseMotor ( reverse_motor_e motor ) {
+
+  timerHardware_t timerHardware;
+  GPIO_TypeDef *gpio;
+  gpio_config_t cfg;
+  uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
+
   switch ( motor ) {
-#ifdef PRIMUSX
+
     case M1:
-      setupMotorAndGPIO ( 0, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM3, TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2, GPIOB, Pin_4, false );
-      break;
-    case M2:
-      setupMotorAndGPIO ( 1, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_2, GPIOA, Pin_7, true );
-      break;
-    case M3:
-      setupMotorAndGPIO ( 2, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM3, TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10, GPIOB, Pin_1, false );
-      break;
-    case M4:
-      setupMotorAndGPIO ( 3, RCC_AHBPeriph_GPIOB, RCC_APB2Periph_TIM8, TIM8, GPIOB, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_5, GPIOA, Pin_15, true );
-      break;
+#if defined( PRIMUSX )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOA, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM3, ENABLE );
+      timerHardware                   = { TIM3, GPIOA, Pin_6, TIM_Channel_1, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2 };
+      motors_gpio [ 0 ].gpio          = GPIOB;
+      motors_gpio [ 0 ].pin           = Pin_4;
+      motors_gpio [ 0 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
+
 #endif
-#ifdef PRIMUSX2
-    case M1:
-      setupMotorAndGPIO ( 0, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM2, TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1, GPIOB, Pin_4, false );
-      break;
-    case M2:
-      setupMotorAndGPIO ( 1, RCC_AHBPeriph_GPIOA, RCC_APB1Periph_TIM2, TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1, GPIOB, Pin_5, false );
-      break;
-    case M3:
-      setupMotorAndGPIO ( 2, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1, GPIOB, Pin_7, false );
-      break;
-    case M4:
-      setupMotorAndGPIO ( 3, RCC_AHBPeriph_GPIOB, RCC_APB1Periph_TIM2, TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1, GPIOB, Pin_6, false );
-      break;
+
+#if defined( PRIMUSX2 )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOA, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM2, ENABLE );
+      timerHardware                   = { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource0, GPIO_AF_1 };
+      motors_gpio [ 0 ].gpio          = GPIOB;
+      motors_gpio [ 0 ].pin           = Pin_4;
+      motors_gpio [ 0 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
 #endif
+      // M1
+      cfg.pin   = motors_gpio [ 0 ].pin;
+      cfg.mode  = Mode_Out_PP;
+      cfg.speed = Speed_2MHz;
+      RCC_AHBPeriphClockCmd ( motors_gpio [ 0 ].RCC_AHBPeriph, ENABLE );
+      gpioInit ( motors_gpio [ 0 ].gpio, &cfg );
+      digitalLo ( motors_gpio [ 0 ].gpio, motors_gpio [ 0 ].pin );
+
+      GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
+      userMotor [ 0 ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+      break;
+
+    case M2:
+#if defined( PRIMUSX )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM2, ENABLE );
+      timerHardware                   = { TIM3, GPIOB, Pin_5, TIM_Channel_2, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource5, GPIO_AF_2 };
+      motors_gpio [ 1 ].gpio          = GPIOA;
+      motors_gpio [ 1 ].pin           = Pin_7;
+      motors_gpio [ 1 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOA;
+#endif
+
+#if defined( PRIMUSX2 )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOA, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM2, ENABLE );
+      timerHardware                   = { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_1 };
+      motors_gpio [ 1 ].gpio          = GPIOB;
+      motors_gpio [ 1 ].pin           = Pin_5;
+      motors_gpio [ 1 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB2
+#endif
+                                                  cfg.pin
+                = motors_gpio [ 1 ].pin;
+      cfg.mode  = Mode_Out_PP;
+      cfg.speed = Speed_2MHz;
+      RCC_AHBPeriphClockCmd ( motors_gpio [ 1 ].RCC_AHBPeriph, ENABLE );
+      gpioInit ( motors_gpio [ 1 ].gpio, &cfg );
+      digitalHi ( motors_gpio [ 1 ].gpio, motors_gpio [ 1 ].pin );
+
+      GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
+      userMotor [ 1 ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+      break;
+
+    case M3:
+#if defined( PRIMUSX )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM3, ENABLE );
+      timerHardware                   = { TIM3, GPIOB, Pin_7, TIM_Channel_4, TIM3_IRQn, 1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_10 };
+      motors_gpio [ 2 ].gpio          = GPIOB;
+      motors_gpio [ 2 ].pin           = Pin_1;
+      motors_gpio [ 2 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
+#endif
+
+#if defined( PRIMUSX2 )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+      RCC_APB1PeriphClockCmd ( RCC_APB1Periph_TIM2, ENABLE );
+      timerHardware                   = { TIM2, GPIOB, Pin_10, TIM_Channel_3, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1 };
+      motors_gpio [ 2 ].gpio          = GPIOB;
+      motors_gpio [ 2 ].pin           = Pin_7;
+      motors_gpio [ 2 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
+#endif
+      cfg.pin   = motors_gpio [ 2 ].pin;
+      cfg.mode  = Mode_Out_PP;
+      cfg.speed = Speed_2MHz;
+      RCC_AHBPeriphClockCmd ( motors_gpio [ 2 ].RCC_AHBPeriph, ENABLE );
+      gpioInit ( motors_gpio [ 2 ].gpio, &cfg );
+      digitalLo ( motors_gpio [ 2 ].gpio, motors_gpio [ 2 ].pin );
+
+      GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
+      userMotor [ 2 ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+      break;
+
+    case M4:
+#if defined( PRIMUSX )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+      RCC_APB2PeriphClockCmd ( RCC_APB2Periph_TIM8, ENABLE );
+      timerHardware                   = { TIM8, GPIOB, Pin_6, TIM_Channel_1, TIM8_CC_IRQn, 1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_5 };
+      motors_gpio [ 3 ].gpio          = GPIOA;
+      motors_gpio [ 3 ].pin           = Pin_15;
+      motors_gpio [ 3 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
+#endif
+
+#if defined( PRIMUSX2 )
+      RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+      RCC_APB2PeriphClockCmd ( RCC_APB1Periph_TIM2, ENABLE );
+      timerHardware                   = { TIM2, GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn, 1, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1 };
+      motors_gpio [ 3 ].gpio          = GPIOB;
+      motors_gpio [ 3 ].pin           = Pin_1;
+      motors_gpio [ 3 ].RCC_AHBPeriph = RCC_AHBPeriph_GPIOB;
+#endif
+      cfg.pin   = motors_gpio [ 3 ].pin;
+      cfg.mode  = Mode_Out_PP;
+      cfg.speed = Speed_2MHz;
+      RCC_AHBPeriphClockCmd ( motors_gpio [ 3 ].RCC_AHBPeriph, ENABLE );
+      gpioInit ( motors_gpio [ 3 ].gpio, &cfg );
+      digitalHi ( motors_gpio [ 3 ].gpio, motors_gpio [ 3 ].pin );
+
+      GPIO_PinAFConfig ( timerHardware.gpio, ( uint16_t ) timerHardware.gpioPinSource, timerHardware.alternateFunction );
+      userMotor [ 3 ] = pwmOutConfig ( &timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / masterConfig.motor_pwm_rate, 0 );
+      break;
+
     default:
       break;
   }
 }
+
 
 void Motor_P::set ( std_motor_e motor, int16_t pwmValue ) {
   bool morto_arm_stat;
@@ -200,19 +299,19 @@ void Motor_P::set ( reverse_motor_e motor, int16_t pwmValue ) {
 
   switch ( motor ) {
     case M1:
-      *userMotor [ 0 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 0 ]->period / 1000;
+      *( userMotor [ 0 ]->ccr ) = ( pwmValue - 1000 ) * userMotor [ 0 ]->period / 1000;
       break;
 
     case M2:
-      *userMotor [ 1 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 1 ]->period / 1000;
+      *( userMotor [ 1 ]->ccr ) = ( pwmValue - 1000 ) * userMotor [ 1 ]->period / 1000;
       break;
 
     case M3:
-      *userMotor [ 2 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 2 ]->period / 1000;
+      *( userMotor [ 2 ]->ccr ) = ( pwmValue - 1000 ) * userMotor [ 2 ]->period / 1000;
       break;
 
     case M4:
-      *userMotor [ 3 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 3 ]->period / 1000;
+      *( userMotor [ 3 ]->ccr ) = ( pwmValue - 1000 ) * userMotor [ 3 ]->period / 1000;
       break;
 
     default:
@@ -220,70 +319,7 @@ void Motor_P::set ( reverse_motor_e motor, int16_t pwmValue ) {
   }
 }
 
-void Motor_P::set ( reverse_motor_e motor, motor_direction_e direction, int16_t pwmValue ) {
 
-  pwmValue = constrain ( pwmValue, 1000, 2000 );
-
-  switch ( motor ) {
-    case M1:
-      if ( direction )
-        digitalHi ( GPIOB, Pin_4 );
-      else
-        digitalLo ( GPIOB, Pin_4 );
-      *userMotor [ 0 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 0 ]->period / 1000;
-      break;
-
-    case M2:
-      if ( direction )
-        digitalHi ( GPIOA, Pin_7 );
-      else
-        digitalLo ( GPIOA, Pin_7 );
-      *userMotor [ 1 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 1 ]->period / 1000;
-      break;
-
-    case M3:
-      if ( direction )
-        digitalHi ( GPIOB, Pin_1 );
-      else
-        digitalLo ( GPIOB, Pin_1 );
-
-      *userMotor [ 2 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 2 ]->period / 1000;
-      break;
-
-    case M4:
-      if ( direction )
-        digitalHi ( GPIOA, Pin_15 );
-      else
-        digitalLo ( GPIOA, Pin_15 );
-      *userMotor [ 3 ]->ccr = ( pwmValue - 1000 ) * userMotor [ 3 ]->period / 1000;
-      break;
-
-    default:
-      break;
-  }
-}
-struct Rev_Motor_Gpio {
-  GPIO_TypeDef *gpio;
-  uint16_t pin;
-};
-
-// Initialize an array of Motor structs
-#if defined( PRIMUSX )
-Rev_Motor_Gpio motors_gpio [] = {
-  { GPIOB, Pin_4 },
-  { GPIOA, Pin_7 },
-  { GPIOB, Pin_1 },
-  { GPIOA, Pin_15 }
-};
-#endif
-#if defined( PRIMUS2X )
-Rev_Motor_Gpio motors_gpio [] = {
-  { GPIOB, Pin_4 },
-  { GPIOB, Pin_5 },
-  { GPIOB, Pin_7 },
-  { GPIOB, Pin_6 }
-};
-#endif
 
 void Motor_P::setDirection ( reverse_motor_e motor, motor_direction_e direction ) {
   // Check if the motor index is within the valid range
@@ -294,5 +330,44 @@ void Motor_P::setDirection ( reverse_motor_e motor, motor_direction_e direction 
       digitalLo ( motors_gpio [ motor ].gpio, motors_gpio [ motor ].pin );
   }
 }
+
+
+
+#if defined( PRIMUSX2 )
+void reverseMotorGPIOInit ( void ) {
+
+  // M2
+  gpio = GPIOB;
+
+  cfg.pin   = Pin_5;
+  cfg.mode  = Mode_Out_PP;
+  cfg.speed = Speed_2MHz;
+  RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+  gpioInit ( gpio, &cfg );
+  digitalLo ( GPIOB, Pin_5 );
+
+  // M3
+  gpio = GPIOB;
+
+  cfg.pin   = Pin_7;
+  cfg.mode  = Mode_Out_PP;
+  cfg.speed = Speed_2MHz;
+  RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+  gpioInit ( gpio, &cfg );
+  digitalLo ( GPIOB, Pin_7 );
+
+  // M4
+  gpio = GPIOB;
+
+  cfg.pin   = Pin_6;
+  cfg.mode  = Mode_Out_PP;
+  cfg.speed = Speed_2MHz;
+  RCC_AHBPeriphClockCmd ( RCC_AHBPeriph_GPIOB, ENABLE );
+  gpioInit ( gpio, &cfg );
+  digitalLo ( GPIOB, Pin_6 );
+}
+
+#endif
+
 
 Motor_P Motor;
