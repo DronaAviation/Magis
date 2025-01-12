@@ -18,14 +18,17 @@
 #ifndef _PlutoPilot_H_
 #define _PlutoPilot_H_
 
-#include<stdint.h>
+#include <stdint.h>
+#include "RxConfig.h"
 
-void plutoInit(void);
+void plutoRxConfig ( void );
 
-void onLoopStart(void);
+void plutoInit ( void );
 
-void plutoLoop(void);
+void onLoopStart ( void );
 
-void onLoopFinish(void);
+void plutoLoop ( void );
+
+void onLoopFinish ( void );
 
 #endif
