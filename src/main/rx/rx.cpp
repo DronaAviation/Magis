@@ -289,6 +289,10 @@ bool rxIsReceivingSignal(void)
     return rxSignalReceived;
 }
 
+bool ppmIsRecievingSignal(void){
+  return rxSignalReceivedNotDataDriven;
+}
+
 bool rxAreFlightChannelsValid(void)
 {
     return rxFlightChannelsValid;
