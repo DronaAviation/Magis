@@ -29,6 +29,11 @@ typedef enum {
 } rx_channel_e;
 
 
+extern uint8_t DevModeAUX;
+extern uint16_t DevModeMinRange;
+extern uint16_t DevModeMaxRange;
+
+
 class Rc_Rx_Config_P {
  private:
   void configAUX ( flight_mode flightMode, rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange );
@@ -41,6 +46,7 @@ class Rc_Rx_Config_P {
   void configureModeBARO ( rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange );
   void configureMagMode ( rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange );
   void configureHeadfreeMode ( rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange );
+  void configureDevMode ( rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange );
 };
 
 extern Rc_Rx_Config_P Receiver;

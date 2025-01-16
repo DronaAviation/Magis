@@ -9,6 +9,7 @@
  * BARO mode : Rx_AUX3, range 1300 to 2100
  * MAG mode : Rx_AUX1, range 900 to 1300
  * HEADFREE mode : Rx_AUX1, range 1300 to 1700
+ * DEV mode : Rx_AUX4, range 1500 to 2100
  */
 void plutoRxConfig ( void ) {
   // Receiver mode: Uncomment one line for ESP or PPM setup.
