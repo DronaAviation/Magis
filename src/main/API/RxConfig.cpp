@@ -1,3 +1,23 @@
+/*******************************************************************************
+ #  Copyright (c) 2025 DRONA AVIATION                                          #
+ #  All rights reserved.                                                       #
+ #  -------------------------------------------------------------------------  #
+ #  Author: Ashish Jaiswal (MechAsh) <AJ>                                      #
+ #  Project: API                                                               #
+ #  File: \RxConfig.cpp                                                        #
+ #  Created Date: Tue, 26th Jan 2025                                           #
+ #  Brief:                                                                     #
+ #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
+ #  Last Modified: Tue, 21st Jan 2025                                          #
+ #  Modified By: AJ                                                            #
+ #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
+ #  HISTORY:                                                                   #
+ #  Date      	By	Comments                                                   #
+ #  ----------	---	---------------------------------------------------------  #
+*******************************************************************************/
+
+
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -44,7 +64,10 @@
 #include "RxConfig.h"
 
 
-
+// Global variables to store device mode configuration
+uint8_t DevModeAUX       = 0;    // Auxiliary channel for device mode
+uint16_t DevModeMinRange = 0;    // Minimum range for device mode
+uint16_t DevModeMaxRange = 0;    // Maximum range for device mode
 
 rx_mode_e RxMode = Rx_ESP;
 
@@ -100,7 +123,9 @@ void Rc_Rx_Config_P::rxMode ( rx_mode_e rxMode ) {
       configAUX ( Mode_BARO, Rx_AUX3, 1300, 2100 );
       configAUX ( Mode_MAG, Rx_AUX1, 900, 1300 );
       configAUX ( Mode_HEADFREE, Rx_AUX1, 1300, 1700 );
-      configureDevMode ( Rx_AUX2, 1400, 1800 );
+      DevModeAUX      = Rx_AUX2;    // Set the auxiliary channel
+      DevModeMinRange = 1450;       // Set the minimum range
+      DevModeMaxRange = 1550;       // Set the maximum range
       break;
 
     case Rx_PPM:
@@ -190,29 +215,26 @@ void Rc_Rx_Config_P::configureHeadfreeMode ( rx_channel_e rxChannel, uint16_t mi
   }
 }
 
-// Global variables to store device mode configuration
-uint8_t DevModeAUX = 0;         // Auxiliary channel for device mode
-uint16_t DevModeMinRange = 0;   // Minimum range for device mode
-uint16_t DevModeMaxRange = 0;   // Maximum range for device mode
+
 
 /**
  * @brief Configures the device mode with specified parameters.
  *
  * This function sets the auxiliary channel, minimum range, and maximum range
- * for the device mode configuration. The configuration is applied only if 
+ * for the device mode configuration. The configuration is applied only if
  * AuxChangeEnable is true.
  *
  * @param rxChannel The auxiliary channel to be used for device mode.
  * @param minRange The minimum range value for the device mode.
  * @param maxRange The maximum range value for the device mode.
  */
-void Rc_Rx_Config_P::configureDevMode(rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange) {
-    // Check if change in auxiliary settings is enabled
-    if (AuxChangeEnable) {
-        DevModeAUX = rxChannel;      // Set the auxiliary channel
-        DevModeMinRange = minRange;  // Set the minimum range
-        DevModeMaxRange = maxRange;  // Set the maximum range
-    }
+void Rc_Rx_Config_P::configureDevMode ( rx_channel_e rxChannel, uint16_t minRange, uint16_t maxRange ) {
+  // Check if change in auxiliary settings is enabled
+  if ( AuxChangeEnable ) {
+    DevModeAUX      = rxChannel;    // Set the auxiliary channel
+    DevModeMinRange = minRange;     // Set the minimum range
+    DevModeMaxRange = maxRange;     // Set the maximum range
+  }
 }
 
 
