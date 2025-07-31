@@ -68,227 +68,200 @@
 
 
 uint8_t current_command = 0;
-uint8_t command_status = 2;
+uint8_t command_status  = 2;
 
-bool isLanding = false;
-bool isArmed = false;
-bool setTakeOffAlt = false;
+bool isLanding          = false;
+bool isArmed            = false;
+bool setTakeOffAlt      = false;
 bool setTakeOffThrottle = false;
-bool setLandTimer = true;
-bool setTakeOffTimer = true;
-bool isTookOff=false;
-bool isTakeOffHeightSet=false;
+bool setLandTimer       = true;
+bool setTakeOffTimer    = true;
+bool isTookOff          = false;
+bool isTakeOffHeightSet = false;
 
 
 uint32_t loopTime;
 uint32_t takeOffLoopTime;
 int32_t takeOffThrottle = 950;
-int8_t checkVelocity = -8;
+int8_t checkVelocity    = -8;
 
 
-uint16_t takeOffHeight=120;
-uint16_t landThrottle=1200;
-bool isUserLandCommand=false;
+uint16_t takeOffHeight = 120;
+uint16_t landThrottle  = 1200;
+bool isUserLandCommand = false;
 
 Interval takeoffTimer;
 Interval posSetTimer;
 
 
 
-void takeOff()
-{
+void takeOff ( ) {
 
-   if (command_status != FINISHED) {
-
-
-
-        if (ARMING_FLAG(ARMED)) {
-
-
-//            if(takeoffTimer.set(1000, false)){
+  if ( command_status != FINISHED ) {
 
 
 
-                current_command = NONE;
-                command_status = ABORT;
-                isTookOff=true;
+    if ( ARMING_FLAG ( ARMED ) ) {
 
-//            }
 
+      //            if(takeoffTimer.set(1000, false)){
 
 
 
+      current_command = NONE;
+      command_status  = ABORT;
+      isTookOff       = true;
 
-        } else {
-            if(IS_RC_MODE_ACTIVE(BOXARM))
-            {
+      //            }
 
-               pidResetErrorAngle();
-               pidResetErrorGyro();
-               mwArm();
-               takeoffTimer.reset();
-               posSetTimer.reset();
 
-              #ifdef LASER_ALT
-              if(!isTakeOffHeightSet){
-              DesiredPosition.set(Z, takeOffHeight);
-              isTakeOffHeightSet=true;
-              }
-              #else
-              if(!isTakeOffHeightSet){
-              DesiredPosition.setRelative(Z, takeOffHeight);
-              isTakeOffHeightSet=true;
-              }
-              #endif
 
-            }
+    } else {
+      if ( IS_RC_MODE_ACTIVE ( BOXARM ) ) {
+
+        pidResetErrorAngle ( );
+        pidResetErrorGyro ( );
+        mwArm ( );
+        takeoffTimer.reset ( );
+        posSetTimer.reset ( );
+
+#ifdef LASER_ALT
+        if ( ! isTakeOffHeightSet ) {
+          DesiredPosition.set ( Z, takeOffHeight );
+          isTakeOffHeightSet = true;
         }
+#else
+        if ( ! isTakeOffHeightSet ) {
+          DesiredPosition.setRelative ( Z, takeOffHeight );
+          isTakeOffHeightSet = true;
+        }
+#endif
+      }
+    }
+  }
+}
+void land ( ) {
 
 
+
+  if ( command_status != FINISHED ) {
+
+
+
+    isLanding = true;
+
+    if ( setLandTimer ) {
+
+      loopTime     = millis ( ) + 30000;
+      setLandTimer = false;
     }
 
+    if ( ( int32_t ) ( millis ( ) - loopTime ) >= 0 ) {
 
-}
-void land()
-{
+      mwDisarm ( );
+
+      command_status = FINISHED;
+
+      isLanding    = false;
+      setLandTimer = true;
+    } else {
+
+
+      if ( ABS ( accADC [ 2 ] ) > 8500 ) {
+
+        command_status = FINISHED;
+
+        mwDisarm ( );
+
+        isLanding         = false;
+        setLandTimer      = true;
+        isUserLandCommand = false;
+
+        return;
+      }
 
 
 
-    if (command_status != FINISHED) {
+      if ( ABS ( ( int32_t ) ( millis ( ) - loopTime ) ) <= 28000 ) {
 
 
+        if ( getEstVelocity ( ) > -8 ) {
 
+          command_status = FINISHED;
 
-        isLanding = true;
+          mwDisarm ( );
 
-        if (setLandTimer) {
-
-            loopTime = millis() + 30000;
-            setLandTimer = false;
-
+          isLanding         = false;
+          setLandTimer      = true;
+          isUserLandCommand = false;
         }
-
-        if ((int32_t)(millis() - loopTime) >= 0) {
-
-            mwDisarm();
-
-            command_status = FINISHED;
-
-            isLanding = false;
-            setLandTimer = true;
-        } else {
-
-
-            if(ABS(accADC[2]) > 8500)
-            {
-
-            command_status = FINISHED;
-
-            mwDisarm();
-
-            isLanding = false;
-            setLandTimer = true;
-            isUserLandCommand=false;
-
-            return;
-
-            }
-
-
-
-
-            if (ABS((int32_t)(millis()-loopTime)) <= 28000 ) {
-
-
-                if(getEstVelocity() > -8)
-                {
-
-                command_status = FINISHED;
-
-                mwDisarm();
-
-                isLanding = false;
-                setLandTimer = true;
-                isUserLandCommand=false;
-
-                }
-            }
-        }
- }
-
+      }
+    }
+  }
 }
 
-void executeCommand()
-{
+void executeCommand ( ) {
 
-    switch (current_command) {
+  switch ( current_command ) {
 
     case NONE:
 
-        break;
+      break;
 
     case TAKE_OFF:
 
-        takeOff();
+      takeOff ( );
 
-        break;
+      break;
 
     case LAND:
 
-        land();
-        break;
+      land ( );
+      break;
 
     case B_FLIP:
 
 
 
-        if (flipState == 0 && FLIGHT_MODE(MAG_MODE))  {
+      if ( flipState == 0 && FLIGHT_MODE ( MAG_MODE ) ) {
 
-            flipDirection = 0;
-            flipState = 1;
-            flipStartTime = millis();
-
-
-        }
-        current_command = NONE;
-        command_status = FINISHED;
+        flipDirection = 0;
+        flipState     = 1;
+        flipStartTime = millis ( );
+      }
+      current_command = NONE;
+      command_status  = FINISHED;
 
 
 
-        break;
+      break;
 
     case F_FLIP:
 
 
 
-        break;
+      break;
 
     case R_FLIP:
 
-        break;
+      break;
 
     case L_FLIP:
 
 
-        break;
+      break;
 
     default:
-        break;
-
-    }
-
+      break;
+  }
 }
 
-void updateCommandStatus()
-{
+void updateCommandStatus ( ) {
 
-    if (current_command != NONE && command_status == FINISHED) {
+  if ( current_command != NONE && command_status == FINISHED ) {
 
-        current_command = NONE;
+    current_command = NONE;
 
-        command_status = FINISHED;
-
-    }
-
+    command_status = FINISHED;
+  }
 }
-

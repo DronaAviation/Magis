@@ -58,6 +58,7 @@ extern int32_t app_GPS_coord [ 2 ];
 extern int32_t RC_ARRAY [ 4 ];
 
 extern bool runUserCode;
+extern bool OledEnable;
 extern bool developerMode;
 extern bool useAutoRC;
 extern bool External_RC_FLAG [ 4 ];

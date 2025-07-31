@@ -18,29 +18,33 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
-#define FC_VERSION_MAJOR            2  // increment when a major release is made (big new feature, etc)
-#define FC_VERSION_MINOR            0 // increment when a minor release is made (small new feature, change etc)
-#define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
+#define FC_VERSION_MAJOR       2    // increment when a major release is made (big new feature, etc)
+#define FC_VERSION_MINOR       0    // increment when a minor release is made (small new feature, change etc)
+#define FC_VERSION_PATCH_LEVEL 0    // increment when a bug is fixed
 
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
+#define STR_HELPER( x )        #x
+#define STR( x )               STR_HELPER ( x )
+#define FC_VERSION_STRING      STR ( FC_VERSION_MAJOR ) "." STR ( FC_VERSION_MINOR ) "." STR ( FC_VERSION_PATCH_LEVEL )
 
-#define MW_VERSION              231
+#define MW_VERSION             231
 
-extern const char* const targetName;
+extern const char *const targetName;
 
-#define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
-extern const char* const shortGitRevision;
+#define GIT_SHORT_REVISION_LENGTH 7    // lower case hexadecimal digits.
+extern const char *const shortGitRevision;
 
 #define BUILD_DATE_LENGTH 11
-extern const char* const buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
+extern const char *const buildDate;    // "MMM DD YYYY" MMM = Jan/Feb/...
 
 #define BUILD_TIME_LENGTH 8
-extern const char* const buildTime;  // "HH:MM:SS"
+extern const char *const buildTime;    // "HH:MM:SS"
+
+extern const char *const FwVersion;
+extern const char *const ApiVersion;
+extern const char *const FwName;
 
 #ifdef __cplusplus
 }
-#endif 
+#endif

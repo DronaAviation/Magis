@@ -63,6 +63,7 @@
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/flashfs.h"
+#include "io/oled_display.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -486,7 +487,6 @@ void mwDisarm ( void ) {
 
   if ( current_command != NONE )
     command_status = FINISHED;
-
   isLanding          = false;
   setLandTimer       = true;
   setTakeOffAlt      = false;
@@ -533,7 +533,6 @@ void mwArm ( void ) {
     }
     if ( ! ARMING_FLAG ( PREVENT_ARMING ) ) {
       ENABLE_ARMING_FLAG ( ARMED );
-
       if ( isUserHeadFreeHoldSet ) {
 
         headFreeModeHold = userHeadFreeHoldHeading;
@@ -978,12 +977,16 @@ void userCode ( ) {
 
   if ( ( rcData [ DevModeAUX ] >= DevModeMinRange && rcData [ DevModeAUX ] <= DevModeMaxRange ) && ( rxIsReceivingSignal ( ) || ppmIsRecievingSignal ( ) ) ) {
     runUserCode = true;
+    devmode     = true;
 
   } else {
     runUserCode = false;
+    devmode     = false;
   }
 
-    if (runUserCode) {
+  OledDisplayData ( );
+
+  if ( runUserCode ) {
     userCurrentTime = micros ( );
     if ( ( int32_t ) ( userCurrentTime - userLoopTime ) >= 0 ) {
       {
@@ -1021,9 +1024,9 @@ void userCode ( ) {
       }
     }
 
-    }
+  }
 
-    else {
+  else {
     if ( callonPilotFinish ) {
       for ( int i = 0; i < 4; i++ ) {
         RC_ARRAY [ i ]   = 0;
@@ -1035,8 +1038,7 @@ void userCode ( ) {
       callOnPilotStart  = true;
       callonPilotFinish = false;
     }
-
-    }
+  }
 }
 
 void loop ( void ) {
@@ -1045,6 +1047,8 @@ void loop ( void ) {
 #if defined( BARO ) || defined( SONAR )
   static bool haveProcessedAnnexCodeOnce = false;
 #endif
+
+  OledStartUpPage ( );
 
   updateRx ( currentTime );
 
@@ -1133,6 +1137,8 @@ void loop ( void ) {
     }
 
     userCode ( );
+
+
 
     /* used in localisation
      if (command_verify()){

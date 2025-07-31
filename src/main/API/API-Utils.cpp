@@ -107,6 +107,7 @@ int32_t app_GPS_coord[2];
 int32_t RC_ARRAY[4] = { 0 };
 
 bool runUserCode = false;
+bool OledEnable =false;
 bool useAutoRC = false;
 bool developerMode = false;
 bool External_RC_FLAG[4] = { true, true, true, true };

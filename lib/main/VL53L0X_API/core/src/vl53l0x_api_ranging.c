@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright © 2016, STMicroelectronics International N.V.
+ Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,9 +29,9 @@
 #include "vl53l0x_api.h"
 #include "vl53l0x_api_core.h"
 
+#include <stdlib.h>
 /* 
 #ifndef __KERNEL__
-#include <stdlib.h>
 #endif
 #define LOG_FUNCTION_START(fmt, ...) \
 	_LOG_FUNCTION_START(TRACE_MODULE_API, fmt, ##__VA_ARGS__)

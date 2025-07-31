@@ -17,7 +17,10 @@
 
 #include "version.h"
 
-const char * const targetName = __TARGET__;
-const char * const shortGitRevision = __REVISION__;
-const char * const buildDate = __DATE__;
-const char * const buildTime = __TIME__;
+const char *const FwName           = __FORKNAME__;
+const char *const targetName       = __TARGET__;
+const char *const shortGitRevision = "0.0.0";
+const char *const buildDate        = __BUILD_DATE__;
+const char *const buildTime        = __BUILD_TIME__;
+const char *const FwVersion        = __FW_VER__;
+const char *const ApiVersion       = __API_VER__;
