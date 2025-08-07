@@ -30,7 +30,7 @@ TARGET	?=	PRIMUSX
 BUILD_TYPE	?= BIN
 LIB_MAJOR_VERSION	=	0
 LIB_MINOR_VERSION	=	3
-FW_Version	=	1.0.0
+FW_Version	=	2.0.1
 API_Version	=	1.0.1
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE	?=
@@ -66,8 +66,7 @@ VALID_TARGETS	=	PRIMUSV3R PRIMUSX
 
 ROOT	:=	$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 SRC_DIR	=	$(ROOT)/src/main
-OBJECT_DIR	=	$(ROOT)/obj/main
-BIN_DIR	=	$(ROOT)/obj
+BUILD_DIR	=	$(ROOT)/Build
 CMSIS_DIR	=	$(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS	=	$(SRC_DIR)
 LINKER_DIR	=	$(ROOT)/src/main/target
@@ -489,12 +488,12 @@ ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS))
 endif
 
-TARGET_BIN	 = $(BIN_DIR)/$(FORKNAME)_$(TARGET).bin
-TARGET_HEX	 = $(BIN_DIR)/Experience_PLUTOX.hex
-TARGET_ELF	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
-TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
-TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $($(TARGET)_SRC))))
-TARGET_MAP	 = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
+TARGET_BIN	 = $(BUILD_DIR)/$(TARGET)/$(FORKNAME)_$(TARGET).bin
+TARGET_HEX	 = $(BUILD_DIR)/$(TARGET)/$(TARGET)-$(FW_Version).hex
+TARGET_ELF	 = $(BUILD_DIR)/$(TARGET)/$(FORKNAME)_$(TARGET).elf
+TARGET_MAP	 = $(BUILD_DIR)/$(TARGET)/$(FORKNAME)_$(TARGET).map
+TARGET_OBJS	 = $(addsuffix .o,$(addprefix $(BUILD_DIR)/$(TARGET)/bin/,$(basename $($(TARGET)_SRC))))
+TARGET_DEPS	 = $(addsuffix .d,$(addprefix $(BUILD_DIR)/$(TARGET)/bin/,$(basename $($(TARGET)_SRC))))
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -517,24 +516,24 @@ libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a: $(TARGET_OBJS)
 	$(AR) rcs $@ $^
 
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.cpp
+$(BUILD_DIR)/$(TARGET)/bin/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CCFLAGS) $<
 
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+$(BUILD_DIR)/$(TARGET)/bin/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(C) -c -o $@ $(CFLAGS) $<
 
 # Assemble
-$(OBJECT_DIR)/$(TARGET)/%.o: %.s
+$(BUILD_DIR)/$(TARGET)/bin/%.o: %.s
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(ASFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.S
+$(BUILD_DIR)/$(TARGET)/bin/%.o: %.S
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(ASFLAGS) $<
@@ -545,7 +544,7 @@ libcreate: libs/libpluto_$(LIB_MAJOR_VERSION).$(LIB_MINOR_VERSION).a
 ## clean       : clean up all temporary / machine-generated files
 clean:
 	rm -f $(TARGET_BIN) $(TARGET_HEX) $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
-	rm -rf $(OBJECT_DIR)/$(TARGET)
+	rm -rf $(BUILD_DIR)/$(TARGET)
 	cd src/test && $(MAKE) clean || true
 
 flash_$(TARGET): $(TARGET_HEX)

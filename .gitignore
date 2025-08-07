@@ -1,5 +1,5 @@
 #object files
-obj/
+Build/
 #static lib files
 libs/
 #Cygnus project settings files and hidden files
