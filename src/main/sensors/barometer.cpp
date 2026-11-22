@@ -30,6 +30,7 @@
 
 #include "drivers/system.h"
 #include "config/config.h"
+#include "config/runtime_config.h"    // ARMING_FLAG ( ARMED ) for the ground zero below
 
 #include "sensors/barometer.h"
 
@@ -340,6 +341,98 @@ uint32_t getBaroLastUpdate()
 
 }
 
+/*
+ * Ground zero upkeep, ported from MagisV2 4657cbf. The boot-time ground reference
+ * goes stale as the board sits on the ground before take-off ( log-3: the estimate
+ * read -46 cm on the floor it booted on ). While disarmed the craft is on the ground,
+ * so the zero tracks the reading ( IIR, to reject pressure noise ) and freezes on
+ * arm: from then on altitude is measured from where the craft armed. Kept as a
+ * separate offset rather than by rewriting baroGroundPressure, as INAV and MagisV2 do.
+ *
+ * "Disarmed" alone does not mean "on the ground" in Magis, which is why the settle
+ * hold below exists. A flip that times out ( acrobats.cpp ) and the ARM switch
+ * turned off in the air ( rc_controls.cpp ) both call mwDisarm ( ) mid-flight without
+ * setting Crash, and the craft can re-arm during the fall that follows: the chuck-arm
+ * branch fires on netAccMagnitude < 11 and mwArm ( ) passes on netAccMagnitude < 2.
+ * Tracking during those few hundred milliseconds would pull the datum up toward the
+ * height the craft was falling from ( 5 % of it per baro sample, so 45-80 cm after a
+ * 0.5-1 s toggle at 2 m ), and the next flight's ceiling and absolute heights would
+ * all be measured from there. MagisV2 gates on ARMED alone and has the same gap.
+ *
+ * Departures from MagisV2, all because the offset is state:
+ * - The settle hold above: tracking only resumes BARO_ZERO_SETTLE_MS after a disarm,
+ *   which is longer than any fall the chuck-arm can catch.
+ * - A non-finite or absurd reading is not fed to the IIR. A single NaN would
+ *   otherwise latch in the offset for the rest of the power cycle and make every
+ *   later altitude NaN; before this upkeep, one bad sample cost one bad altitude.
+ * - Updated at most once per baro sample, keyed on its timestamp. Today baroUpdateZero ( )
+ *   is reached once per sample anyway ( checkBaro ( ) in altitudehold.cpp gates on the
+ *   same timestamp, and checkReading ( ) is compiled out unless LASER_ALT ), so this is
+ *   a guard, not a fix: it keeps the time constant right if a second caller is ever added.
+ *
+ * baroGroundPressure is written only by the boot calibration ( baroCalibrate ( ) from
+ * main.cpp ), so the first seed is the only seed. The gyro-calibration stick command's
+ * baroSetCalibrationCycles ( ) reaches only performBaroCalibrationCycle ( ), which
+ * nothing calls on this target.
+ */
+#define BARO_ZERO_TRACK_ALPHA 0.05f           // per baro sample: about 2 s at 10 Hz
+#define BARO_ZERO_SANE_CM     100000.0f       // 1 km: beyond this a ground reading is garbage
+#define BARO_ZERO_SETTLE_MS   3000            // after a disarm, wait this long before tracking again
+
+static float baroAltitudeOffset = 0.0f;       // cm, the ground zero subtracted from the raw altitude
+static bool baroOffsetSeeded = false;
+static uint32_t baroZeroLastUpdate = 0;       // baro sample time last applied
+static bool baroZeroWasArmed = false;
+static uint32_t baroZeroDisarmAtMs = 0;       // millis ( ) at the last disarm, 0 = none yet
+
+static void baroUpdateZero(float rawAltitude)
+{
+    const bool armed = (ARMING_FLAG(ARMED) != 0);
+
+    if (armed != baroZeroWasArmed) {
+        baroZeroWasArmed = armed;
+        if (!armed) {
+            baroZeroDisarmAtMs = millis();
+        }
+    }
+
+    // Frozen while armed: this is the datum the flight is measured against.
+    if (armed) {
+        return;
+    }
+
+    // Just disarmed: the craft may still be in the air and may re-arm there ( see above ).
+    if (baroZeroDisarmAtMs != 0 && (millis() - baroZeroDisarmAtMs) < BARO_ZERO_SETTLE_MS) {
+        return;
+    }
+
+    // NaN compares false, so this also rejects NaN and inf.
+    if (!(fabsf(rawAltitude) < BARO_ZERO_SANE_CM)) {
+        return;
+    }
+
+    const uint32_t sampleTime = getBaroLastUpdate();
+
+    if (!baroOffsetSeeded) {
+        baroAltitudeOffset = rawAltitude;
+        baroZeroLastUpdate = sampleTime;
+        baroOffsetSeeded = true;
+        return;
+    }
+
+    if (sampleTime == baroZeroLastUpdate) {
+        return;    // this sample has been applied already
+    }
+    baroZeroLastUpdate = sampleTime;
+
+    baroAltitudeOffset += (rawAltitude - baroAltitudeOffset) * BARO_ZERO_TRACK_ALPHA;
+}
+
+float getBaroZeroOffset(void)
+{
+    return baroAltitudeOffset;
+}
+
 float apmBaroCalculateAltitude(void)
 {
 
@@ -348,7 +441,11 @@ float apmBaroCalculateAltitude(void)
     float scaling = (float) baroGroundPressure / (float) baroPressure;
     float temp = (baroGroundTemperature + 27315) / 100;
 
-    BaroAlt = logf(scaling) * temp * 29.271267f * 100;
+    const float rawAltitude = logf(scaling) * temp * 29.271267f * 100;    // cm above the boot reference
+
+    baroUpdateZero(rawAltitude);
+
+    BaroAlt = rawAltitude - baroAltitudeOffset;    // cm above where the craft armed
 
     return BaroAlt;
 

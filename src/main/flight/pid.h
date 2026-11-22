@@ -107,6 +107,7 @@ extern  int16_t lastGyroReadings[3];
 void pidSetController(pidControllerType_e type);
 void pidResetErrorAngle(void);
 void pidResetErrorGyro(void);
+void pidSetGyroITermFreeze(bool freeze);    // pidRewrite holds its rate I-term while set ( mw.cpp, airborne stick-down )
 
 
 

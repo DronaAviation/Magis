@@ -1,0 +1,2 @@
+# Local rollback image: kept on disk, never committed
+*.hex

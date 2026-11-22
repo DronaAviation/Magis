@@ -30,8 +30,8 @@ TARGET	?=	PRIMUSX
 BUILD_TYPE	?= BIN
 LIB_MAJOR_VERSION	=	0
 LIB_MINOR_VERSION	=	3
-FW_Version	=	2.0.1
-API_Version	=	1.0.1
+FW_Version	=	2.1.0
+API_Version	=	1.0.2
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE	?=
 # Debugger optons, must be empty or GDB

@@ -153,6 +153,11 @@ uint32_t arm_time        = 0;
 
 bool isBlackboxOn = false;
 
+// True once the throttle rose above mincheck since arming ( airborne ). Read by processRx ( ) to
+// freeze, not reset, the attitude I-term on a full stick-down in flight. Cleared in mwDisarm ( ).
+// Ported from MagisV2 4657cbf; Magis has no arm-time baro re-zero for it to guard.
+static bool throttleRaisedSinceArm = false;
+
 // bool isFlipDone=false;
 // bool startStable=false;
 
@@ -349,6 +354,10 @@ void annexCode ( void ) {
     rcData [ THROTTLE ] = landThrottle;
   }
 
+  if ( ARMING_FLAG ( ARMED ) && rcData [ THROTTLE ] > masterConfig.rxConfig.mincheck ) {
+    throttleRaisedSinceArm = true;
+  }
+
   tmp                    = constrain ( rcData [ THROTTLE ], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX );
   tmp                    = ( uint32_t ) ( tmp - masterConfig.rxConfig.mincheck ) * PWM_RANGE_MIN / ( PWM_RANGE_MAX - masterConfig.rxConfig.mincheck );    // [MINCHECK;2000] -> [0;1000]
   tmp2                   = tmp / 100;
@@ -494,6 +503,8 @@ void mwDisarm ( void ) {
   setTakeOffTimer    = true;
   isTookOff          = false;
   isTakeOffHeightSet = false;
+  throttleRaisedSinceArm = false;
+  pidSetGyroITermFreeze ( false );
   takeOffThrottle    = 950;
   takeOffHeight      = 120;
   landThrottle       = 1200;
@@ -786,7 +797,16 @@ void processRx ( void ) {
 
   throttleStatus_e throttleStatus = calculateThrottleStatus ( &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle );
 
-  if ( throttleStatus == THROTTLE_LOW ) {
+  // Stick at the bottom ( raw throttle below mincheck ): on the ground, at arming and in ground idle the
+  // attitude I-terms are reset ( anti wind-up ). Airborne, that reset drops the trim that holds an off-centre
+  // CG and the craft leans toward it, so pidRewrite freezes its rate I-term instead ( MagisV2 a7f398d,
+  // payload-tilt-on-descent ). throttleStatus itself is unchanged.
+  const bool freezeGyroITerm = throttleStatus == THROTTLE_LOW && ARMING_FLAG ( ARMED ) && throttleRaisedSinceArm
+                               && ! isThrottleStickArmed
+                               && ( pidControllerType_e ) currentProfile->pidProfile.pidController == PID_CONTROLLER_REWRITE;
+  pidSetGyroITermFreeze ( freezeGyroITerm );
+
+  if ( throttleStatus == THROTTLE_LOW && ! freezeGyroITerm ) {
     pidResetErrorAngle ( );
     pidResetErrorGyro ( );
   }
