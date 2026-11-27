@@ -57,6 +57,8 @@ bool isBaroReady(void);
 float baroCalculateAltitude(void);
 float getBaroPressure(void);
 float getBaroTemperature(void);
+// Ground zero offset in cm: tracks the reading while disarmed, frozen on arm ( MagisV2 4657cbf ).
+float getBaroZeroOffset(void);
 uint32_t getBaroLastUpdate(void);
 void performBaroCalibrationCycle(void);
 void baroCalibrate(void);

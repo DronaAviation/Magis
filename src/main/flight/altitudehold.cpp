@@ -30,6 +30,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/gpio.h"
+#include "drivers/system.h"
 #include "drivers/ranging_vl53l0x.h"
 
 #include "sensors/sensors.h"
@@ -49,16 +50,21 @@
 #include "config/runtime_config.h"
 
 #include "command/command.h"
+#include "flight/acrobats.h"
 #include "altitudehold.h"
 
-uint8_t velocityControl = 1;
+// Distance below max_altitude where limitAltitude ( ) stops accepting climb, cm.
+// It has no velocity term, so this is the stopping distance: keep it at least
+// the overshoot at the fastest climb flown, or the ceiling gets breached.
+#define ALT_CEILING_MARGIN_CM 25
+
 int16_t max_altitude = -1;
 int16_t althold_throttle = 0;
 int32_t errorVelocityI = 0;
 int32_t altHoldThrottleAdjustment = 0;
 int32_t AltHold;
 int32_t vario = 0;                      // variometer in cm/s
-int32_t setVelocity = 0;
+int32_t setVelocity = 0;                // rate requested by the stick, or the landing descent, cm/s ( getSetVelocity ( ) )
 int32_t calculatedError = 10;
 int32_t VelocityZ;
 int32_t baroAlt_offset_print = 0;
@@ -168,6 +174,162 @@ static int32_t EstAlt = 0;                // in cm
 #define UPDATE_FREQUENCY (1000 * 10) //100Hz
 
 #define DEGREES_80_IN_DECIDEGREES 800
+
+/*
+ * Hover-trim offload. With initialThrottleHold pinned at 1500, the whole hover
+ * trim lives in errorVelocityI, clamped at +/- 300 counts, so hover throttle
+ * could not go above 1800 and the craft sank as the battery sagged.
+ *
+ * While settled ( armed, stick centred, setpoint fixed, |VelocityZ| small ) the
+ * trim moves into initialThrottleHold one count at a time. Commanded throttle
+ * is unchanged: the baseline gains what the integrator loses, and
+ * altHoldThrottleAdjustment is corrected here too, since it only updates at
+ * 100 Hz. Never offload mid-climb - a transient would stick in the baseline.
+ */
+#define ALT_TRIM_OFFLOAD_MS  20         // ms, at most one count this often
+#define ALT_TRIM_OFFLOAD_VEL 10         // cm/s below which the craft counts as settled
+
+/*
+ * Setpoint shaping ( ArduPilot / DJI style ). The throttle stick never takes the
+ * position loop out of the chain: it sets a climb rate that moves AltHold, and
+ * the position loop keeps tracking the moving target with that rate fed
+ * forward. The rate is ramped, so climbs and descents start and stop without a
+ * step, and centring the stick lets the target coast to a stop instead of
+ * snapping it to wherever EstAlt happens to be ( which overshot ).
+ *
+ * A new AltHold written from outside ( take-off, setAltitude ( ),
+ * setRelativeAltitude ( ), MSP ) is not jumped to. It becomes a goal, and the
+ * target travels there on a profile: ramp up, cruise at the command rate, and
+ * brake at ALT_GOAL_DECEL_CMSS just in time to stop on it. Stepping AltHold
+ * instead left the P = 1 position loop to close the gap, and its demand shrinks
+ * with the gap, so the last 40 cm of a 120 cm take-off crawled. Moving the
+ * stick cancels the goal.
+ *
+ * setVelocity holds the request ( stick rate, landing descent, 0 when centred ),
+ * as getSetVelocity ( ) returns it. The final velocity setpoint is clamped and
+ * slewed as well; it lives in altVelTarget and the controller's setVel.
+ */
+#define ALT_MAX_CLIMB_CMS       40      // cm/s, full stick up
+#define ALT_MAX_DESCENT_CMS     30      // cm/s, full stick down
+#define ALT_CMD_MAX_CLIMB_CMS   60      // cm/s, cruise up to a commanded goal ( take-off )
+#define ALT_CMD_MAX_DESCENT_CMS 30      // cm/s, cruise down to a commanded goal
+#define ALT_GOAL_DECEL_CMSS     80      // cm/s^2, braking into a goal ( below the ramp, so the ramp can follow it )
+#define ALT_STICK_FULL_TRAVEL   500     // RC counts from centre ( 1500 ) to end
+#define ALT_STICK_ACCEL_CMSS    100     // cm/s^2, ramp of the profile rate
+#define ALT_VEL_ACCEL_CMSS      150     // cm/s^2, slew of the final velocity setpoint
+#define ALT_TARGET_LEASH_CM     50      // cm, target stops advancing this far from EstAlt
+
+/*
+ * Landing keeps its own descent profile, not the stick limits. annexCode ( )
+ * ( mw.cpp ) writes landThrottle into rcData[THROTTLE] while isLanding, flown as
+ * ( landThrottle - 1500 ) / 4: -75 cm/s at the default 1200, and -48 to -112 cm/s
+ * ( clamped here to -100 ) when user code picks a speed through Command.land ( )
+ * ( API/User.cpp: landThrottle = 1305 - landSpeed ). Near the floor the baro drifts
+ * low in the craft's own downwash; at the stick's 10-20 cm/s that drift alone
+ * met the descent demand, so the craft hovered a few cm up with EstAlt still
+ * falling and the touchdown test ( descent stopped ) never fired.
+ */
+#define ALT_LAND_MAX_DESCENT_CMS 100    // cm/s, descent clamp while isLanding
+
+static float altRate = 0.0f;            // ramped profile rate moving the target, cm/s
+static float altVelTarget = 0.0f;       // slewed velocity setpoint, cm/s
+static float altTarget = 0.0f;          // AltHold with the fraction kept, cm
+static float altGoal = 0.0f;            // commanded altitude the target is travelling to, cm
+static bool altGoalActive = false;
+static bool altHoldGroundIdle = false;  // armed on the throttle stick, motors held at idle
+
+// Drop all setpoint shaping state and pin the target to the current estimate.
+static void resetAltSetpoint(void)
+{
+    altRate = 0.0f;
+    altVelTarget = 0.0f;
+    altGoalActive = false;
+    AltHold = EstAlt;
+    altTarget = (float) EstAlt;
+}
+
+/*
+ * Flip ( acrobats.cpp ) keeps ALT_HOLD on: its DEACTIVATE_RC_MODE(BOXBARO) is
+ * undone by updateActivatedModes ( ) on the next RX frame while the app holds the
+ * BARO AUX channel, before updateAltHoldState ( ) reads it. It drives
+ * rcData[THROTTLE] itself ( 2000 in ASCEND and HOLD ) and ASCEND waits for
+ * VelocityZ >= 100 cm/s before it starts the rotation. Through setpoint shaping
+ * full stick is 40 cm/s, so ASCEND timed out after 2.2 s and never flipped
+ * ( MagisV2 flip-althold-regression ). While a flip runs, the controller flies
+ * the raw rate path it had before setpoint shaping instead.
+ */
+#define ALT_FLIP_MAX_CLIMB_CMS   120    // cm/s, ( 2000 - 1500 ) / 4 = 125, clamped as before shaping
+#define ALT_FLIP_MAX_DESCENT_CMS 100    // cm/s
+#define ALT_FLIP_EXIT_IGNORE_MS  100    // ms, throttle ignored after a flip ( RX refresh <= 20 ms )
+#define ALT_FLIP_RETURN_MIN_CM   20     // cm, pre-flip AltHold below this is treated as on the ground: no return
+#define ALT_FLIP_EXIT_I_HOLD_MS  500    // ms, velocity integrator held after a flip while its climb is braked
+
+static bool flipActive(void)
+{
+#ifdef ENABLE_ACROBAT
+    return flipState != 0;
+#else
+    return false;
+#endif
+}
+
+// Pre-shaping controller: outside the deadband the rate is fed straight to the
+// velocity loop with no cap, ramp or slew; inside it the position loop holds
+// AltHold. The shaping state follows; the hand-back on exit is in
+// calculateAltHoldThrottleAdjustment ( ). Returns cm/s.
+static int32_t flipVelocitySetpoint(void)
+{
+    int32_t setVel;    // cm/s
+
+    if (setVelocity != 0) {
+        AltHold = EstAlt;
+        setVel = setVelocity;
+    } else {
+        const int32_t error = constrain(AltHold - EstAlt, -500, 500);    // cm
+        calculatedError = error;
+        altholdDebug8 = error;
+        setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300);
+    }
+
+    altTarget = (float) AltHold;
+    altRate = 0.0f;
+    altGoalActive = false;
+    altVelTarget = (float) setVel;
+    return setVel;
+}
+
+static void offloadHoverTrim(void)
+{
+    static uint32_t lastOffload = 0;    // ms
+
+    if (!ARMING_FLAG(ARMED) || altHoldGroundIdle || setVelocity != 0 || altRate != 0.0f || altGoalActive)
+        return;
+
+    if (ABS(VelocityZ) > ALT_TRIM_OFFLOAD_VEL)
+        return;
+
+    uint32_t now = millis();
+    if ((now - lastOffload) < ALT_TRIM_OFFLOAD_MS)
+        return;
+
+    lastOffload = now;
+
+    int32_t trim = errorVelocityI / 8192;   // throttle counts
+    if (trim == 0)
+        return;
+
+    int32_t step = (trim > 0) ? 1 : -1;
+    int32_t baseline = (int32_t) initialThrottleHold + step;
+
+    // Never walk the baseline outside what the ESCs can be commanded anyway.
+    if (baseline < escAndServoConfig->minthrottle || baseline > escAndServoConfig->maxthrottle)
+        return;
+
+    initialThrottleHold = (int16_t) baseline;
+    errorVelocityI -= step * 8192;
+    altHoldThrottleAdjustment -= step;
+}
+
 /** Drone should maintian its altitude which it attins at the throttle of '1500'*/
 static void applyMultirotorAltHold(void)
 {
@@ -188,9 +350,16 @@ static void applyMultirotorAltHold(void)
 
         } else {
             if (isAltHoldChanged) {
-                AltHold = EstAlt;
+                // Not just AltHold: the target and rate must go too, or the recentred
+                // height reads as an external write and is flown back to as a goal from
+                // wherever the target was left ( the craft sank about a third of the
+                // climb ). Fast mode is off by default ( alt_hold_fast_change 0 ).
+                resetAltSetpoint();
 //                AltHold = 120;
                 isAltHoldChanged = 0;
+                // Do NOT reset errorVelocityI here: it holds the hover trim, so
+                // clearing it drops the throttle and the craft falls. Reset only on
+                // BARO entry / disarm.
                 if (ARMING_FLAG(ARMED)) {
                     //altHoldThrottleAdjustment = throttle_history;
                 }
@@ -201,30 +370,42 @@ static void applyMultirotorAltHold(void)
 
         }
     } else {
-        // slow alt changes, mostly used for aerial photography
-        if (ABS(rcData[THROTTLE] - 1500) > rcControlsConfig->alt_hold_deadband) {
-            // set velocity proportional to stick movement +100 throttle gives ~ +50 cm/s
-            //setVelocity = (rcData[THROTTLE] - masterConfig.rxConfig.midrc) / 6;
+        // slow alt changes: the stick sets the climb rate that moves AltHold ( see
+        // setpoint shaping ). The rate starts at zero on the deadband edge, so
+        // leaving the deadband is not a step, and reaches the maximum at full stick.
+        const int32_t deflection = rcData[THROTTLE] - 1500;    // RC counts from centre
+        const int32_t deadband = rcControlsConfig->alt_hold_deadband;
 
-            setVelocity = (rcData[THROTTLE] - 1500) / 4;
-            setVelocity = constrain(setVelocity, -100, 120); //to descend smoothly
+        // flip ( ) writes 2000 into rcData[THROTTLE] on its last tick as well, and
+        // it stays there until the next RX frame. Read as stick it would cancel the
+        // return-to-height goal set on flip exit, so ignore the throttle briefly.
+        static bool flipSeen = false;
+        static uint32_t flipEndedAtMs = 0;    // ms, millis ( ) at the flip's end, 0 = none yet
+        if (flipActive()) {
+            flipSeen = true;
+        } else if (flipSeen) {
+            flipSeen = false;
+            flipEndedAtMs = millis();
+        }
+        const bool flipExitGrace = (flipEndedAtMs != 0) && ((millis() - flipEndedAtMs) < ALT_FLIP_EXIT_IGNORE_MS);
 
-            /* if (isAltHoldChanged)
-             velocityControl = 0;
-             else
-             velocityControl = 1;*/
-
-            velocityControl = 1; //Switch on velocity hold
-            isAltHoldChanged = 1;
-
-        } else {
-
-            velocityControl = 0; //Switch on altitude hold
+        if (isLanding) {
+            // rcData[THROTTLE] holds landThrottle here ( annexCode ( ) in mw.cpp ):
+            // the landing descent never goes through the stick limits.
+            setVelocity = constrain(deflection / 4, -ALT_LAND_MAX_DESCENT_CMS, 0);
+        } else if (flipExitGrace) {
             setVelocity = 0;
-            if (isAltHoldChanged) {
-                AltHold = EstAlt; //Record the height to be maintained
-                isAltHoldChanged = 0;
-            }
+        } else if (flipActive()) {
+            // rcData[THROTTLE] is written by flip ( ), not the pilot: raw rate as
+            // before setpoint shaping ( see flipVelocitySetpoint ( ) ).
+            setVelocity = (ABS(deflection) > deadband) ? constrain(deflection / 4, -ALT_FLIP_MAX_DESCENT_CMS, ALT_FLIP_MAX_CLIMB_CMS) : 0;
+        } else if (ABS(deflection) > deadband) {
+            const int32_t maxRate = (deflection > 0) ? ALT_MAX_CLIMB_CMS : ALT_MAX_DESCENT_CMS;
+            const int32_t rate = constrain((ABS(deflection) - deadband) * maxRate / (ALT_STICK_FULL_TRAVEL - deadband), 0, maxRate);
+            setVelocity = (deflection > 0) ? rate : -rate;
+        } else {
+            setVelocity = 0;
+            offloadHoverTrim();
         }
 
         rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
@@ -248,21 +429,28 @@ static void applyMultirotorAltHold(void)
 //        	  rcCommand[THROTTLE] = 1000;
 //        }
 
-        if (isThrottleStickArmed && rcData[THROTTLE] <= 1500) {
-            // rcData[THROTTLE] = 1000;
-            rcCommand[THROTTLE] = 1000;
-        } else {
-            isThrottleStickArmed = false;
-        }
-
-        althold_throttle = rcCommand[THROTTLE];
-
-        altholdDebug = AltHold;
-       // altholdDebug2 = velocityControl;
-        altholdDebug3 = isAltHoldChanged;
-        altholdDebug4 = rcCommand[THROTTLE];
-
     }
+
+    // Both modes: armed on the throttle stick with the stick down means the craft is
+    // still on its skids, so hold the motors at idle and tell the controller to stay
+    // in reset. Outside the if / else as in MagisV2 c569c0f: inside the slow branch
+    // this never ran with alt_hold_fast_change = 1, so that mode neither held the
+    // controller in reset on the ground nor cleared isThrottleStickArmed, which left
+    // the airborne I-term freeze switched off for the whole flight.
+    if (isThrottleStickArmed && rcData[THROTTLE] <= 1500) {
+        // rcData[THROTTLE] = 1000;
+        rcCommand[THROTTLE] = 1000;
+        altHoldGroundIdle = true;
+    } else {
+        isThrottleStickArmed = false;
+        altHoldGroundIdle = false;
+    }
+
+    althold_throttle = rcCommand[THROTTLE];
+
+    altholdDebug = AltHold;
+    altholdDebug3 = altGoalActive ? 1 : 0;    // goal profile running
+    altholdDebug4 = rcCommand[THROTTLE];
 }
 
 static void applyFixedWingAltHold(airplaneConfig_t *airplaneConfig)
@@ -288,13 +476,16 @@ void updateAltHoldState(void)
     // Baro alt hold activate
     if (!IS_RC_MODE_ACTIVE(BOXBARO)) {
         DISABLE_FLIGHT_MODE(BARO_MODE);
+        // applyAltHold ( ) no longer runs, so nothing else clears the stick inputs.
+        setVelocity = 0;
+        altHoldGroundIdle = false;
         return;
     }
 
     if (!FLIGHT_MODE(BARO_MODE)) {
 
         ENABLE_FLIGHT_MODE(BARO_MODE);
-        AltHold = EstAlt;       //+100;
+        resetAltSetpoint();
         //initialThrottleHold = rcData[THROTTLE];
         initialThrottleHold = 1500;
         errorVelocityI = 0;
@@ -316,7 +507,7 @@ void updateSonarAltHoldState(void)
 
     if (!FLIGHT_MODE(SONAR_MODE)) {
         ENABLE_FLIGHT_MODE(SONAR_MODE);
-        AltHold = EstAlt;
+        resetAltSetpoint();
         initialThrottleHold = rcData[THROTTLE];
         errorVelocityI = 0;
         altHoldThrottleAdjustment = 0;
@@ -338,39 +529,148 @@ int16_t calculateTiltAngle(rollAndPitchInclination_t *inclination)
     return MAX(ABS(inclination->values.rollDeciDegrees), ABS(inclination->values.pitchDeciDegrees));
 }
 
-int32_t calculateAltHoldThrottleAdjustment(int32_t velocity_z, float accZ_tmp, float accZ_old)
+/*
+ * Altitude P-controller with setpoint shaping ( see the shaping block above ).
+ * Moves the target, then returns the velocity setpoint for the velocity loop:
+ * profile rate fed forward plus P_ALT x the position error, clamped per source
+ * and slewed. ctrlDt is the control-loop period, s. Returns cm/s.
+ */
+static int32_t shapedVelocitySetpoint(float ctrlDt)
+{
+    int32_t error;
+
+    // AltHold written elsewhere ( take-off, setAltitude ( ), setRelativeAltitude ( ),
+    // MSP ) becomes the goal; the target stays where it is and travels there below.
+    if (AltHold != lrintf(altTarget)) {
+        altGoal = (float) AltHold;
+        altGoalActive = true;
+    }
+    if (setVelocity != 0) {
+        altGoalActive = false;    // the stick ( or landing ) takes over
+    }
+
+    // Rate the target should move at: the stick's, or the goal profile's - the
+    // fastest rate that can still brake to a stop on the goal, capped at cruise.
+    float profileRate = (float) setVelocity;    // cm/s
+    if (altGoalActive) {
+        const float remaining = altGoal - altTarget;    // cm
+        const float stopRate = sqrtf(2.0f * ALT_GOAL_DECEL_CMSS * fabsf(remaining));
+        if (remaining > 0.0f) {
+            profileRate = fminf(stopRate, (float) ALT_CMD_MAX_CLIMB_CMS);
+        } else {
+            profileRate = -fminf(stopRate, (float) ALT_CMD_MAX_DESCENT_CMS);
+        }
+    }
+
+    const float rateStep = ALT_STICK_ACCEL_CMSS * ctrlDt;    // cm/s per tick
+    altRate += constrainf(profileRate - altRate, -rateStep, rateStep);
+
+    // Move the target. The leash stops it running away from a craft that cannot
+    // keep up ( still on the ground, weak battery ); the rate is kept, so it resumes
+    // as soon as the craft catches up.
+    const float nextTarget = altTarget + altRate * ctrlDt;
+    if (!((altRate > 0.0f && nextTarget > (float) (EstAlt + ALT_TARGET_LEASH_CM)) || (altRate < 0.0f && nextTarget < (float) (EstAlt - ALT_TARGET_LEASH_CM)))) {
+        altTarget = nextTarget;
+    }
+
+    // Arrived: land exactly on the goal once the profile has braked.
+    if (altGoalActive && fabsf(altGoal - altTarget) < 1.0f && fabsf(altRate) <= 2.0f * rateStep) {
+        altTarget = altGoal;
+        altRate = 0.0f;
+        altGoalActive = false;
+    }
+    AltHold = lrintf(altTarget);
+
+    error = constrain(AltHold - EstAlt, -500, 500);    // cm
+    // No deadband on the position error: applyDeadband ( ) subtracts, so a 5 cm
+    // band took 5 cm off every error ( a 10 cm sag read as 5 ) and caused a limit
+    // cycle. EstAlt is already smooth ( ~1 cm between samples ), so none is needed.
+    calculatedError = error;
+    altholdDebug8 = error;
+
+    // Profile rate fed forward plus the position loop, clamped and slewed.
+    const float maxClimb = altGoalActive ? (float) ALT_CMD_MAX_CLIMB_CMS : (float) ALT_MAX_CLIMB_CMS;
+    const float maxDescent = isLanding ? (float) ALT_LAND_MAX_DESCENT_CMS : (altGoalActive ? (float) ALT_CMD_MAX_DESCENT_CMS : (float) ALT_MAX_DESCENT_CMS);
+    float velDemand = altRate + (float) pidProfile->P8[PIDALT] * (float) error / 128.0f;
+    velDemand = constrainf(velDemand, -maxDescent, maxClimb);
+    const float velStep = ALT_VEL_ACCEL_CMSS * ctrlDt;    // cm/s per tick
+    altVelTarget += constrainf(velDemand - altVelTarget, -velStep, velStep);
+
+    return lrintf(altVelTarget);
+}
+
+int32_t calculateAltHoldThrottleAdjustment(int32_t velocity_z, float accZ_tmp, float accZ_old, float ctrlDt)
 {
     int32_t result = 0;
     int32_t error;
     int32_t setVel;
 
+    // Flip hand-back ( MagisV2 flip-althold-regression ). HOLD asks for 120 cm/s
+    // while the craft falls out of the rotation, so the velocity integrator winds
+    // up, and the flip's last setpoint ( 120 ) was left for the slew to walk down:
+    // together they drove a flyaway into the ceiling. On exit, restart from a zero
+    // setpoint with the hover trim from before the flip, and fly back to the
+    // altitude ALT_HOLD was holding when the flip was sent: HOLD's fixed 1.5 s of
+    // full throttle ends the flip 40-120 cm high. Writing AltHold makes it a goal,
+    // flown on the goal profile like take-off; the stick cancels it. Checked ahead
+    // of the tilt test so a flip that ends tilted is still handed back.
+    static bool altFlipWasActive = false;
+    static int32_t altPreFlipVelocityI = 0;
+    static int32_t altPreFlipAltHold = 0;     // cm
+    static bool altPreFlipReturn = false;
+    static int32_t altGroundAlt = 0;          // cm, EstAlt last seen on the ground ( see the reset below )
+    static uint32_t altFlipExitAtMs = 0;      // ms, millis ( ) at flip exit, 0 = no hold
+    const bool flipping = flipActive();
+    if (flipping && !altFlipWasActive) {
+        // Without BARO_MODE the integrator is chasing an AltHold nothing actuates;
+        // save what BARO entry would reset it to instead, and hold where the flip
+        // ends ( a user-code flip can start with ALT_HOLD off, command.cpp only
+        // checks MAG_MODE ).
+        altPreFlipVelocityI = FLIGHT_MODE(BARO_MODE) ? errorVelocityI : 0;
+        // Only return to a height the craft was flying at: a flip sent while armed on
+        // the floor would fly back down to it with the motors running, and the
+        // ground-effect baro bias can then hold it just above the surface with no
+        // touchdown detection. Measured against altGroundAlt rather than a bare 20 cm:
+        // the barometer datum freezes at the arm instant ( sensors/barometer.cpp ), so
+        // altGroundAlt is normally about 0 and this matches MagisV2's test, but after a
+        // disarm and re-arm in the air the datum is the first arm's and a bare threshold
+        // would measure from there. ( altHoldGroundIdle is ANDed in as well, but it is
+        // usually already false by the time the 100 Hz tick sees the flip, so the
+        // altGroundAlt difference is what actually guards this. )
+        // While a goal is being flown AltHold is the moving target, so take the goal
+        // itself: otherwise flips sent during the return descent ratchet the height up.
+        const int32_t preFlipTarget = altGoalActive ? lrintf(altGoal) : AltHold;    // cm
+        altPreFlipReturn = FLIGHT_MODE(BARO_MODE) && !altHoldGroundIdle && (preFlipTarget - altGroundAlt) >= ALT_FLIP_RETURN_MIN_CM;
+        altPreFlipAltHold = preFlipTarget;
+    } else if (!flipping && altFlipWasActive) {
+        resetAltSetpoint();
+        errorVelocityI = altPreFlipVelocityI;
+        altFlipExitAtMs = millis();
+        if (altPreFlipReturn) {
+            AltHold = altPreFlipAltHold;
+        }
+    }
+    altFlipWasActive = flipping;
+
     if (!isThrustFacingDownwards(&inclination)) {
         return result;
     }
 
-    // Altitude P-Controller
-    if (!ARMING_FLAG(ARMED)) {
-        AltHold = EstAlt;
-        //initialThrottleHold=1500;
+    // Disarmed, or armed on the throttle stick with the motors held at idle: the
+    // craft is on the ground, so hold the whole controller in reset. Otherwise the
+    // integrator winds down against a craft that cannot move and the take-off is
+    // late and sluggish.
+    if (!ARMING_FLAG(ARMED) || altHoldGroundIdle) {
+        resetAltSetpoint();
+        errorVelocityI = 0;
+        altFlipExitAtMs = 0;    // no post-flip integrator hold after a re-arm
+        altGroundAlt = EstAlt;  // cm, the surface the flip return test measures against
+        return result;
     }
 
-    if (!velocityControl) {
-        // error = constrain(AltHold - EstAlt, -100, 100);
-        error = constrain(AltHold - EstAlt, -500, 500);
-        error = applyDeadband(error, 5); // remove small P parameter to reduce noise near zero position
+    ctrlDt = constrainf(ctrlDt, 0.0f, 0.05f);    // s
 
-        calculatedError = error;
-        altholdDebug8 = error;
-
-        // setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -80, +150); // limit velocity to +/- 3 m/s
-        setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
-
-    } else {
-
-        setVel = setVelocity;
-    }
-
-    //  altholdDebug=setVel;
+    setVel = flipActive() ? flipVelocitySetpoint() : shapedVelocitySetpoint(ctrlDt);
 
   //  altholdDebug1 = setVel;
 
@@ -385,9 +685,17 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t velocity_z, float accZ_tmp, f
 
     velControlDebug[0] = result;
 
+    // The flip ends climbing at ~120 cm/s; braking that from a near-zero setpoint
+    // drove the integrator to -20 counts in 0.4 s, and once the climb stopped that
+    // trim dropped the craft 15-46 cm below the target. Hold the restored pre-flip
+    // trim while the P term ( at its clamp ) brakes the climb.
+    const bool holdFlipExitI = (altFlipExitAtMs != 0) && ((millis() - altFlipExitAtMs) < ALT_FLIP_EXIT_I_HOLD_MS);
+
     // I
     if (ARMING_FLAG(ARMED)) {
-        errorVelocityI += (pidProfile->I8[PIDVEL] * error);
+        if (!holdFlipExitI) {
+            errorVelocityI += (pidProfile->I8[PIDVEL] * error);
+        }
     } else {
         errorVelocityI = 0;
     }
@@ -519,7 +827,7 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     vario = applyDeadband(vel_tmp, 5);
     if (1) //!(ABS(rcData[THROTTLE] - initialThrottleHold) > rcControlsConfig->alt_hold_deadband))
     {
-        altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
+        altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old, (float) dTime * 1e-6f);
     }        //dronadrona_1200am
     Temp = pidProfile->I8[PIDALT];
     barometerConfig->baro_cf_alt = 1 - Temp / 1000;
@@ -699,7 +1007,7 @@ void apmCalculateEstimatedAltitude(uint32_t currentTime)
 
     //   addHistPositionBaseEstZ(_position_base_z1);
 
-    altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(VelocityZ, accZ_tmp, accZ_old);
+    altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(VelocityZ, accZ_tmp, accZ_old, dt);
 
     altholdDebug7 = altHoldThrottleAdjustment;
 
@@ -853,7 +1161,10 @@ void correctedWithBaro(float baroAlt, float dt)
 //     }
 //     #endif
 
-    if (ABS(inclination_generalised.values.rollDeciDegrees) > 30 || ABS(inclination_generalised.values.pitchDeciDegrees) > 30) {
+    // Deci-degrees: 300 = 30 deg ( the old 30 meant 3 deg, so the slow ~15 s filter
+    // ran all the time and the estimate lagged high in descents ). 30 deg is above
+    // the 20 deg max_angle_inclination, so this only trips in aggressive flight.
+    if (ABS(inclination_generalised.values.rollDeciDegrees) > 300 || ABS(inclination_generalised.values.pitchDeciDegrees) > 300) {
 
         _time_constant_z = 5;
         updateGains();
@@ -1001,7 +1312,7 @@ bool limitAltitude()
 
     if (max_altitude != -1 && IS_RC_MODE_ACTIVE(BOXBARO)) {
 
-        if (EstAlt >= (max_altitude - 50)) {
+        if (EstAlt >= (max_altitude - ALT_CEILING_MARGIN_CM)) {
 
             return true;
 

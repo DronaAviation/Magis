@@ -142,7 +142,9 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 106;
+// 107: alt-hold outer-loop gain P8 [ PIDALT ] 100 -> 128 ( MagisV2 4657cbf ). Stored profiles keep
+//      their old gain, so the bump is required for the change to take effect.
+static const uint8_t EEPROM_CONF_VERSION = 107;
 
 static void resetAccelerometerTrims ( flightDynamicsTrims_t *accelerometerTrims ) {
   accelerometerTrims->values.pitch = 0;
@@ -172,7 +174,12 @@ static void resetPidProfile ( pidProfile_t *pidProfile ) {
   pidProfile->P8 [ PIDYAW ]   = 150;    // 85;
   pidProfile->I8 [ PIDYAW ]   = 70;     // 45;
   pidProfile->D8 [ PIDYAW ]   = 50;     // 0;
-  pidProfile->P8 [ PIDALT ]   = 100;
+  // Outer altitude loop is P-only; PIDVEL holds the integrator ( an I here would
+  // wind up against throttle saturation ). P8 = 128 is unity: a 10 cm error asks
+  // for 10 cm/s ( setVel = P8 * error / 128 ), once the 5 cm position deadband is
+  // gone ( altitudehold.cpp ). The old 100 left small sags inside
+  // the VelocityZ noise, uncorrected.
+  pidProfile->P8 [ PIDALT ]   = 128;
   pidProfile->I8 [ PIDALT ]   = 0;
   pidProfile->D8 [ PIDALT ]   = 30;     // 0;
 

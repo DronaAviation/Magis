@@ -66,6 +66,11 @@ static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 static int32_t errorAngleI[2] = { 0, 0 };
 static float errorAngleIf[2] = { 0.0f, 0.0f };
 
+// Set by mw.cpp while the throttle stick is low and the craft is airborne: pidRewrite then holds its
+// rate I-term ( the trim that carries an off-centre CG ) instead of the stick-low reset zeroing it.
+// Main loop only. Ported from MagisV2 a7f398d.
+static bool gyroITermFrozen = false;
+
 int32_t desiredAngle[3] = { 0, 0, 0 };
 int32_t desiredRate[3] = { 0, 0, 0 };
 float derivatives[3] = { 0, 0, 0 };
@@ -98,6 +103,11 @@ void pidResetErrorGyro(void)
     errorGyroIf[ROLL] = 0.0f;
     errorGyroIf[PITCH] = 0.0f;
     errorGyroIf[YAW] = 0.0f;
+}
+
+void pidSetGyroITermFreeze(bool freeze)
+{
+    gyroITermFrozen = freeze;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -828,7 +838,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
         // Time correction (to avoid different I scaling for different builds based on average cycle time)
         // is normalized to cycle time = 2048.
-        errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * pidProfile->I8[axis] * PIDweight[axis] / 100;
+        // Frozen during an airborne stick-down ( pidSetGyroITermFreeze ): the held value still acts below.
+        if (!gyroITermFrozen) {
+            errorGyroI[axis] = errorGyroI[axis] + ((RateError * cycleTime) >> 11) * pidProfile->I8[axis] * PIDweight[axis] / 100;
+        }
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
         // I coefficient (I8) moved before integration to make limiting independent from PID settings

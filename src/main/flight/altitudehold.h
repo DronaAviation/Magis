@@ -73,6 +73,9 @@ int32_t getEstVelocity1(void);
 
 bool limitAltitude();
 
+// The alt-hold cascade's only integrator. It carries the hover trim, less whatever
+// offloadHoverTrim ( ) has already moved into initialThrottleHold.
+extern int32_t errorVelocityI;
 extern int32_t altholdDebug;
 extern int32_t altholdDebug1;
 extern int32_t altholdDebug2;

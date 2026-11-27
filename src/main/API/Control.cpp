@@ -460,7 +460,9 @@ void PIDProfile_P::setDefault(void)
     currentProfile->pidProfile.P8[YAW] = 150;
     currentProfile->pidProfile.I8[YAW] = 70;
     currentProfile->pidProfile.D8[YAW] = 50;
-    currentProfile->pidProfile.P8[PIDALT] = 100;
+    // Keep in step with resetPidProfile ( ) in config/config.cpp: 128 is unity for the
+    // outer altitude loop ( setVel = P8 * error / 128 ). MagisV2 4657cbf.
+    currentProfile->pidProfile.P8[PIDALT] = 128;
     currentProfile->pidProfile.I8[PIDALT] = 0;
     currentProfile->pidProfile.D8[PIDALT] = 30;
     currentProfile->pidProfile.P8[PIDUSER] = 0;
